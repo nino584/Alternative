@@ -48,7 +48,7 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
   return (
     <div style={{paddingTop:80,background:C.cream}}>
       <div style={{maxWidth:1360,margin:"0 auto",padding:"20px 40px 0",display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
-        {[[L.home,"home"],[p.section,"catalog"],[p.name,null]].map(([l,pg],i,arr)=>(
+        {[[L.home,"home"],[p.section,"catalog"],[L&&L.localNames&&L.localNames[p.name]||p.name,null]].map(([l,pg],i,arr)=>(
           <span key={i} style={{display:"flex",alignItems:"center",gap:6}}>
             {pg?<button onClick={()=>setPage(pg)} style={{background:"none",border:"none",...T.labelSm,color:C.gray,fontSize:8}}>{l}</button>
               :<span style={{...T.labelSm,color:C.black,fontSize:8,overflow:"hidden",textOverflow:"ellipsis",maxWidth:200,whiteSpace:"nowrap"}}>{l}</span>}
@@ -80,7 +80,7 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
 
         <div>
           <p style={{...T.labelSm,color:C.tan,marginBottom:6,fontSize:10,letterSpacing:"0.2em"}}>{p.brand}</p>
-          <h1 style={{fontFamily:"'Alido',serif",fontSize:mobile?30:38,fontWeight:300,color:C.black,lineHeight:1.15,marginBottom:6}}>{p.name}</h1>
+          <h1 style={{fontFamily:"'Alido',serif",fontSize:mobile?30:38,fontWeight:300,color:C.black,lineHeight:1.15,marginBottom:6}}>{L&&L.localNames&&L.localNames[p.name]||p.name}</h1>
           <p style={{...T.bodySm,color:C.gray,marginBottom:20,fontSize:13}}>{p.color} · {p.section}</p>
 
           <div style={{marginBottom:24,display:"flex",alignItems:"baseline",gap:12}}>
