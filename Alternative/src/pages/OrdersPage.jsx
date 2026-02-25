@@ -4,6 +4,11 @@ import { ORDER_STATUSES } from '../constants/data.js';
 import { VIDEO_VERIFICATION_GEL } from '../constants/config.js';
 import HoverBtn from '../components/ui/HoverBtn.jsx';
 
+// ── STATUS TRANSLATION HELPER ────────────────────────────────────────────────
+const STATUS_KEY_MAP = {reserved:"Reserved",sourcing:"Sourcing",confirmed:"Confirmed",shipped:"Shipped",delivered:"Delivered"};
+const getStatusLabel = (L,key) => L&&L[`status${STATUS_KEY_MAP[key]}`] || ORDER_STATUSES.find(s=>s.key===key)?.label || key;
+const getStatusDesc = (L,key) => L&&L[`status${STATUS_KEY_MAP[key]}Desc`] || ORDER_STATUSES.find(s=>s.key===key)?.desc || '';
+
 // ── ORDERS PAGE ───────────────────────────────────────────────────────────────
 export default function OrdersPage({mobile,orders,setPage,toast,L}) {
   const allOrders = orders || [];
@@ -68,8 +73,8 @@ export default function OrdersPage({mobile,orders,setPage,toast,L}) {
                     <p style={{...T.labelSm,color:C.gray,fontSize:8,marginBottom:6}}>{o.orderId}</p>
                     <div style={{display:"flex",gap:6,alignItems:"center"}}>
                       <div style={{width:5,height:5,borderRadius:"50%",background:ORDER_STATUSES[osi]?.color||C.tan,flexShrink:0}}/>
-                      <span style={{...T.labelSm,fontSize:8,color:C.black}}>{ORDER_STATUSES[osi]?.label}</span>
-                      {o.wantVideo&&<span style={{...T.labelSm,fontSize:7,color:C.tan,padding:"1px 6px",border:`1px solid ${C.tan}`}}>VIDEO</span>}
+                      <span style={{...T.labelSm,fontSize:8,color:C.black}}>{getStatusLabel(L,o.status)}</span>
+                      {o.wantVideo&&<span style={{...T.labelSm,fontSize:7,color:C.tan,padding:"1px 6px",border:`1px solid ${C.tan}`}}>{L&&L.videoTag||'VIDEO'}</span>}
                     </div>
                   </div>
                 </div>
@@ -86,7 +91,7 @@ export default function OrdersPage({mobile,orders,setPage,toast,L}) {
               </div>
               <div style={{display:"flex",justifyContent:"space-between"}}>
                 {ORDER_STATUSES.map((s,i)=>(
-                  <span key={i} style={{...T.labelSm,fontSize:8,color:i===si?s.color:C.gray,fontWeight:i===si?500:300}}>{s.label}</span>
+                  <span key={i} style={{...T.labelSm,fontSize:8,color:i===si?s.color:C.gray,fontWeight:i===si?500:300}}>{getStatusLabel(L,s.key)}</span>
                 ))}
               </div>
             </div>
@@ -98,16 +103,16 @@ export default function OrdersPage({mobile,orders,setPage,toast,L}) {
                 <h2 style={{fontFamily:"'Alido',serif",fontSize:26,fontWeight:300,color:C.black,lineHeight:1.2,marginBottom:6}}>{current.name}</h2>
                 <p style={{...T.bodySm,color:C.gray,marginBottom:18}}>{current.color}{current.selectedSize&&current.selectedSize!=="One Size"?" · "+current.selectedSize:""}</p>
                 <div style={{padding:16,background:C.offwhite,borderLeft:`3px solid ${ORDER_STATUSES[si]?.color||C.tan}`,marginBottom:14}}>
-                  <p style={{...T.labelSm,color:ORDER_STATUSES[si]?.color||C.tan,marginBottom:5,fontSize:9}}>Current status</p>
-                  <p style={{...T.label,color:C.black,fontSize:11,marginBottom:4}}>{ORDER_STATUSES[si]?.label}</p>
-                  <p style={{...T.bodySm,color:C.gray,lineHeight:1.7,fontSize:12}}>{ORDER_STATUSES[si]?.desc}</p>
+                  <p style={{...T.labelSm,color:ORDER_STATUSES[si]?.color||C.tan,marginBottom:5,fontSize:9}}>{L&&L.currentStatus||'Current status'}</p>
+                  <p style={{...T.label,color:C.black,fontSize:11,marginBottom:4}}>{getStatusLabel(L,current.status)}</p>
+                  <p style={{...T.bodySm,color:C.gray,lineHeight:1.7,fontSize:12}}>{getStatusDesc(L,current.status)}</p>
                 </div>
                 {current.wantVideo&&(
                   <div style={{padding:"10px 14px",background:`rgba(177,154,122,0.08)`,border:`1px solid ${C.tan}`,marginBottom:14}}>
-                    <p style={{...T.labelSm,color:C.tan,fontSize:9}}>▷ Video verification included — will be sent to WhatsApp before dispatch</p>
+                    <p style={{...T.labelSm,color:C.tan,fontSize:9}}>▷ {L&&L.videoIncluded||'Video verification included — will be sent to WhatsApp before dispatch'}</p>
                   </div>
                 )}
-                {[["Amount paid",`GEL ${current.depositPaid}`],["Total",`GEL ${orderTotal}`]].map(([k,v])=>(
+                {[[L&&L.amountPaid||"Amount paid",`GEL ${current.depositPaid}`],[L&&L.total||"Total",`GEL ${orderTotal}`]].map(([k,v])=>(
                   <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:`1px solid ${C.lgray}`}}>
                     <span style={{...T.labelSm,color:C.gray,fontSize:9}}>{k}</span>
                     <span style={{...T.bodySm,color:C.black}}>{v}</span>

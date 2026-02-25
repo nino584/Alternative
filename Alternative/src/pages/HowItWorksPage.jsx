@@ -3,6 +3,10 @@ import { C, T } from '../constants/theme.js';
 import { ORDER_STATUSES } from '../constants/data.js';
 import Footer from '../components/layout/Footer.jsx';
 
+const STATUS_KEY_MAP = {reserved:"Reserved",sourcing:"Sourcing",confirmed:"Confirmed",shipped:"Shipped",delivered:"Delivered"};
+const getStatusLabel = (L,key) => L&&L[`status${STATUS_KEY_MAP[key]}`] || ORDER_STATUSES.find(s=>s.key===key)?.label || key;
+const getStatusDesc = (L,key) => L&&L[`status${STATUS_KEY_MAP[key]}Desc`] || ORDER_STATUSES.find(s=>s.key===key)?.desc || '';
+
 // ── HOW IT WORKS ──────────────────────────────────────────────────────────────
 export default function HowItWorksPage({setPage,L,mobile}) {
   const [openFaq,setOpenFaq]=useState(null);
@@ -63,8 +67,8 @@ export default function HowItWorksPage({setPage,L,mobile}) {
             {ORDER_STATUSES.map((s,i)=>(
               <div key={i} style={{background:C.cream,padding:"20px 16px"}}>
                 <div style={{height:3,background:s.color,marginBottom:16}}/>
-                <p style={{...T.label,color:C.black,marginBottom:7,fontSize:10}}>{s.label}</p>
-                <p style={{...T.bodySm,color:C.gray,fontSize:11,lineHeight:1.6}}>{s.desc}</p>
+                <p style={{...T.label,color:C.black,marginBottom:7,fontSize:10}}>{getStatusLabel(L,s.key)}</p>
+                <p style={{...T.bodySm,color:C.gray,fontSize:11,lineHeight:1.6}}>{getStatusDesc(L,s.key)}</p>
               </div>
             ))}
           </div>

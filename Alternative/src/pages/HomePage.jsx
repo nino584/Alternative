@@ -74,7 +74,7 @@ export default function HomePage({setPage,setSelected,L,mobile}) {
         <div style={{maxWidth:1360,margin:"0 auto",padding:`0 ${px}`}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:mobile?28:44}}>
             <div><p style={{...T.labelSm,color:C.tan,marginBottom:10}}>{L.featuredLabel}</p><h2 style={{...T.displayMd,color:C.black,fontSize:mobile?"clamp(22px,6vw,32px)":undefined}}>{L.featuredTitle}</h2></div>
-            <button onClick={()=>setPage("catalog")} style={{background:"none",border:"none",...T.bodySm,color:C.gray,textDecoration:"underline",cursor:"pointer",fontSize:mobile?11:undefined}}>View all →</button>
+            <button onClick={()=>setPage("catalog")} style={{background:"none",border:"none",...T.bodySm,color:C.gray,textDecoration:"underline",cursor:"pointer",fontSize:mobile?11:undefined}}>{L.viewAll||"View all →"}</button>
           </div>
           <div style={{display:"grid",gridTemplateColumns:mobile?"1fr 1fr":"repeat(3,1fr)",gap:3}}>
             {PRODUCTS.slice(0,mobile?4:3).map(p=><ProductCard key={p.id} product={p} onSelect={()=>{setPage("product",p);}} L={L} mobile={mobile}/>)}

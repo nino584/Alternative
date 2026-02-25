@@ -11,10 +11,10 @@ export default function ProductCard({product:p,onSelect,wishlist,onWishlist,L,mo
       <div style={{height:mobile?280:340,overflow:"hidden",position:"relative"}}>
         <img src={p.img} alt={p.name} style={{width:"100%",height:"100%",objectFit:"cover",transform:h?"scale(1.04)":"scale(1)",transition:"transform 0.6s ease"}}/>
         <div style={{position:"absolute",top:10,left:10,display:"flex",gap:5,flexWrap:"wrap"}}>
-          {p.tag==="Sale"&&<span style={{...T.labelSm,color:C.white,background:C.red,padding:"4px 10px",fontSize:8}}>SALE</span>}
-          {p.tag==="New"&&<span style={{...T.labelSm,color:C.white,background:C.black,padding:"4px 10px",fontSize:8}}>NEW</span>}
-          {p.tag==="Popular"&&<span style={{...T.labelSm,color:C.white,background:C.brown,padding:"4px 10px",fontSize:8}}>POPULAR</span>}
-          {p.tag==="Limited"&&<span style={{...T.labelSm,color:C.white,background:C.tan,padding:"4px 10px",fontSize:8}}>LIMITED</span>}
+          {p.tag==="Sale"&&<span style={{...T.labelSm,color:C.white,background:C.red,padding:"4px 10px",fontSize:8,textTransform:"uppercase"}}>{L&&L.sale||"SALE"}</span>}
+          {p.tag==="New"&&<span style={{...T.labelSm,color:C.white,background:C.black,padding:"4px 10px",fontSize:8,textTransform:"uppercase"}}>{L&&L.newIn||"NEW"}</span>}
+          {p.tag==="Popular"&&<span style={{...T.labelSm,color:C.white,background:C.brown,padding:"4px 10px",fontSize:8,textTransform:"uppercase"}}>{L&&L.tagPopular||"POPULAR"}</span>}
+          {p.tag==="Limited"&&<span style={{...T.labelSm,color:C.white,background:C.tan,padding:"4px 10px",fontSize:8,textTransform:"uppercase"}}>{L&&L.tagLimited||"LIMITED"}</span>}
         </div>
         {onWishlist&&(
           <button onClick={e=>{e.stopPropagation();onWishlist(p.id);}}

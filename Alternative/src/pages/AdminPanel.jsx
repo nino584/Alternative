@@ -45,6 +45,10 @@ const STORE_INFO = {
   address: "Tbilisi, Georgia",
 };
 
+// ── STATUS TRANSLATION HELPER ────────────────────────────────────────────────
+const STATUS_KEY_MAP = {reserved:"Reserved",sourcing:"Sourcing",confirmed:"Confirmed",shipped:"Shipped",delivered:"Delivered"};
+const getStatusLabel = (L,key) => L&&L[`status${STATUS_KEY_MAP[key]}`] || ORDER_STATUSES.find(s=>s.key===key)?.label || key;
+
 // ── ADMIN PANEL ──────────────────────────────────────────────────────────────
 export default function AdminPanel({ mobile, user, setPage, orders, toast, L, products, setProducts }) {
   const [tab, setTab] = useState("orders");
@@ -152,7 +156,7 @@ export default function AdminPanel({ mobile, user, setPage, orders, toast, L, pr
 
   const saveProduct = () => {
     if (!productForm.name.trim() || !productForm.price.trim()) {
-      toast("Name and price are required", "error");
+      toast(L && L.nameAndPriceRequired || "Name and price are required", "error");
       return;
     }
     const parsedSizes = productForm.sizes
@@ -220,7 +224,7 @@ export default function AdminPanel({ mobile, user, setPage, orders, toast, L, pr
   const videoRate = orderList.length > 0 ? Math.round((videoOrders / orderList.length) * 100) : 0;
 
   const revenueByStatus = ORDER_STATUSES.map(s => ({
-    label: s.label,
+    label: getStatusLabel(L,s.key),
     key: s.key,
     value: orderList.filter(o => o.status === s.key).reduce((sum, o) => sum + o.amount, 0),
   }));
@@ -242,7 +246,7 @@ export default function AdminPanel({ mobile, user, setPage, orders, toast, L, pr
   const maxCatCount = bestCategories.length > 0 ? bestCategories[0][1] : 1;
 
   const ordersByStatus = ORDER_STATUSES.map(s => ({
-    label: s.label,
+    label: getStatusLabel(L,s.key),
     key: s.key,
     count: orderList.filter(o => o.status === s.key).length,
   }));
@@ -385,7 +389,7 @@ export default function AdminPanel({ mobile, user, setPage, orders, toast, L, pr
 
               {/* Status filter pills */}
               <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                {[{ key: "all", label: L && L.allStatuses || "All" }, ...ORDER_STATUSES].map(s => (
+                {[{ key: "all", label: L && L.allStatuses || "All" }, ...ORDER_STATUSES.map(s=>({...s,label:getStatusLabel(L,s.key)}))].map(s => (
                   <button
                     key={s.key}
                     onClick={() => setStatusFilter(s.key)}
@@ -452,7 +456,7 @@ export default function AdminPanel({ mobile, user, setPage, orders, toast, L, pr
                           <td style={{ ...T.bodySm, color: C.black, padding: "12px 14px", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{o.item}</td>
                           <td style={{ padding: "12px 14px" }}>
                             <span style={{ ...T.labelSm, fontSize: 8, padding: "3px 8px", background: STATUS_COLOR[o.status] || C.gray, color: C.white }}>
-                              {o.status}
+                              {getStatusLabel(L,o.status)}
                             </span>
                           </td>
                           <td style={{ padding: "12px 14px" }} onClick={e => e.stopPropagation()}>
@@ -461,7 +465,7 @@ export default function AdminPanel({ mobile, user, setPage, orders, toast, L, pr
                               onChange={e => updateStatus(o.orderId, e.target.value)}
                               style={{ ...T.labelSm, fontSize: 8, padding: "5px 8px", border: `1px solid ${C.lgray}`, background: C.cream, color: C.black, cursor: "pointer", outline: "none" }}
                             >
-                              {ORDER_STATUSES.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+                              {ORDER_STATUSES.map(s => <option key={s.key} value={s.key}>{getStatusLabel(L,s.key)}</option>)}
                             </select>
                           </td>
                           <td style={{ ...T.bodySm, color: C.black, padding: "12px 14px" }}>GEL {o.amount}</td>
@@ -476,20 +480,20 @@ export default function AdminPanel({ mobile, user, setPage, orders, toast, L, pr
                                 <div>
                                   <p style={{ ...T.labelSm, color: C.gray, fontSize: 8, marginBottom: 4 }}>{L && L.orderDetails || "ORDER DETAILS"}</p>
                                   <p style={{ ...T.bodySm, color: C.black, marginBottom: 4 }}>{o.item}</p>
-                                  <p style={{ ...T.bodySm, color: C.gray, fontSize: 12 }}>Size: {o.size || "\u2014"}</p>
+                                  <p style={{ ...T.bodySm, color: C.gray, fontSize: 12 }}>{L && L.sizeLabel || "Size"}: {o.size || "\u2014"}</p>
                                 </div>
                                 <div>
-                                  <p style={{ ...T.labelSm, color: C.gray, fontSize: 8, marginBottom: 4 }}>VIDEO VERIFICATION</p>
+                                  <p style={{ ...T.labelSm, color: C.gray, fontSize: 8, marginBottom: 4 }}>{L && L.videoVerifLabel || "VIDEO VERIFICATION"}</p>
                                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                                     {o.wantVideo
-                                      ? <><IconCheck size={14} color={C.green} /><span style={{ ...T.bodySm, color: C.green }}>Requested (+{VIDEO_VERIFICATION_GEL} GEL)</span></>
-                                      : <><IconCross size={14} color={C.gray} /><span style={{ ...T.bodySm, color: C.gray }}>Not requested</span></>
+                                      ? <><IconCheck size={14} color={C.green} /><span style={{ ...T.bodySm, color: C.green }}>{L && L.videoRequested || "Requested"} (+{VIDEO_VERIFICATION_GEL} GEL)</span></>
+                                      : <><IconCross size={14} color={C.gray} /><span style={{ ...T.bodySm, color: C.gray }}>{L && L.videoNotRequested || "Not requested"}</span></>
                                     }
                                   </div>
                                 </div>
                                 <div>
-                                  <p style={{ ...T.labelSm, color: C.gray, fontSize: 8, marginBottom: 4 }}>NOTES</p>
-                                  <p style={{ ...T.bodySm, color: o.notes ? C.black : C.gray }}>{o.notes || "No notes"}</p>
+                                  <p style={{ ...T.labelSm, color: C.gray, fontSize: 8, marginBottom: 4 }}>{L && L.notesLabel || "NOTES"}</p>
+                                  <p style={{ ...T.bodySm, color: o.notes ? C.black : C.gray }}>{o.notes || (L && L.noNotes || "No notes")}</p>
                                 </div>
                               </div>
                             </td>
@@ -512,7 +516,7 @@ export default function AdminPanel({ mobile, user, setPage, orders, toast, L, pr
 
             {/* Header */}
             {sectionHeader(
-              `${L && L.productCatalog || "Product Catalog"} (${productList.length} items)`,
+              `${L && L.productCatalog || "Product Catalog"} (${productList.length} ${L && L.items || "items"})`,
               <HoverBtn onClick={openAddProduct} variant="tan" style={{ padding: "8px 18px", fontSize: 9 }}>
                 + {L && L.addProduct || "Add Product"}
               </HoverBtn>
@@ -632,7 +636,7 @@ export default function AdminPanel({ mobile, user, setPage, orders, toast, L, pr
             {/* ── Product Table ──────────────────────────────────────────── */}
             {productList.length === 0 ? (
               <div style={{ padding: "48px 20px", textAlign: "center" }}>
-                <p style={{ ...T.bodySm, color: C.gray, marginBottom: 16 }}>No products yet</p>
+                <p style={{ ...T.bodySm, color: C.gray, marginBottom: 16 }}>{L && L.noProducts || "No products yet"}</p>
                 <HoverBtn onClick={openAddProduct} variant="tan" style={{ padding: "10px 24px", fontSize: 9 }}>
                   + {L && L.addProduct || "Add Product"}
                 </HoverBtn>
