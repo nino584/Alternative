@@ -45,7 +45,7 @@ export default function PreorderModal({product:p,selectedSize,onClose,onComplete
           <div style={{display:"flex",gap:12,padding:14,background:C.offwhite,marginBottom:24}}>
             <img src={p.img} alt={p.name} style={{width:56,height:56,objectFit:"cover",flexShrink:0}}/>
             <div>
-              <p style={{...T.heading,color:C.black,fontSize:13,marginBottom:2}}>{p.name}</p>
+              <p style={{...T.heading,color:C.black,fontSize:13,marginBottom:2}}>{L&&L.localNames&&L.localNames[p.name]||p.name}</p>
               <p style={{...T.labelSm,color:C.gray,fontSize:9,marginBottom:5}}>{p.color}{selectedSize&&selectedSize!=="One Size"?" · "+selectedSize:""}</p>
               <p style={{...T.bodySm,color:C.tan}}>GEL {effectivePrice} total</p>
             </div>
@@ -86,7 +86,7 @@ export default function PreorderModal({product:p,selectedSize,onClose,onComplete
             <>
               <p style={{...T.label,color:C.black,fontSize:11,marginBottom:16}}>{L&&L.orderSummary||"Order Summary"}</p>
               {[
-                [L&&L.item||"Item",p.name],[L&&L.size||"Size",selectedSize||"One Size"],[L&&L.leadTime||"Lead time",p.lead],
+                [L&&L.item||"Item",L&&L.localNames&&L.localNames[p.name]||p.name],[L&&L.size||"Size",selectedSize||"One Size"],[L&&L.leadTime||"Lead time",p.lead],
                 [L&&L.depositNow||"Payment",`GEL ${totalPrice}`],
                 ...(wantVideo?[[L&&L.videoVerif||"Video verification",`GEL ${VIDEO_VERIFICATION_GEL}`]]:[]),
                 [L&&L.total||"Total",`GEL ${totalPrice+(wantVideo?VIDEO_VERIFICATION_GEL:0)}`],
