@@ -176,7 +176,7 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
 
           <div style={{marginBottom:24}}>
             <p style={{...T.label,color:C.black,marginBottom:10,fontSize:11}}>{L.itemDetails}</p>
-            <p style={{...T.body,color:C.gray,lineHeight:1.85}}>{p.desc}</p>
+            <p style={{...T.body,color:C.gray,lineHeight:1.85}}>{L&&L.localDescs&&L.localDescs[p.desc]||p.desc}</p>
           </div>
 
           <div style={{marginBottom:28}}>
