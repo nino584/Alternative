@@ -268,15 +268,13 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
   const sidebarSections = [
     { key: "shopping", items: [
       { id: "overview", icon: icons.overview, label: L.overview || "Overview" },
-      { id: "orders", icon: icons.orders, label: L.myOrders || "My Orders" },
       { id: "wishlist", icon: icons.wishlist, label: `${L.wishlist || "Wishlist"} (${wishlistItems.length})` },
+      { id: "orders", icon: icons.orders, label: L.myOrders || "My Orders" },
     ]},
     { key: "details", label: L.myDetails || "MY DETAILS", items: [
       { id: "profile", icon: icons.profile, label: L.profileInfo || "Profile" },
       { id: "addresses", icon: icons.address, label: L.addressBook || "Address Book" },
       { id: "payments", icon: icons.payment, label: L.paymentMethods || "Payment Methods" },
-    ]},
-    { key: "support", items: [
       { id: "returns", icon: icons.returns, label: L.returnsRefunds || "Returns & Refunds" },
     ]},
   ];
@@ -304,12 +302,14 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
         {/* ── SIDEBAR ── */}
         <div>
           {/* User card */}
-          <div style={{ padding: 20, background: C.white, marginBottom: 24, borderLeft: `3px solid ${C.tan}` }}>
-            <div style={{ width: 40, height: 40, borderRadius: "50%", background: C.tan, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
-              <span style={{ ...T.label, color: C.white, fontSize: 14, letterSpacing: 0 }}>{(user.name || "U").charAt(0).toUpperCase()}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "0 14px", marginBottom: 20 }}>
+            <div style={{ width: 36, height: 36, borderRadius: "50%", background: C.tan, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <span style={{ ...T.label, color: C.white, fontSize: 13, letterSpacing: 0 }}>{(user.name || "U").charAt(0).toUpperCase()}</span>
             </div>
-            <p style={{ ...T.heading, color: C.black, fontSize: 13, marginBottom: 3 }}>{user.name}</p>
-            <p style={{ ...T.bodySm, color: C.gray, fontSize: 12 }}>{user.email}</p>
+            <div style={{ minWidth: 0 }}>
+              <p style={{ ...T.heading, color: C.black, fontSize: 13, marginBottom: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.name}</p>
+              <p style={{ ...T.bodySm, color: C.gray, fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</p>
+            </div>
           </div>
 
           {/* Nav items */}
@@ -354,46 +354,66 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
             <div>
               <SectionHeader title={L.overview || "Overview"} subtitle={L.overviewSub || "Your account at a glance"} mobile={mobile} />
 
-              {/* Stats row */}
-              <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 2, marginBottom: 32 }}>
-                {[
-                  { n: orders.length, l: L.myOrders || "Orders" },
-                  { n: wishlistItems.length, l: L.wishlist || "Wishlist" },
-                  { n: addresses.length, l: L.addressBook || "Addresses" },
-                  { n: payments.length, l: L.paymentMethods || "Cards" },
-                ].map(({ n, l }) => (
-                  <div key={l} style={{ padding: 24, background: C.white, textAlign: "center" }}>
-                    <p style={{ ...T.displaySm, color: C.black, fontSize: 28, marginBottom: 4 }}>{n}</p>
-                    <p style={{ ...T.labelSm, color: C.gray, fontSize: 8 }}>{l}</p>
+              {/* Wishlist & My Orders — main navigation cards */}
+              <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr" : "1fr 1fr", gap: 2, marginBottom: 24 }}>
+                {/* Wishlist card */}
+                <button onClick={() => setTab("wishlist")}
+                  style={{ padding: mobile ? 24 : 32, background: C.white, border: "none", textAlign: "left", cursor: "pointer", transition: "background 0.15s", width: "100%" }}
+                  onMouseEnter={e => e.currentTarget.style.background = C.offwhite}
+                  onMouseLeave={e => e.currentTarget.style.background = C.white}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+                    <Icon d={icons.wishlist} size={26} color={C.tan} />
+                    <div style={{ ...T.displaySm, color: C.black, fontSize: 32 }}>{wishlistItems.length}</div>
                   </div>
-                ))}
+                  <p style={{ ...T.heading, color: C.black, fontSize: 15, marginBottom: 4 }}>{L.wishlist || "Wishlist"}</p>
+                  <p style={{ ...T.bodySm, color: C.gray, fontSize: 12 }}>{L.viewSavedItems || "View your saved items"}</p>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 14 }}>
+                    <span style={{ ...T.labelSm, fontSize: 9, color: C.tan }}>{L.viewAll || "View all →"}</span>
+                  </div>
+                </button>
+
+                {/* My Orders card */}
+                <button onClick={() => setPage("orders")}
+                  style={{ padding: mobile ? 24 : 32, background: C.white, border: "none", textAlign: "left", cursor: "pointer", transition: "background 0.15s", width: "100%" }}
+                  onMouseEnter={e => e.currentTarget.style.background = C.offwhite}
+                  onMouseLeave={e => e.currentTarget.style.background = C.white}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+                    <Icon d={icons.orders} size={26} color={C.tan} />
+                    <div style={{ ...T.displaySm, color: C.black, fontSize: 32 }}>{orders.length}</div>
+                  </div>
+                  <p style={{ ...T.heading, color: C.black, fontSize: 15, marginBottom: 4 }}>{L.myOrders || "My Orders"}</p>
+                  <p style={{ ...T.bodySm, color: C.gray, fontSize: 12 }}>{L.viewYourOrders || "Track and manage your orders"}</p>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 14 }}>
+                    <span style={{ ...T.labelSm, fontSize: 9, color: C.tan }}>{L.viewAll || "View all →"}</span>
+                  </div>
+                </button>
               </div>
 
               {/* Recent orders */}
-              <div style={{ marginBottom: 32 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-                  <p style={{ ...T.label, color: C.black, fontSize: 11 }}>{L.recentOrders || "Recent Orders"}</p>
-                  <button onClick={() => setTab("orders")} style={{ background: "none", border: "none", ...T.labelSm, color: C.tan, fontSize: 9, textDecoration: "underline", textUnderlineOffset: 3, cursor: "pointer" }}>{L.viewAll || "View all →"}</button>
-                </div>
-                {orders.length === 0 ? (
-                  <EmptyState icon={icons.orders} title={L.noOrdersYet || "No orders yet"} subtitle={L.startBrowsing || "Start exploring our collection."} action={() => setPage("catalog")} actionLabel={L.exploreCollection || "Explore Collection"} />
-                ) : orders.slice(0, 3).map(o => (
-                  <div key={o.orderId} style={{ display: "flex", gap: 14, padding: 16, background: C.white, marginBottom: 2, cursor: "pointer", transition: "background 0.15s" }}
-                    onClick={() => setPage("orders")}
-                    onMouseEnter={e => e.currentTarget.style.background = C.offwhite}
-                    onMouseLeave={e => e.currentTarget.style.background = C.white}>
-                    <img src={o.img} alt={o.name} style={{ width: 56, height: 56, objectFit: "cover", flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ ...T.heading, color: C.black, fontSize: 13, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{o.name}</p>
-                      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                        <div style={{ width: 5, height: 5, borderRadius: "50%", background: C.tan }} />
-                        <span style={{ ...T.labelSm, fontSize: 8, color: C.tan }}>{L.processing || "Processing"}</span>
-                      </div>
-                    </div>
-                    <p style={{ ...T.heading, color: C.black, fontSize: 14, flexShrink: 0 }}>GEL {o.sale || o.price}</p>
+              {orders.length > 0 && (
+                <div style={{ marginBottom: 24 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                    <p style={{ ...T.label, color: C.black, fontSize: 11 }}>{L.recentOrders || "Recent Orders"}</p>
+                    <button onClick={() => setPage("orders")} style={{ background: "none", border: "none", ...T.labelSm, color: C.tan, fontSize: 9, textDecoration: "underline", textUnderlineOffset: 3, cursor: "pointer" }}>{L.viewAll || "View all →"}</button>
                   </div>
-                ))}
-              </div>
+                  {orders.slice(0, 3).map(o => (
+                    <div key={o.orderId} style={{ display: "flex", gap: 14, padding: 16, background: C.white, marginBottom: 2, cursor: "pointer", transition: "background 0.15s" }}
+                      onClick={() => setPage("orders")}
+                      onMouseEnter={e => e.currentTarget.style.background = C.offwhite}
+                      onMouseLeave={e => e.currentTarget.style.background = C.white}>
+                      <img src={o.img} alt={o.name} style={{ width: 56, height: 56, objectFit: "cover", flexShrink: 0 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ ...T.heading, color: C.black, fontSize: 13, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{o.name}</p>
+                        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                          <div style={{ width: 5, height: 5, borderRadius: "50%", background: C.tan }} />
+                          <span style={{ ...T.labelSm, fontSize: 8, color: C.tan }}>{L.processing || "Processing"}</span>
+                        </div>
+                      </div>
+                      <p style={{ ...T.heading, color: C.black, fontSize: 14, flexShrink: 0 }}>GEL {o.sale || o.price}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Quick links */}
               <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr" : "1fr 1fr", gap: 2 }}>
@@ -568,54 +588,58 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
           {/* ════════ PAYMENTS ════════ */}
           {tab === "payments" && (
             <div>
-              <SectionHeader title={L.paymentMethods || "Payment Methods"} subtitle={`${payments.length} ${L.savedCards || "saved cards"}`} action={() => { resetPayForm(); setPayModal(true); }} actionLabel={`+ ${L.addCard || "Add Card"}`} mobile={mobile} />
+              <SectionHeader title={L.paymentMethods || "Payment Methods"} mobile={mobile} />
 
-              {payments.length === 0 ? (
-                <EmptyState icon={icons.payment} title={L.noCards || "No saved payment methods"} subtitle={L.noCardsSub || "Add a card for faster checkout."} action={() => { resetPayForm(); setPayModal(true); }} actionLabel={`+ ${L.addCard || "Add Card"}`} />
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  {payments.map((card, i) => (
-                    <PaymentCard key={card.id} card={card} isDefault={card.isDefault} onDelete={() => deletePayment(i)} onSetDefault={() => setDefaultPayment(i)} L={L} />
-                  ))}
+              {/* Bank cards */}
+              <div style={{ background: C.white, padding: mobile ? 24 : 32, marginBottom: 2 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+                  <Icon d={icons.payment} size={20} color={C.tan} />
+                  <p style={{ ...T.heading, color: C.black, fontSize: 14 }}>{L.bankCards || "Bank Cards"}</p>
                 </div>
-              )}
-
-              {/* Accepted methods info */}
-              <div style={{ marginTop: 32, padding: 24, background: C.offwhite }}>
-                <p style={{ ...T.label, color: C.black, fontSize: 10, marginBottom: 14 }}>{L.acceptedMethods || "Accepted Payment Methods"}</p>
-                <div style={{ display: "flex", gap: 12 }}>
-                  {["VISA", "MC", "AMEX", "BOG", "TBC"].map(m => (
-                    <div key={m} style={{ padding: "6px 14px", background: C.white, border: `1px solid ${C.lgray}` }}>
-                      <span style={{ ...T.labelSm, fontSize: 8, color: C.gray }}>{m}</span>
+                <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
+                  {["VISA", "MC", "BOG", "TBC"].map(m => (
+                    <div key={m} style={{ padding: "8px 18px", background: C.offwhite, border: `1px solid ${C.lgray}` }}>
+                      <span style={{ ...T.labelSm, fontSize: 9, color: C.black }}>{m}</span>
                     </div>
                   ))}
                 </div>
+                <p style={{ ...T.bodySm, color: C.gray, fontSize: 12 }}>{L.bankCardDesc || "Pay securely with Visa, Mastercard, or Georgian bank cards (BOG, TBC). Card details are entered at checkout — we never store card data."}</p>
               </div>
 
-              {/* Payment Modal */}
-              <Modal open={payModal} onClose={() => { setPayModal(false); resetPayForm(); }} title={L.addCard || "Add New Card"} mobile={mobile}>
-                <FormInput label={L.cardNumber || "Card Number"} value={cNumber} onChange={setCNumber} placeholder="0000 0000 0000 0000" required />
-                <FormInput label={L.cardHolder || "Cardholder Name"} value={cHolder} onChange={setCHolder} placeholder={L.cardHolderHint || "As shown on card"} required />
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                  <FormInput label={L.expiryDate || "Expiry Date"} value={cExpiry} onChange={setCExpiry} placeholder="MM/YY" required />
-                  <div style={{ marginBottom: 16 }}>
-                    <label style={{ ...T.labelSm, color: C.gray, fontSize: 9, display: "block", marginBottom: 6 }}>{L.cardType || "Card Type"}</label>
-                    <select value={cType} onChange={e => setCType(e.target.value)} style={{ width: "100%", padding: "12px 14px", border: `1px solid ${C.lgray}`, background: C.white, fontSize: 14, color: C.black, fontFamily: "'TT Interphases Pro',sans-serif" }}>
-                      <option value="visa">Visa</option>
-                      <option value="mastercard">Mastercard</option>
-                      <option value="amex">American Express</option>
-                    </select>
-                  </div>
+              {/* Crypto */}
+              <div style={{ background: C.white, padding: mobile ? 24 : 32, marginBottom: 2 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.tan} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" /><path d="M9.5 8h5a2 2 0 010 4h-5m0-4v8m0-8H8m1.5 4h4.5a2 2 0 010 4H9.5m0 0H8" />
+                  </svg>
+                  <p style={{ ...T.heading, color: C.black, fontSize: 14 }}>{L.cryptoPayments || "Cryptocurrency"}</p>
                 </div>
-                <div style={{ padding: 16, background: C.offwhite, marginBottom: 20, display: "flex", gap: 10, alignItems: "flex-start" }}>
-                  <Icon d={icons.check} size={16} color={C.green} />
-                  <p style={{ ...T.bodySm, color: C.gray, fontSize: 12 }}>{L.cardSecure || "Your card information is encrypted and stored securely."}</p>
+                <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
+                  {["BTC", "ETH", "USDT", "USDC"].map(m => (
+                    <div key={m} style={{ padding: "8px 18px", background: C.offwhite, border: `1px solid ${C.lgray}` }}>
+                      <span style={{ ...T.labelSm, fontSize: 9, color: C.black }}>{m}</span>
+                    </div>
+                  ))}
                 </div>
-                <div style={{ display: "flex", gap: 10 }}>
-                  <HoverBtn onClick={savePayment} variant="primary" style={{ padding: "13px 36px" }}>{L.saveCard || "Save Card"}</HoverBtn>
-                  <HoverBtn onClick={() => { setPayModal(false); resetPayForm(); }} variant="ghost">{L.cancel || "Cancel"}</HoverBtn>
+                <p style={{ ...T.bodySm, color: C.gray, fontSize: 12 }}>{L.cryptoDesc || "We accept Bitcoin, Ethereum, USDT, and USDC. Select crypto at checkout and receive wallet details via WhatsApp. Confirmation within minutes."}</p>
+              </div>
+
+              {/* Bank transfer */}
+              <div style={{ background: C.white, padding: mobile ? 24 : 32 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.tan} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3" />
+                  </svg>
+                  <p style={{ ...T.heading, color: C.black, fontSize: 14 }}>{L.bankTransfer || "Bank Transfer"}</p>
                 </div>
-              </Modal>
+                <p style={{ ...T.bodySm, color: C.gray, fontSize: 12 }}>{L.bankTransferDesc || "Direct transfer to our BOG or TBC account. We'll send you the details on WhatsApp after order confirmation."}</p>
+              </div>
+
+              {/* Security note */}
+              <div style={{ marginTop: 24, padding: 20, background: C.offwhite, display: "flex", gap: 12, alignItems: "flex-start" }}>
+                <Icon d={icons.check} size={16} color={C.green} />
+                <p style={{ ...T.bodySm, color: C.gray, fontSize: 12 }}>{L.paymentSecure || "All payments are processed securely. We never store your card information."}</p>
+              </div>
             </div>
           )}
 
@@ -624,21 +648,56 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
             <div>
               <SectionHeader title={L.returnsRefunds || "Returns & Refunds"} mobile={mobile} />
 
-              {/* Return policy */}
+              {/* Cancellation policy */}
+              <div style={{ background: C.white, padding: mobile ? 24 : 32, marginBottom: 2 }}>
+                <p style={{ ...T.label, color: C.black, fontSize: 10, marginBottom: 16 }}>{L.cancellationPolicy || "Cancellation Policy"}</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                  <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                    <Icon d={icons.check} size={16} color={C.green} />
+                    <p style={{ ...T.bodySm, color: C.gray }}>{L.returnPolicy1 || "Free cancellation within 24 hours of placing your order — full refund guaranteed"}</p>
+                  </div>
+                  <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                    <Icon d={icons.check} size={16} color={C.green} />
+                    <p style={{ ...T.bodySm, color: C.gray }}>{L.returnPolicy1b || "Orders can be cancelled free of charge before shipping"}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Return policy for delivered items */}
+              <div style={{ background: C.white, padding: mobile ? 24 : 32, marginBottom: 2 }}>
+                <p style={{ ...T.label, color: C.black, fontSize: 10, marginBottom: 16 }}>{L.returnPolicyDelivered || "Returns After Delivery"}</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                  <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                    <Icon d={icons.check} size={16} color={C.green} />
+                    <p style={{ ...T.bodySm, color: C.gray }}>{L.returnPolicy2 || "If the item arrives damaged, defective, or not as described — return within 24 hours of delivery for a full refund"}</p>
+                  </div>
+                  <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                    <Icon d={icons.check} size={16} color={C.green} />
+                    <p style={{ ...T.bodySm, color: C.gray }}>{L.returnPolicy3 || "Items must be in original packaging with all tags attached"}</p>
+                  </div>
+                  <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                    <Icon d={icons.check} size={16} color={C.green} />
+                    <p style={{ ...T.bodySm, color: C.gray }}>{L.returnPolicy4 || "Refunds processed within 3–5 business days after return is approved"}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* How to return */}
               <div style={{ background: C.white, padding: mobile ? 24 : 32, marginBottom: 24 }}>
-                <p style={{ ...T.label, color: C.black, fontSize: 10, marginBottom: 16 }}>{L.returnPolicy || "Return Policy"}</p>
-                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                  {[
-                    { icon: icons.check, text: L.returnPolicy1 || "Free cancellation before shipping — full refund guaranteed" },
-                    { icon: icons.check, text: L.returnPolicy2 || "Items must be in original condition with all tags attached" },
-                    { icon: icons.check, text: L.returnPolicy3 || "Refunds processed within 3–5 business days" },
-                    { icon: icons.check, text: L.returnPolicy4 || "Contact us on WhatsApp to initiate a return" },
-                  ].map(({ icon, text }, i) => (
-                    <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                      <Icon d={icon} size={16} color={C.green} />
-                      <p style={{ ...T.bodySm, color: C.gray }}>{text}</p>
-                    </div>
-                  ))}
+                <p style={{ ...T.label, color: C.black, fontSize: 10, marginBottom: 16 }}>{L.howToReturn || "How to Return"}</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                  <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                    <span style={{ ...T.labelSm, color: C.tan, fontSize: 10, width: 20, flexShrink: 0 }}>1.</span>
+                    <p style={{ ...T.bodySm, color: C.gray }}>{L.returnStep1 || "Contact us on WhatsApp within 24 hours of delivery"}</p>
+                  </div>
+                  <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                    <span style={{ ...T.labelSm, color: C.tan, fontSize: 10, width: 20, flexShrink: 0 }}>2.</span>
+                    <p style={{ ...T.bodySm, color: C.gray }}>{L.returnStep2 || "Send photos of the item and packaging"}</p>
+                  </div>
+                  <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                    <span style={{ ...T.labelSm, color: C.tan, fontSize: 10, width: 20, flexShrink: 0 }}>3.</span>
+                    <p style={{ ...T.bodySm, color: C.gray }}>{L.returnStep3 || "We'll arrange pickup and process your refund"}</p>
+                  </div>
                 </div>
               </div>
 
