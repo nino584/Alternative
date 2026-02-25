@@ -57,18 +57,18 @@ export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,ini
             <div style={{display:"flex",alignItems:"center",gap:12}}>
               <span style={{...T.labelSm,color:C.gray,fontSize:9}}>{filtered.length} {L.pieces}</span>
               {!mobile&&<select value={sortBy} onChange={e=>setSortBy(e.target.value)} style={{...T.labelSm,fontSize:9,padding:"8px 12px",border:`1px solid ${C.lgray}`,background:C.cream,color:C.black,cursor:"pointer",outline:"none",appearance:"none",paddingRight:28,backgroundImage:"url(\"data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23a8a296' strokeWidth='1.2'/%3E%3C/svg%3E\")",backgroundRepeat:"no-repeat",backgroundPosition:"right 10px center"}}>
-                <option value="picks">Our Picks</option>
-                <option value="new">Newest first</option>
-                <option value="high">Price: high to low</option>
-                <option value="low">Price: low to high</option>
+                <option value="picks">{L.sortOurPicks}</option>
+                <option value="new">{L.sortNewest}</option>
+                <option value="high">{L.sortPriceHigh}</option>
+                <option value="low">{L.sortPriceLow}</option>
               </select>}
             </div>
           </div>
           {!mobile&&(
             <div style={{display:"flex",alignItems:"center",gap:16,padding:"10px 0",marginBottom:8}}>
-              <span style={{...T.labelSm,color:C.tan,fontSize:8}}>PRE-ORDER MODEL</span>
+              <span style={{...T.labelSm,color:C.tan,fontSize:8}}>{L.preorderModel}</span>
               <span style={{width:1,height:14,background:C.lgray}}/>
-              <span style={{...T.bodySm,color:C.gray,fontSize:11}}>Order & pay · Sourced & verified · Delivered in 10–18 days to Tbilisi</span>
+              <span style={{...T.bodySm,color:C.gray,fontSize:11}}>{L.preorderDesc}</span>
             </div>
           )}
           {!mobile&&(
@@ -100,13 +100,13 @@ export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,ini
               <button onClick={()=>setRefineOpen(true)}
                 style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"14px 16px",background:"none",border:"none",borderRight:`1px solid ${C.lgray}`,...T.labelSm,fontSize:10,color:C.black,cursor:"pointer"}}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.black} strokeWidth="1.5"><path d="M4 21V14M4 10V3M12 21V12M12 8V3M20 21V16M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
-                REFINE
+                {L.refine}
               </button>
               <select value={sortBy} onChange={e=>setSortBy(e.target.value)} style={{flex:1,padding:"14px 16px",border:"none",background:"transparent",...T.labelSm,fontSize:10,color:C.black,cursor:"pointer",outline:"none",textAlign:"center",appearance:"none",WebkitAppearance:"none"}}>
-                <option value="picks">SORT: OUR PICKS</option>
-                <option value="new">SORT: NEWEST</option>
-                <option value="high">SORT: PRICE ↓</option>
-                <option value="low">SORT: PRICE ↑</option>
+                <option value="picks">{L.sortOurPicksShort}</option>
+                <option value="new">{L.sortNewestShort}</option>
+                <option value="high">{L.sortPriceHighShort}</option>
+                <option value="low">{L.sortPriceLowShort}</option>
               </select>
             </div>
           ):(
@@ -119,7 +119,7 @@ export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,ini
                 ))}
               </div>
               <div style={{display:"flex",gap:0,flexShrink:0,borderLeft:`1px solid ${C.lgray}`,paddingLeft:16}}>
-                {[["all","All price"],["under200","< 200"],["200-400","200–400"],["over400","400+"]].map(([v,l])=>(
+                {[["all",L.allPriceShort],["under200","< 200"],["200-400","200–400"],["over400","400+"]].map(([v,l])=>(
                   <button key={v} onClick={()=>setPrice(v)} style={{...T.labelSm,fontSize:8,padding:"13px 10px",background:"none",border:"none",color:price===v?C.black:C.gray,cursor:"pointer",whiteSpace:"nowrap",borderBottom:price===v?`2px solid ${C.tan}`:"2px solid transparent"}}>
                     {l}
                   </button>
@@ -142,8 +142,8 @@ export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,ini
 
           {/* SORT BY */}
           <div style={{padding:"0 20px 28px"}}>
-            <h3 style={{...T.label,color:C.black,fontSize:13,marginBottom:20,fontWeight:600}}>SORT BY</h3>
-            {[{v:"picks",l:"Our Picks"},{v:"new",l:"Newest first"},{v:"high",l:"Price: high to low"},{v:"low",l:"Price: low to high"}].map((opt,i)=>(
+            <h3 style={{...T.label,color:C.black,fontSize:13,marginBottom:20,fontWeight:600}}>{L.sortLabel}</h3>
+            {[{v:"picks",l:L.sortOurPicks},{v:"new",l:L.sortNewest},{v:"high",l:L.sortPriceHigh},{v:"low",l:L.sortPriceLow}].map((opt,i)=>(
               <button key={i} onClick={()=>setSortBy(opt.v)}
                 style={{display:"flex",alignItems:"center",gap:14,width:"100%",padding:"16px 0",background:"none",border:"none",textAlign:"left",borderBottom:i<3?`1px solid ${C.lgray}`:"none"}}>
                 <div style={{width:22,height:22,borderRadius:"50%",border:`2px solid ${sortBy===opt.v?C.black:C.lgray}`,display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -156,11 +156,11 @@ export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,ini
 
           {/* FILTERS */}
           <div style={{padding:"0 20px 28px",borderTop:`6px solid ${C.offwhite}`,paddingTop:28}}>
-            <h3 style={{...T.label,color:C.black,fontSize:13,marginBottom:16,fontWeight:600}}>FILTERS</h3>
+            <h3 style={{...T.label,color:C.black,fontSize:13,marginBottom:16,fontWeight:600}}>{L.filtersLabel}</h3>
 
             {/* Category */}
             <div style={{marginBottom:20}}>
-              <p style={{...T.body,color:C.black,fontSize:15,fontWeight:300,marginBottom:12}}>Category</p>
+              <p style={{...T.body,color:C.black,fontSize:15,fontWeight:300,marginBottom:12}}>{L.categoryLabel}</p>
               <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
                 {(subCats[section]||subCats.All).map(([lbl,key])=>(
                   <button key={key} onClick={()=>{if(key==="Brands"){setPage("brands");setRefineOpen(false);}else{setSubCat(key);}}}
@@ -173,7 +173,7 @@ export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,ini
 
             {/* Section */}
             <div style={{marginBottom:20}}>
-              <p style={{...T.body,color:C.black,fontSize:15,fontWeight:300,marginBottom:12}}>Section</p>
+              <p style={{...T.body,color:C.black,fontSize:15,fontWeight:300,marginBottom:12}}>{L.sectionLabel}</p>
               <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
                 {[{k:"Womenswear",l:L.womenswear},{k:"Menswear",l:L.menswear},{k:"Kidswear",l:L.kidswear}].map(({k,l})=>(
                   <button key={k} onClick={()=>{setSection(k);setSubCat("All");}}
@@ -186,9 +186,9 @@ export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,ini
 
             {/* Price */}
             <div style={{marginBottom:20}}>
-              <p style={{...T.body,color:C.black,fontSize:15,fontWeight:300,marginBottom:12}}>Price</p>
+              <p style={{...T.body,color:C.black,fontSize:15,fontWeight:300,marginBottom:12}}>{L.priceLabel}</p>
               <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
-                {[["all","All prices"],["under200","Under GEL 200"],["200-400","GEL 200 – 400"],["over400","Over GEL 400"]].map(([v,l])=>(
+                {[["all",L.allPrices],["under200",L.underGel200],["200-400",L.gel200to400],["over400",L.overGel400]].map(([v,l])=>(
                   <button key={v} onClick={()=>setPrice(v)}
                     style={{padding:"8px 16px",borderRadius:20,border:`1px solid ${price===v?C.black:C.lgray}`,background:price===v?C.black:"transparent",color:price===v?C.white:C.black,...T.bodySm,fontSize:12,cursor:"pointer"}}>
                     {l}
@@ -202,7 +202,7 @@ export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,ini
           <div style={{position:"sticky",bottom:0,padding:"16px 20px",background:C.cream,borderTop:`1px solid ${C.lgray}`}}>
             <button onClick={()=>setRefineOpen(false)}
               style={{width:"100%",padding:"16px",background:C.black,color:C.white,border:"none",...T.label,fontSize:12,cursor:"pointer",letterSpacing:1}}>
-              Show {filtered.length} Result{filtered.length!==1?"s":""}
+              {L.showResults} {filtered.length} {filtered.length!==1?L.results:L.result}
             </button>
           </div>
         </div>

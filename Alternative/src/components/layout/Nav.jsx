@@ -31,7 +31,7 @@ export default function Nav({page,setPage,cartCount,user,setUser,onSearch,onCart
     {key:"Womenswear",label:L.womenswear,items:[L.newIn,L.clothing,L.shoes,L.bags,L.accessories,L.jewellery,L.sale]},
     {key:"Menswear",label:L.menswear,items:[L.newIn,L.clothing,L.shoes,L.bags,L.accessories,L.watches,L.sale]},
     {key:"Kidswear",label:L.kidswear,items:[L.newIn,L.clothing,L.shoes,L.accessories]},
-    {key:"Browse",label:"Browse By",items:[L.newIn,L.brands,L.sale]},
+    {key:"Browse",label:L.browseBy,items:[L.newIn,L.brands,L.sale]},
   ];
 
   if (mobile) {
@@ -139,7 +139,7 @@ export default function Nav({page,setPage,cartCount,user,setUser,onSearch,onCart
             {/* Language section */}
             <div style={{padding:"0 20px 32px"}}>
               <h3 style={{...T.displaySm,color:C.black,marginBottom:16,fontSize:18,fontWeight:300}}>
-                {lang==="ka"?"ენა":"Language"}
+                {L.language}
               </h3>
               {[{code:"en",label:"English"},{code:"ka",label:"ქართული"},{code:"ru",label:"Русский"}].map(opt=>(
                 <button key={opt.code} onClick={()=>setLang(opt.code)}
@@ -202,7 +202,7 @@ export default function Nav({page,setPage,cartCount,user,setUser,onSearch,onCart
           </button>
 
           {/* Wishlist / Heart icon */}
-          <button onClick={()=>{window.__initAccountTab="wishlist";setPage("account");}} title="Wishlist"
+          <button onClick={()=>{window.__initAccountTab="wishlist";setPage("account");}} title={L.wishlist||"Wishlist"}
             style={{background:"none",border:"none",width:42,height:42,display:"flex",alignItems:"center",justifyContent:"center",position:"relative",borderRadius:6,transition:"opacity 0.2s, background 0.2s",cursor:"pointer"}}
             onMouseEnter={e=>{e.currentTarget.style.opacity="0.7";e.currentTarget.style.background="rgba(0,0,0,0.04)";}} onMouseLeave={e=>{e.currentTarget.style.opacity="1";e.currentTarget.style.background="transparent";}}>
             <svg width="21" height="21" viewBox="0 0 24 24" fill={wishlistCount>0?C.tan:"none"} stroke={wishlistCount>0?C.tan:C.black} strokeWidth="1.5">
