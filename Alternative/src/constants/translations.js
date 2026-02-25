@@ -313,6 +313,7 @@ export const LANG_DATA = {
     aboutPara2:"Neither option respected the customer. ALTERNATIVES was built to offer exactly that — a simple, honest alternative to a market that had stopped trying.",
     // Product name overrides
     localNames:{},
+    localDescs:{},
   },
   ka: {
     collection:"ᲙᲝᲚᲔᲥᲪᲘᲐ", howItWorks:"ᲠᲝᲒᲝᲠ ᲛᲣᲨᲐᲝᲑᲡ", about:"ᲩᲕᲔᲜ ᲨᲔᲡᲐᲮᲔᲑ",
@@ -597,6 +598,25 @@ export const LANG_DATA = {
     aboutPara2:"არცერთი ვარიანტი არ პატივს სცემდა მომხმარებელს. ALTERNATIVE შეიქმნა სწორედ ამის შესათავაზებლად — მარტივი, გულწრფელი ალტერნატივა ბაზრისთვის, რომელმაც ცდა შეწყვიტა.",
     // Product name overrides (Farfetch style: keep style names, translate generic words)
     localNames:{"Automatic Mesh Watch":"Automatic Mesh საათი","Gold Bracelet Watch":"Gold Bracelet საათი","Ceramic Dress Watch":"Ceramic Dress საათი"},
+    // Product description overrides
+    localDescs:{
+      "Intreccio lambskin. Gold-tone brass hardware. Interior suede lining with zip pocket.":"ინტრეჩო ტარის ტყავი. ოქროსფერი თითბრის ფურნიტურა. შიდა ზამშის საფენი ზიპ-ჯიბით.",
+      "Diamond-quilted calfskin. Silver-tone chain strap. YSL turn-lock closure.":"ალმასისებრი ნაკერის ხბოს ტყავი. ვერცხლისფერი ჯაჭვის საკიდი. YSL ბრუნვის საკეტი.",
+      "100% silk twill. Hand-rolled edges. Signature Anagram print.":"100% აბრეშუმის ტვილი. ხელით შემოხვეული კიდეები. სიგნატურული Anagram პრინტი.",
+      "Full-grain leather upper. 6cm block heel. Scalloped edge detail.":"სრულმარცვლოვანი ტყავის ზედა ნაწილი. 6სმ ბლოკ-ქუსლი. ტალღოვანი კიდის დეტალი.",
+      "100% cashmere. Brushed finish. Monili detail.":"100% კაშმირი. ბრაშირებული დამუშავება. მონილი დეტალი.",
+      "Soft pebbled calfskin. Signature puzzle geometric panels. Gold chain.":"რბილი მარცვლოვანი ხბოს ტყავი. სიგნატურული Puzzle გეომეტრიული პანელები. ოქროს ჯაჭვი.",
+      "80% wool, 20% cashmere. Structured shoulder. Satin lining.":"80% მატყლი, 20% კაშმირი. სტრუქტურირებული მხარი. სატინის საფენი.",
+      "Vegetable-tanned calfskin. V-Logo signature buckle.":"მცენარეულად თრიმლული ხბოს ტყავი. V-Logo სიგნატურული ბალთა.",
+      "Sapphire crystal glass. Swiss automatic movement. 5ATM water resistance.":"საფირონის ბროლის მინა. შვეიცარიული ავტომატური მექანიზმი. 5ATM წყალგამძლეობა.",
+      "PVD gold-tone case. Brushed bracelet. Day-date complication.":"PVD ოქროსფერი კორპუსი. ბრაშირებული სამაჯური. დღე-თარიღის კომპლიკაცია.",
+      "Smooth calfskin. Signature horsebit hardware. Blake-stitched leather sole.":"გლუვი ხბოს ტყავი. სიგნატურული Horsebit ფურნიტურა. Blake-ნაკერის ტყავის ძირი.",
+      "Full-grain leather. Removable shoulder strap. Interior zip compartment.":"სრულმარცვლოვანი ტყავი. მოხსნადი მხრის საკიდი. შიდა ზიპ-განყოფილება.",
+      "90% virgin wool. Double-breasted. Structured shoulder. Fully lined.":"90% ქალწული მატყლი. ორმაგბორტიანი. სტრუქტურირებული მხარი. სრულად საფენიანი.",
+      "Ceramic bezel. Swiss quartz movement. Sapphire crystal.":"კერამიკული ბეზელი. შვეიცარიული კვარცის მექანიზმი. საფირონის ბროლი.",
+      "Lightweight goose-down fill. Snap-button closure. Machine washable.":"მსუბუქი ბატის ბუმბულის შევსება. კნოპ-ღილის შესაკრავი. მანქანით გასარეცხი.",
+      "Canvas upper. Signature star. Rubber sole. Velcro closure.":"ტილოს ზედა ნაწილი. სიგნატურული ვარსკვლავი. რეზინის ძირი. Velcro შესაკრავი.",
+    },
   },
   ru: {
     collection:"Коллекция", howItWorks:"Как это работает", about:"О нас",
@@ -881,5 +901,24 @@ export const LANG_DATA = {
     aboutPara2:"Ни один вариант не уважал клиента. ALTERNATIVE был создан именно для этого — простая, честная альтернатива рынку, который перестал стараться.",
     // Product name overrides
     localNames:{"Automatic Mesh Watch":"Automatic Mesh часы","Gold Bracelet Watch":"Gold Bracelet часы","Ceramic Dress Watch":"Ceramic Dress часы"},
+    // Product description overrides
+    localDescs:{
+      "Intreccio lambskin. Gold-tone brass hardware. Interior suede lining with zip pocket.":"Кожа ягнёнка Intreccio. Фурнитура из латуни золотого тона. Подкладка из замши с карманом на молнии.",
+      "Diamond-quilted calfskin. Silver-tone chain strap. YSL turn-lock closure.":"Стёганая телячья кожа. Цепочка серебристого тона. Замок-вертушка YSL.",
+      "100% silk twill. Hand-rolled edges. Signature Anagram print.":"100% шёлковый твил. Края ручной подшивки. Фирменный принт Anagram.",
+      "Full-grain leather upper. 6cm block heel. Scalloped edge detail.":"Верх из натуральной кожи. Блочный каблук 6 см. Фестончатая отделка краёв.",
+      "100% cashmere. Brushed finish. Monili detail.":"100% кашемир. Матовая отделка. Деталь Monili.",
+      "Soft pebbled calfskin. Signature puzzle geometric panels. Gold chain.":"Мягкая зернистая телячья кожа. Фирменные геометрические панели Puzzle. Золотая цепочка.",
+      "80% wool, 20% cashmere. Structured shoulder. Satin lining.":"80% шерсть, 20% кашемир. Структурированное плечо. Атласная подкладка.",
+      "Vegetable-tanned calfskin. V-Logo signature buckle.":"Телячья кожа растительного дубления. Фирменная пряжка V-Logo.",
+      "Sapphire crystal glass. Swiss automatic movement. 5ATM water resistance.":"Сапфировое стекло. Швейцарский автоматический механизм. Водостойкость 5ATM.",
+      "PVD gold-tone case. Brushed bracelet. Day-date complication.":"Корпус PVD золотого тона. Матовый браслет. Усложнение день-дата.",
+      "Smooth calfskin. Signature horsebit hardware. Blake-stitched leather sole.":"Гладкая телячья кожа. Фирменная фурнитура Horsebit. Кожаная подошва Blake.",
+      "Full-grain leather. Removable shoulder strap. Interior zip compartment.":"Натуральная кожа. Съёмный плечевой ремень. Внутреннее отделение на молнии.",
+      "90% virgin wool. Double-breasted. Structured shoulder. Fully lined.":"90% натуральная шерсть. Двубортный. Структурированное плечо. Полная подкладка.",
+      "Ceramic bezel. Swiss quartz movement. Sapphire crystal.":"Керамический безель. Швейцарский кварцевый механизм. Сапфировое стекло.",
+      "Lightweight goose-down fill. Snap-button closure. Machine washable.":"Лёгкий гусиный пух. Застёжка на кнопках. Машинная стирка.",
+      "Canvas upper. Signature star. Rubber sole. Velcro closure.":"Верх из канваса. Фирменная звезда. Резиновая подошва. Застёжка Velcro.",
+    },
   },
 };
