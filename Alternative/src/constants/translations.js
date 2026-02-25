@@ -302,9 +302,20 @@ export const LANG_DATA = {
     topCategories:"Top Categories", ordersByStatus:"Orders by Status",
     totalOrders:"Total Orders", revenue:"Revenue (GEL)", pending:"Pending", videoOrders:"Video Orders",
     productMgmtSoon:"Product management coming soon",
+    // Order statuses
+    statusReservedLabel:"Reserved", statusReservedDesc:"Reservation confirmed. We are processing your order now.",
+    statusSourcingLabel:"Sourcing", statusSourcingDesc:"Your item is being sourced from our verified supplier network.",
+    statusConfirmedLabel:"Confirmed", statusConfirmedDesc:"Item confirmed in stock and being packaged.",
+    statusShippedLabel:"Shipped", statusShippedDesc:"In transit to Georgia. Estimated arrival 3–5 days.",
+    statusDeliveredLabel:"Delivered", statusDeliveredDesc:"Order delivered. Enjoy!",
+    // About paragraphs
+    aboutPara1:"Walk into a Georgian shop and you pay for the shopkeeper's rent. Order online from an unverified source and receive something that looked premium in the photo but felt wrong in your hands.",
+    aboutPara2:"Neither option respected the customer. ALTERNATIVES was built to offer exactly that — a simple, honest alternative to a market that had stopped trying.",
+    // Product name overrides
+    localNames:{},
   },
   ka: {
-    collection:"კოლექცია", howItWorks:"როგორ მუშაობს", about:"ჩვენ შესახებ",
+    collection:"ᲙᲝᲚᲔᲥᲪᲘᲐ", howItWorks:"ᲠᲝᲒᲝᲠ ᲛᲣᲨᲐᲝᲑᲡ", about:"ᲩᲕᲔᲜ ᲨᲔᲡᲐᲮᲔᲑ",
     orders:"შეკვეთები", signIn:"შესვლა", search:"ძიება",
     shop:"მაღაზია", theCollection:"კოლექცია", pieces:"ნივთი", piece:"ნივთი",
     sortNew:"ახალი პირველი", sortLow:"ფასი: იაფიდან → ძვირამდე", sortHigh:"ფასი: ძვირიდან → იაფამდე",
@@ -575,6 +586,17 @@ export const LANG_DATA = {
     topCategories:"საუკეთესო კატეგორიები", ordersByStatus:"შეკვეთები სტატუსების მიხედვით",
     totalOrders:"სულ შეკვეთები", revenue:"შემოსავალი (GEL)", pending:"მომლოდინე", videoOrders:"ვიდეო შეკვეთები",
     productMgmtSoon:"პროდუქტების მართვა მალე",
+    // Order statuses
+    statusReservedLabel:"რეზერვირებული", statusReservedDesc:"რეზერვაცია დადასტურებულია. ვამუშავებთ თქვენს შეკვეთას.",
+    statusSourcingLabel:"მოძიება", statusSourcingDesc:"თქვენი ნივთი მოიძიება ჩვენი დამოწმებული მომწოდებლების ქსელიდან.",
+    statusConfirmedLabel:"დადასტურებული", statusConfirmedDesc:"ნივთი დადასტურებულია მარაგში და იფუთება.",
+    statusShippedLabel:"გაგზავნილი", statusShippedDesc:"გზაშია საქართველოსკენ. სავარაუდო ჩამოსვლა 3–5 დღე.",
+    statusDeliveredLabel:"მიწოდებული", statusDeliveredDesc:"შეკვეთა მიწოდებულია. ისიამოვნეთ!",
+    // About paragraphs
+    aboutPara1:"შეხვალ ქართულ მაღაზიაში და გამყიდველის ქირას იხდი. შეუკვეთე ონლაინ გადაუმოწმებელ წყაროს და მიიღე ის, რაც ფოტოზე პრემიუმად გამოიყურებოდა, მაგრამ ხელში არასწორად იგრძნობოდა.",
+    aboutPara2:"არცერთი ვარიანტი არ პატივს სცემდა მომხმარებელს. ALTERNATIVE შეიქმნა სწორედ ამის შესათავაზებლად — მარტივი, გულწრფელი ალტერნატივა ბაზრისთვის, რომელმაც ცდა შეწყვიტა.",
+    // Product name overrides (Farfetch style: keep style names, translate generic words)
+    localNames:{"Automatic Mesh Watch":"Automatic Mesh საათი","Gold Bracelet Watch":"Gold Bracelet საათი","Ceramic Dress Watch":"Ceramic Dress საათი"},
   },
   ru: {
     collection:"Коллекция", howItWorks:"Как это работает", about:"О нас",
@@ -848,5 +870,16 @@ export const LANG_DATA = {
     topCategories:"Топ категорий", ordersByStatus:"Заказы по статусам",
     totalOrders:"Всего заказов", revenue:"Выручка (GEL)", pending:"В ожидании", videoOrders:"Видео заказы",
     productMgmtSoon:"Управление товарами — скоро",
+    // Order statuses
+    statusReservedLabel:"Зарезервировано", statusReservedDesc:"Резервация подтверждена. Мы обрабатываем ваш заказ.",
+    statusSourcingLabel:"Поиск", statusSourcingDesc:"Ваш товар ищется через нашу сеть проверенных поставщиков.",
+    statusConfirmedLabel:"Подтверждено", statusConfirmedDesc:"Товар подтверждён в наличии и упаковывается.",
+    statusShippedLabel:"Отправлено", statusShippedDesc:"В пути в Грузию. Ориентировочное прибытие 3–5 дней.",
+    statusDeliveredLabel:"Доставлено", statusDeliveredDesc:"Заказ доставлен. Наслаждайтесь!",
+    // About paragraphs
+    aboutPara1:"Зайдите в грузинский магазин — и вы платите за аренду продавца. Закажите онлайн из непроверенного источника — и получите вещь, которая на фото выглядела премиально, но в руках ощущалась неправильно.",
+    aboutPara2:"Ни один вариант не уважал клиента. ALTERNATIVE был создан именно для этого — простая, честная альтернатива рынку, который перестал стараться.",
+    // Product name overrides
+    localNames:{"Automatic Mesh Watch":"Automatic Mesh часы","Gold Bracelet Watch":"Gold Bracelet часы","Ceramic Dress Watch":"Ceramic Dress часы"},
   },
 };
