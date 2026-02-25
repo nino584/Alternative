@@ -17,8 +17,8 @@ export default function AboutPage({setPage,L,mobile}) {
       </div>
       <div style={{padding:"64px 0",borderBottom:`1px solid ${C.lgray}`}}>
         <div style={{maxWidth:900,margin:"0 auto",padding:mobile?"0 16px":"0 40px",display:"grid",gridTemplateColumns:mobile?"1fr":"1fr 1fr",gap:mobile?20:52}}>
-          <p style={{...T.body,color:C.gray,lineHeight:1.9}}>Walk into a Georgian shop and you pay for the shopkeeper's rent. Order online from an unverified source and receive something that looked premium in the photo but felt wrong in your hands.</p>
-          <p style={{...T.body,color:C.gray,lineHeight:1.9}}>Neither option respected the customer. ALTERNATIVES was built to offer exactly that — a simple, honest alternative to a market that had stopped trying.</p>
+          <p style={{...T.body,color:C.gray,lineHeight:1.9}}>{L&&L.aboutPara1||'Walk into a Georgian shop and you pay for the shopkeeper\'s rent. Order online from an unverified source and receive something that looked premium in the photo but felt wrong in your hands.'}</p>
+          <p style={{...T.body,color:C.gray,lineHeight:1.9}}>{L&&L.aboutPara2||'Neither option respected the customer. ALTERNATIVES was built to offer exactly that — a simple, honest alternative to a market that had stopped trying.'}</p>
         </div>
       </div>
       <div style={{padding:"64px 0",background:C.offwhite}}>
@@ -36,7 +36,7 @@ export default function AboutPage({setPage,L,mobile}) {
       <div style={{padding:"64px 0"}}>
         <div style={{maxWidth:900,margin:"0 auto",padding:"0 40px"}}>
           <div style={{display:"grid",gridTemplateColumns:mobile?"1fr":"repeat(3,1fr)",gap:mobile?28:48}}>
-            {[{t:"Honest pricing",b:"Our price reflects actual quality and cost — not a brand tax or a landlord's rent."},{t:"No surprises",b:"The biggest failure of online fashion is the gap between photo and reality. We close it."},{t:"Service is product",b:"From first message to delivery, every touchpoint is designed to exceed your expectations."}].map((v,i)=>(
+            {[{t:L&&L.honestPricing||"Honest pricing",b:L&&L.honestBody||"Our price reflects actual quality and cost — not a brand tax or a landlord's rent."},{t:L&&L.noSurprises||"No surprises",b:L&&L.noSurprisesBody||"The biggest failure of online fashion is the gap between photo and reality. We close it."},{t:L&&L.serviceProduct||"Service is product",b:L&&L.serviceBody||"From first message to delivery, every touchpoint is designed to exceed your expectations."}].map((v,i)=>(
               <div key={i}><div style={{width:36,height:1,background:C.tan,marginBottom:20}}/><h3 style={{...T.label,color:C.black,fontSize:12,marginBottom:10}}>{v.t}</h3><p style={{...T.bodySm,color:C.gray,lineHeight:1.8}}>{v.b}</p></div>
             ))}
           </div>
