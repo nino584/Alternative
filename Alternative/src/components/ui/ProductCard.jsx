@@ -27,7 +27,7 @@ export default function ProductCard({product:p,onSelect,wishlist,onWishlist,L,mo
       </div>
       <div style={{padding:"14px 14px 16px",borderTop:`1px solid ${C.lgray}`}}>
         <p style={{...T.labelSm,color:C.tan,marginBottom:4,fontSize:9}}>{p.brand}</p>
-        <p style={{...T.heading,color:C.black,marginBottom:3,fontSize:13}}>{p.name}</p>
+        <p style={{...T.heading,color:C.black,marginBottom:3,fontSize:13}}>{L&&L.localNames&&L.localNames[p.name]||p.name}</p>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginTop:6}}>
           <div>
             {p.sale?(
