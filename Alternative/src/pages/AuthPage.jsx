@@ -13,7 +13,7 @@ export default function AuthPage({mobile,setPage,setUser,toast,L}) {
   const handleSubmit=()=>{
     setError("");
     if (mode==="login"){
-      if (!form.email||!form.password){setError("Enter email and password.");return;}
+      if (!form.email||!form.password){setError(L&&L.enterEmailPass||"Enter email and password.");return;}
       setLoading(true);
       setTimeout(()=>{
         setLoading(false);
@@ -26,18 +26,18 @@ export default function AuthPage({mobile,setPage,setUser,toast,L}) {
           toast(L&&L.welcomeAdmin||"Welcome, Admin","success");
           setPage("admin");
         } else {
-          setError("Incorrect email or password.");
+          setError(L&&L.enterEmailPass||"Incorrect email or password.");
         }
       },600);
     } else {
-      if (!form.name||!form.email||!form.password){setError("All marked fields are required.");return;}
-      if (form.password.length<6){setError("Password must be at least 6 characters.");return;}
-      if (!form.email.includes("@")){setError("Enter a valid email address.");return;}
+      if (!form.name||!form.email||!form.password){setError(L&&L.allRequired||"All marked fields are required.");return;}
+      if (form.password.length<6){setError(L&&L.passwordMin||"Password must be at least 6 characters.");return;}
+      if (!form.email.includes("@")){setError(L&&L.validEmail||"Enter a valid email address.");return;}
       setLoading(true);
       setTimeout(()=>{
         setLoading(false);
         setUser({name:form.name,email:form.email,isAdmin:false});
-        toast("Account created! Welcome to Alternative.","success");
+        toast(L&&L.accountCreated||"Account created! Welcome to Alternative.","success");
         setPage("account");
       },800);
     }

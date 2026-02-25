@@ -24,9 +24,9 @@ export default function ContactPage({setPage,L,mobile}) {
       {/* HEADER */}
       <div style={{borderBottom:`1px solid ${C.lgray}`,padding:mobile?"28px 0":"40px 0"}}>
         <div style={{maxWidth:900,margin:"0 auto",padding:`0 ${px}`}}>
-          <p style={{...T.labelSm,color:C.tan,marginBottom:10}}>Get in Touch</p>
-          <h1 style={{...T.displayMd,color:C.black,marginBottom:8}}>Contact Us</h1>
-          <p style={{...T.body,color:C.gray,lineHeight:1.9}}>We're here to help. Reach out through any of the channels below.</p>
+          <p style={{...T.labelSm,color:C.tan,marginBottom:10}}>{L.contactGetInTouch}</p>
+          <h1 style={{...T.displayMd,color:C.black,marginBottom:8}}>{L.contactTitle}</h1>
+          <p style={{...T.body,color:C.gray,lineHeight:1.9}}>{L.contactBody}</p>
         </div>
       </div>
 
@@ -37,11 +37,11 @@ export default function ContactPage({setPage,L,mobile}) {
           {/* LEFT — Contact Info */}
           <div>
             <div style={{marginBottom:32}}>
-              <p style={{...T.labelSm,color:C.tan,marginBottom:16,fontSize:10}}>CONTACT CHANNELS</p>
+              <p style={{...T.labelSm,color:C.tan,marginBottom:16,fontSize:10}}>{L.contactChannels}</p>
               {[
-                {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.tan} strokeWidth="1.5"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>,label:"WhatsApp",value:"+995 555 999 555",href:`https://wa.me/${WHATSAPP_NUMBER}`,note:"Fastest way to reach us"},
-                {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.tan} strokeWidth="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,label:"Email",value:"info@alternative.ge",href:"mailto:info@alternative.ge",note:"We reply within 24 hours"},
-                {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.tan} strokeWidth="1.5"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>,label:"Phone",value:"+995 555 999 555",href:"tel:+995555999555",note:"Mon–Sat 10:00–20:00"},
+                {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.tan} strokeWidth="1.5"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>,label:"WhatsApp",value:"+995 555 999 555",href:`https://wa.me/${WHATSAPP_NUMBER}`,note:L.contactWhatsAppNote},
+                {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.tan} strokeWidth="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,label:"Email",value:"info@alternative.ge",href:"mailto:info@alternative.ge",note:L.contactEmailNote},
+                {icon:<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.tan} strokeWidth="1.5"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>,label:L.contactPhoneNote,value:"+995 555 999 555",href:"tel:+995555999555",note:L.contactPhoneNote},
               ].map((ch,i)=>(
                 <a key={i} href={ch.href} target={ch.href.startsWith("https")?"_blank":undefined} rel="noopener noreferrer"
                   style={{display:"flex",gap:14,padding:"16px 0",borderBottom:`1px solid ${C.lgray}`,textDecoration:"none",transition:"background 0.15s"}}>
@@ -58,15 +58,15 @@ export default function ContactPage({setPage,L,mobile}) {
             </div>
 
             <div style={{marginBottom:32}}>
-              <p style={{...T.labelSm,color:C.tan,marginBottom:16,fontSize:10}}>LOCATION</p>
-              <p style={{...T.body,color:C.black,marginBottom:4}}>Tbilisi, Georgia</p>
-              <p style={{...T.bodySm,color:C.gray,lineHeight:1.7}}>We currently operate online and deliver within Tbilisi. Nationwide shipping coming soon.</p>
+              <p style={{...T.labelSm,color:C.tan,marginBottom:16,fontSize:10}}>{L.contactLocationLabel}</p>
+              <p style={{...T.body,color:C.black,marginBottom:4}}>{L.contactLocationCity}</p>
+              <p style={{...T.bodySm,color:C.gray,lineHeight:1.7}}>{L.contactLocationDesc}</p>
             </div>
 
             <div>
-              <p style={{...T.labelSm,color:C.tan,marginBottom:16,fontSize:10}}>BUSINESS HOURS</p>
+              <p style={{...T.labelSm,color:C.tan,marginBottom:16,fontSize:10}}>{L.contactHoursLabel}</p>
               <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                {[["Monday – Saturday","10:00 – 20:00"],["Sunday","Closed"]].map(([d,h])=>(
+                {[[L.contactMonSat,L.contactMonSatTime],[L.contactSunday,L.contactClosed]].map(([d,h])=>(
                   <div key={d} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid ${C.lgray}`}}>
                     <span style={{...T.bodySm,color:C.black,fontSize:13}}>{d}</span>
                     <span style={{...T.label,color:C.gray,fontSize:11}}>{h}</span>
@@ -78,11 +78,11 @@ export default function ContactPage({setPage,L,mobile}) {
 
           {/* RIGHT — Contact Form */}
           <div>
-            <p style={{...T.labelSm,color:C.tan,marginBottom:16,fontSize:10}}>SEND US A MESSAGE</p>
+            <p style={{...T.labelSm,color:C.tan,marginBottom:16,fontSize:10}}>{L.contactSendMessage}</p>
             <form onSubmit={handleSubmit}>
               {[
-                {key:"name",label:"Full Name",type:"text",placeholder:"Your name"},
-                {key:"email",label:"Email",type:"email",placeholder:"your@email.com"},
+                {key:"name",label:L.contactFullName,type:"text",placeholder:L.contactFullNamePh},
+                {key:"email",label:L.contactEmailLabel,type:"email",placeholder:L.contactEmailPh},
               ].map(f=>(
                 <div key={f.key} style={{marginBottom:16}}>
                   <label style={{...T.labelSm,color:C.gray,fontSize:9,display:"block",marginBottom:6}}>{f.label}</label>
@@ -91,19 +91,19 @@ export default function ContactPage({setPage,L,mobile}) {
                 </div>
               ))}
               <div style={{marginBottom:20}}>
-                <label style={{...T.labelSm,color:C.gray,fontSize:9,display:"block",marginBottom:6}}>Message</label>
-                <textarea placeholder="How can we help you?" value={form.message} onChange={e=>setForm({...form,message:e.target.value})}
+                <label style={{...T.labelSm,color:C.gray,fontSize:9,display:"block",marginBottom:6}}>{L.contactMessageLabel}</label>
+                <textarea placeholder={L.contactMessagePh} value={form.message} onChange={e=>setForm({...form,message:e.target.value})}
                   rows={5} style={{width:"100%",padding:"12px 14px",border:`1px solid ${C.lgray}`,background:C.white,fontSize:14,color:C.black,outline:"none",resize:"vertical",...T.body}}/>
               </div>
               <HoverBtn type="submit" variant="primary" style={{width:"100%",padding:"15px 24px"}}>
-                {sent?"Message Sent!":"Send Message"}
+                {sent?L.contactSent:L.contactSend}
               </HoverBtn>
-              {sent&&<p style={{...T.bodySm,color:C.tan,marginTop:12,textAlign:"center"}}>Thank you! We'll get back to you soon.</p>}
+              {sent&&<p style={{...T.bodySm,color:C.tan,marginTop:12,textAlign:"center"}}>{L.contactThankYou}</p>}
             </form>
 
             <div style={{padding:"16px 20px",background:C.offwhite,borderLeft:`3px solid ${C.tan}`,marginTop:24}}>
               <p style={{...T.bodySm,color:C.brown,lineHeight:1.8,fontSize:12}}>
-                For the fastest response, contact us on WhatsApp. We typically respond within minutes during business hours.
+                {L.contactWhatsappTip}
               </p>
             </div>
           </div>
