@@ -1,0 +1,230 @@
+import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { C, T } from '../constants/theme.js';
+import { BI } from '../constants/images.js';
+import { PRODUCTS } from '../constants/data.js';
+import { VIDEO_VERIFICATION_GEL, WHATSAPP_NUMBER } from '../constants/config.js';
+import HoverBtn from '../components/ui/HoverBtn.jsx';
+import ProductCard from '../components/ui/ProductCard.jsx';
+import SizeFitWidget from '../components/ui/SizeFitWidget.jsx';
+import SizeGuideModal from '../components/ui/SizeGuideModal.jsx';
+import { IconCheck, IconLock, IconPackage, IconVideo } from '../components/icons/Icons.jsx';
+import PreorderModal from './PreorderModal.jsx';
+
+// ── PRODUCT PAGE ──────────────────────────────────────────────────────────────
+export default function ProductPage({mobile,product:productProp,setPage,setSelected,addToCart,toast,wishlist,onWishlist,L}) {
+  const { id: idParam } = useParams();
+  const p = productProp ?? (idParam ? PRODUCTS.find(x => x.id === parseInt(idParam, 10)) ?? null : null);
+  const [selectedSize,setSelectedSize]=useState(null);
+  const [showModal,setShowModal]=useState(false);
+  const [sizeError,setSizeError]=useState(false);
+  const [activeImg,setActiveImg]=useState(0);
+  const [showGuide,setShowGuide]=useState(false);
+
+  // All hooks must run before early return
+  const imgs=p?[p.img,BI.bag_stone,BI.packaging,BI.ribbon]:[];
+  const effectivePrice=p?(p.sale||p.price):0;
+  const totalPrice=effectivePrice;
+  const related=p?PRODUCTS.filter(x=>x.section===p.section&&x.cat===p.cat&&x.id!==p.id).slice(0,4):[];
+
+  useEffect(()=>{setSelectedSize(null);setSizeError(false);setActiveImg(0);},[p?.id]);
+
+  if (!p) return (
+    <div style={{paddingTop:180,textAlign:"center",minHeight:"100vh",background:C.cream}}>
+      <p style={{...T.displaySm,color:C.gray,marginBottom:24}}>Product not found</p>
+      <HoverBtn onClick={()=>setPage("catalog")} variant="primary">Back to Collection</HoverBtn>
+    </div>
+  );
+
+  const handleReserve=()=>{
+    if (p.sizes.length>1&&p.sizes[0]!=="One Size"&&!selectedSize){setSizeError(true);return;}
+    setSizeError(false);
+    setShowModal(true);
+  };
+
+  const wished=wishlist?.includes(p.id);
+  const guideCategory=p.sub==="Shoes"?"Shoes":p.sub==="Bags"?"Bags":"Clothing";
+
+  return (
+    <div style={{paddingTop:80,background:C.cream}}>
+      <div style={{maxWidth:1360,margin:"0 auto",padding:"20px 40px 0",display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
+        {[["Home","home"],[p.section,"catalog"],[p.name,null]].map(([l,pg],i,arr)=>(
+          <span key={i} style={{display:"flex",alignItems:"center",gap:6}}>
+            {pg?<button onClick={()=>setPage(pg)} style={{background:"none",border:"none",...T.labelSm,color:C.gray,fontSize:8}}>{l}</button>
+              :<span style={{...T.labelSm,color:C.black,fontSize:8,overflow:"hidden",textOverflow:"ellipsis",maxWidth:200,whiteSpace:"nowrap"}}>{l}</span>}
+            {i<arr.length-1&&<span style={{color:C.lgray,fontSize:8,flexShrink:0}}>→</span>}
+          </span>
+        ))}
+      </div>
+
+      <div style={{maxWidth:1360,margin:"0 auto",padding:mobile?"16px 16px 60px":"28px 40px 80px",display:"grid",gridTemplateColumns:mobile?"1fr":"1fr 1fr",gap:mobile?28:72,alignItems:"start"}}>
+        <div style={{position:mobile?"relative":"sticky",top:mobile?"auto":96}}>
+          <div style={{height:mobile?380:520,overflow:"hidden",marginBottom:3,position:"relative"}}>
+            <img src={imgs[activeImg]} alt={p.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+            {p.sale&&<div style={{position:"absolute",top:14,left:14,background:C.red,padding:"5px 12px"}}><span style={{...T.label,color:C.white,fontSize:9}}>Sale</span></div>}
+            <button onClick={()=>onWishlist&&onWishlist(p.id)}
+              style={{position:"absolute",top:14,right:14,background:wished?"rgba(177,154,122,0.9)":"rgba(255,255,255,0.85)",border:"none",width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s"}}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill={wished?C.white:"none"} stroke={wished?C.white:C.gray} strokeWidth="1.5">
+                <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+              </svg>
+            </button>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:3}}>
+            {imgs.map((src,i)=>(
+              <div key={i} onClick={()=>setActiveImg(i)} style={{height:78,overflow:"hidden",cursor:"pointer",border:`2px solid ${i===activeImg?C.tan:"transparent"}`,transition:"border-color 0.2s"}}>
+                <img src={src} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <p style={{...T.labelSm,color:C.tan,marginBottom:6,fontSize:10,letterSpacing:"0.2em"}}>{p.brand}</p>
+          <h1 style={{fontFamily:"'Alido',serif",fontSize:mobile?30:38,fontWeight:300,color:C.black,lineHeight:1.15,marginBottom:6}}>{p.name}</h1>
+          <p style={{...T.bodySm,color:C.gray,marginBottom:20,fontSize:13}}>{p.color} · {p.section}</p>
+
+          <div style={{marginBottom:24,display:"flex",alignItems:"baseline",gap:12}}>
+            <span style={{fontFamily:"'Alido',serif",fontSize:34,color:p.sale?C.red:C.black,lineHeight:1}}>GEL {effectivePrice}</span>
+            {p.sale&&<span style={{fontFamily:"'Alido',serif",fontSize:22,color:C.gray,textDecoration:"line-through"}}>GEL {p.price}</span>}
+          </div>
+
+          <div style={{padding:"16px 18px",background:C.offwhite,marginBottom:20,borderLeft:`3px solid ${C.tan}`}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <span style={{...T.labelSm,color:C.gray,fontSize:9}}>Total price</span>
+              <span style={{fontFamily:"'Alido',serif",fontSize:20,color:C.black}}>GEL {totalPrice}</span>
+            </div>
+          </div>
+
+          {p.sizes&&p.sizes.length>1&&p.sizes[0]!=="One Size"&&(
+            <div style={{marginBottom:20}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                <p style={{...T.label,color:sizeError?C.red:C.black,fontSize:11}}>{sizeError?"⚠ Please select a size":"Select Size"}</p>
+                <button onClick={()=>setShowGuide(true)} style={{background:"none",border:"none",...T.labelSm,color:C.tan,fontSize:9,textDecoration:"underline"}}>Size guide</button>
+              </div>
+              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                {p.sizes.map(sz=>(
+                  <button key={sz} onClick={()=>{setSelectedSize(sz);setSizeError(false);}} style={{
+                    padding:"9px 14px",border:`1px solid ${selectedSize===sz?C.black:C.lgray}`,
+                    background:selectedSize===sz?C.black:"transparent",
+                    color:selectedSize===sz?C.white:C.black,
+                    ...T.labelSm,fontSize:10,transition:"all 0.15s",
+                  }}>{sz}</button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <SizeFitWidget product={p} onGuide={()=>setShowGuide(true)} L={L}/>
+
+          <div style={{marginBottom:20,padding:"18px",border:`1.5px solid ${C.tan}`,background:`rgba(177,154,122,0.05)`,position:"relative",overflow:"hidden"}}>
+            <div style={{position:"absolute",top:0,right:0,background:C.tan,padding:"3px 10px"}}>
+              <span style={{...T.labelSm,color:C.white,fontSize:7}}>RECOMMENDED</span>
+            </div>
+            <div style={{display:"flex",gap:12,alignItems:"flex-start"}}>
+              <div style={{width:36,height:36,borderRadius:"50%",background:C.black,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                <IconVideo size={16} color={C.white} stroke={1.8}/>
+              </div>
+              <div style={{flex:1}}>
+                <p style={{...T.label,color:C.black,fontSize:11,marginBottom:4}}>See This Item Before It Ships</p>
+                <p style={{...T.bodySm,color:C.gray,lineHeight:1.7,marginBottom:6}}>Our team video-calls you on WhatsApp to show the exact item — hardware, stitching, material, in motion.</p>
+                <span style={{...T.label,color:C.tan,fontSize:10}}>+ GEL {VIDEO_VERIFICATION_GEL} at checkout</span>
+              </div>
+            </div>
+          </div>
+
+          {/* HOW IT WORKS */}
+          <div style={{padding:"14px 16px",background:"rgba(177,154,122,0.06)",marginBottom:16}}>
+            <p style={{...T.labelSm,color:C.tan,fontSize:8,marginBottom:10}}>HOW IT WORKS</p>
+            <div style={{display:"flex",gap:mobile?8:16}}>
+              {[["1","Place order & pay"],["2","We source & verify"],["3","Delivered to you"]].map(([n,t])=>(
+                <div key={n} style={{display:"flex",alignItems:"center",gap:6,flex:1}}>
+                  <span style={{width:20,height:20,borderRadius:"50%",background:C.black,color:C.white,display:"flex",alignItems:"center",justifyContent:"center",...T.labelSm,fontSize:8,flexShrink:0}}>{n}</span>
+                  <span style={{...T.bodySm,color:C.brown,fontSize:mobile?9:11,lineHeight:1.3}}>{t}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* TRUST GUARANTEES */}
+          <div style={{display:"flex",flexDirection:"column",gap:0,marginBottom:20}}>
+            {[
+              {Icon:IconCheck,text:"Quality Guaranteed — or full refund"},
+              {Icon:IconLock,text:"Secure payment. Full refund if item unavailable"},
+              {Icon:IconPackage,text:`Estimated delivery: ${p.lead}`},
+            ].map((g,i)=>(
+              <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:i<2?`1px solid ${C.lgray}`:"none"}}>
+                <g.Icon size={14} color={C.tan} style={{flexShrink:0}}/>
+                <span style={{...T.bodySm,color:C.gray,fontSize:12}}>{g.text}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* DELIVERY TIMELINE */}
+          <div style={{marginBottom:24,padding:"16px",background:C.offwhite}}>
+            <p style={{...T.labelSm,color:C.tan,fontSize:8,marginBottom:14}}>DELIVERY TIMELINE</p>
+            <div style={{display:"flex",alignItems:"flex-start",gap:0}}>
+              {[{l:"Reserve",d:"Today"},{l:"Source",d:"2–3d"},{l:"Verify",d:"1–2d"},{l:"Ship",d:"5–10d"},{l:"Receive",d:p.lead}].map((step,i,arr)=>(
+                <div key={i} style={{flex:1,textAlign:"center",position:"relative"}}>
+                  <div style={{width:10,height:10,borderRadius:"50%",background:i===0?C.tan:C.lgray,margin:"0 auto 6px",position:"relative",zIndex:1}}/>
+                  {i<arr.length-1&&<div style={{position:"absolute",top:4,left:"55%",width:"90%",height:1,background:C.lgray}}/>}
+                  <p style={{...T.labelSm,fontSize:7,color:i===0?C.black:C.gray,lineHeight:1.2}}>{step.l}</p>
+                  <p style={{...T.labelSm,fontSize:6,color:C.lgray,marginTop:2}}>{step.d}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{marginBottom:24}}>
+            <p style={{...T.label,color:C.black,marginBottom:10,fontSize:11}}>Item Details</p>
+            <p style={{...T.body,color:C.gray,lineHeight:1.85}}>{p.desc}</p>
+          </div>
+
+          <div style={{marginBottom:28}}>
+            {[["Lead time",p.lead],["Delivery","Tbilisi, Georgia"],["Verified","✓ Quality verified"]].map(([k,v])=>(
+              <div key={k} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:`1px solid ${C.lgray}`}}>
+                <span style={{...T.labelSm,color:C.gray,fontSize:9}}>{k}</span>
+                <span style={{...T.bodySm,color:C.black,display:"flex",alignItems:"center",gap:6}}>
+                  {k==="Verified"&&<IconCheck size={12} color={C.tan} stroke={1.8}/>}
+                  {v}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div style={{display:"flex",gap:10,marginBottom:10}}>
+            <HoverBtn onClick={handleReserve} variant="primary" style={{flex:1,padding:"16px 20px",fontSize:11}}>
+              Order Now — GEL {totalPrice}
+            </HoverBtn>
+            <a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noopener noreferrer"
+              style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"15px 20px",border:`1px solid ${C.lgray}`,background:"transparent",color:C.black,...T.labelSm,fontSize:10,textDecoration:"none",transition:"all 0.2s",whiteSpace:"nowrap"}}
+              onMouseEnter={e=>{e.currentTarget.style.background=C.black;e.currentTarget.style.color=C.white;e.currentTarget.style.borderColor=C.black;}}
+              onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color=C.black;e.currentTarget.style.borderColor=C.lgray;}}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/>
+              </svg>
+              Ask on WhatsApp
+            </a>
+          </div>
+          <p style={{...T.labelSm,color:C.gray,fontSize:9,textAlign:"center"}}>Free cancellation before shipping</p>
+        </div>
+      </div>
+
+      {related.length>0&&(
+        <div style={{borderTop:`1px solid ${C.lgray}`,padding:"64px 0",background:C.offwhite}}>
+          <div style={{maxWidth:1360,margin:"0 auto",padding:"0 40px"}}>
+            <p style={{...T.labelSm,color:C.tan,marginBottom:10}}>From the same collection</p>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:3}}>
+              {related.map(item=><ProductCard key={item.id} product={item} wishlist={wishlist} onWishlist={onWishlist} L={L}
+                onSelect={()=>{setPage("product",item);window.scrollTo({top:0,behavior:"smooth"});}}/>)}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showModal&&<PreorderModal product={p} selectedSize={selectedSize||"One Size"} L={L} onClose={()=>setShowModal(false)}
+        setPage={setPage}
+        onComplete={data=>{addToCart(data);toast(L&&L.orderReserved||"Order reserved!","success");}}/>}
+      {showGuide&&<SizeGuideModal onClose={()=>setShowGuide(false)} category={guideCategory} L={L}/>}
+    </div>
+  );
+}
