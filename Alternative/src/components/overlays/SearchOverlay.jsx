@@ -35,7 +35,7 @@ export default function SearchOverlay({onClose,setPage,setSelected,L,mobile}) {
                 onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
                 <img src={p.img} alt={p.name} style={{width:48,height:48,objectFit:"cover",flexShrink:0}}/>
                 <div>
-                  <p style={{...T.heading,color:C.black,marginBottom:3,fontSize:13}}>{p.name}</p>
+                  <p style={{...T.heading,color:C.black,marginBottom:3,fontSize:13}}>{L&&L.localNames&&L.localNames[p.name]||p.name}</p>
                   <p style={{...T.labelSm,color:C.gray,fontSize:9}}>{p.section} · {p.cat} · GEL {p.sale||p.price}</p>
                 </div>
               </div>
