@@ -1,40 +1,42 @@
 // ── BRAND IMAGES ─────────────────────────────────────────────────────────────
 // Static images live in public/images/. Hero: place hero.jpg (or hero.png / hero.webp) there.
-export const IMAGES_DIR = "/images";
+const BASE = import.meta.env.BASE_URL;
+export const IMAGES_DIR = BASE + "images";
 export const HERO_IMAGE = `${IMAGES_DIR}/hero.png`;
 
 export const BI = {
-  bag_stone:       '/images/womenswear.jpg',
-  man_editorial:   '/images/menswear.jpg',
-  packaging:       '/images/kidswear.jpg',
-  store_interior:  '/images/store-interior.jpg',
-  cover:           '/images/womenswear.jpg',
-  editorial:       '/images/menswear.jpg',
-  bag:             '/images/womenswear.jpg',
-  store:           '/images/store-interior.jpg',
-  hero_bag:        '/images/womenswear.jpg',
-  ribbon:          '/images/kidswear.jpg',
-  thankyou:        '/images/store-interior.jpg',
-  logo_page:       '/images/store-interior.jpg',
-  story_sneakers:  '/images/kidswear.jpg',
+  bag_stone:       `${IMAGES_DIR}/womenswear.jpg`,
+  man_editorial:   `${IMAGES_DIR}/menswear.jpg`,
+  packaging:       `${IMAGES_DIR}/kidswear.jpg`,
+  store_interior:  `${IMAGES_DIR}/store-interior.jpg`,
+  cover:           `${IMAGES_DIR}/womenswear.jpg`,
+  editorial:       `${IMAGES_DIR}/menswear.jpg`,
+  bag:             `${IMAGES_DIR}/womenswear.jpg`,
+  store:           `${IMAGES_DIR}/store-interior.jpg`,
+  hero_bag:        `${IMAGES_DIR}/womenswear.jpg`,
+  ribbon:          `${IMAGES_DIR}/kidswear.jpg`,
+  thankyou:        `${IMAGES_DIR}/store-interior.jpg`,
+  logo_page:       `${IMAGES_DIR}/store-interior.jpg`,
+  story_sneakers:  `${IMAGES_DIR}/kidswear.jpg`,
 };
 
 // ── PRODUCT PLACEHOLDER IMAGES ───────────────────────────────────────────────
+const PRODUCTS_DIR = `${IMAGES_DIR}/products`;
 export const PI = {
-  tote:      '/images/products/tote.jpg',
-  quilted:   '/images/products/quilted.jpg',
-  scarf:     '/images/products/scarf.jpg',
-  mule:      '/images/products/mule.jpg',
-  cashmere:  '/images/products/cashmere.jpg',
-  crossbody: '/images/products/crossbody.jpg',
-  blazer:    '/images/products/blazer.jpg',
-  belt:      '/images/products/belt.jpg',
-  watch1:    '/images/products/watch1.jpg',
-  watch2:    '/images/products/watch2.jpg',
-  loafer:    '/images/products/loafer.jpg',
-  duffle:    '/images/products/duffle.jpg',
-  overcoat:  '/images/products/overcoat.jpg',
-  dresswatch:'/images/products/dresswatch.jpg',
-  puffer:    '/images/products/puffer.jpg',
-  sneaker:   '/images/products/sneaker.jpg',
+  tote:      `${PRODUCTS_DIR}/tote.jpg`,
+  quilted:   `${PRODUCTS_DIR}/quilted.jpg`,
+  scarf:     `${PRODUCTS_DIR}/scarf.jpg`,
+  mule:      `${PRODUCTS_DIR}/mule.jpg`,
+  cashmere:  `${PRODUCTS_DIR}/cashmere.jpg`,
+  crossbody: `${PRODUCTS_DIR}/crossbody.jpg`,
+  blazer:    `${PRODUCTS_DIR}/blazer.jpg`,
+  belt:      `${PRODUCTS_DIR}/belt.jpg`,
+  watch1:    `${PRODUCTS_DIR}/watch1.jpg`,
+  watch2:    `${PRODUCTS_DIR}/watch2.jpg`,
+  loafer:    `${PRODUCTS_DIR}/loafer.jpg`,
+  duffle:    `${PRODUCTS_DIR}/duffle.jpg`,
+  overcoat:  `${PRODUCTS_DIR}/overcoat.jpg`,
+  dresswatch:`${PRODUCTS_DIR}/dresswatch.jpg`,
+  puffer:    `${PRODUCTS_DIR}/puffer.jpg`,
+  sneaker:   `${PRODUCTS_DIR}/sneaker.jpg`,
 };
