@@ -129,6 +129,14 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
             </div>
           )}
 
+          {/* ── ORDER BUTTON — visible without scrolling ── */}
+          <div style={{marginBottom:10}}>
+            <HoverBtn onClick={handleReserve} variant="primary" style={{width:"100%",padding:"16px 20px",fontSize:11}}>
+              {L.orderNow} — GEL {totalPrice}
+            </HoverBtn>
+          </div>
+          <p style={{...T.labelSm,color:C.gray,fontSize:9,textAlign:"center",marginBottom:24}}>{L.freeCancellation}</p>
+
           <SizeFitWidget product={p} onGuide={()=>setShowGuide(true)} L={L}/>
 
           <div style={{marginBottom:20,padding:"18px",border:`1.5px solid ${C.tan}`,background:`rgba(177,154,122,0.05)`,position:"relative",overflow:"hidden"}}>
@@ -205,22 +213,6 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
               </div>
             ))}
           </div>
-
-          <div style={{display:"flex",gap:10,marginBottom:10}}>
-            <HoverBtn onClick={handleReserve} variant="primary" style={{flex:1,padding:"16px 20px",fontSize:11}}>
-              {L.orderNow} — GEL {totalPrice}
-            </HoverBtn>
-            <a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noopener noreferrer"
-              style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"15px 20px",border:`1px solid ${C.lgray}`,background:"transparent",color:C.black,...T.labelSm,fontSize:10,textDecoration:"none",transition:"all 0.2s",whiteSpace:"nowrap"}}
-              onMouseEnter={e=>{e.currentTarget.style.background=C.black;e.currentTarget.style.color=C.white;e.currentTarget.style.borderColor=C.black;}}
-              onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color=C.black;e.currentTarget.style.borderColor=C.lgray;}}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/>
-              </svg>
-              {L.askWhatsApp}
-            </a>
-          </div>
-          <p style={{...T.labelSm,color:C.gray,fontSize:9,textAlign:"center"}}>{L.freeCancellation}</p>
         </div>
       </div>
 
