@@ -3,6 +3,7 @@ import { C, T } from '../constants/theme.js';
 import { PRODUCTS } from '../constants/data.js';
 import HoverBtn from '../components/ui/HoverBtn.jsx';
 import ProductCard from '../components/ui/ProductCard.jsx';
+import Footer from '../components/layout/Footer.jsx';
 
 const STORAGE = { addr: "alternative_addresses", pay: "alternative_payments" };
 function load(key, fb) { try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : fb; } catch { return fb; } }
@@ -719,6 +720,7 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
           )}
         </div>
       </div>
+      <Footer setPage={setPage} L={L} mobile={mobile}/>
     </div>
   );
 }
