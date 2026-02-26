@@ -10,6 +10,7 @@ import SizeFitWidget from '../components/ui/SizeFitWidget.jsx';
 import SizeGuideModal from '../components/ui/SizeGuideModal.jsx';
 import { IconCheck, IconLock, IconPackage, IconVideo } from '../components/icons/Icons.jsx';
 import PreorderModal from './PreorderModal.jsx';
+import Footer from '../components/layout/Footer.jsx';
 
 // ── PRODUCT PAGE ──────────────────────────────────────────────────────────────
 export default function ProductPage({mobile,product:productProp,setPage,setSelected,addToCart,toast,wishlist,onWishlist,L}) {
@@ -280,6 +281,8 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
           </div>
         </div>
       )}
+
+      <Footer setPage={setPage} L={L} mobile={mobile}/>
 
       {showModal&&<PreorderModal product={p} selectedSize={selectedSize||"One Size"} L={L} onClose={()=>setShowModal(false)}
         setPage={setPage}
