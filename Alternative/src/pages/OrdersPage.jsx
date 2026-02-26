@@ -3,6 +3,7 @@ import { C, T } from '../constants/theme.js';
 import { ORDER_STATUSES } from '../constants/data.js';
 import { VIDEO_VERIFICATION_GEL } from '../constants/config.js';
 import HoverBtn from '../components/ui/HoverBtn.jsx';
+import Footer from '../components/layout/Footer.jsx';
 
 // ── ORDERS PAGE ───────────────────────────────────────────────────────────────
 export default function OrdersPage({mobile,orders,setPage,toast,L}) {
@@ -128,6 +129,7 @@ export default function OrdersPage({mobile,orders,setPage,toast,L}) {
           </div>
         )}
       </div>
+      <Footer setPage={setPage} L={L} mobile={mobile}/>
     </div>
   );
 }
