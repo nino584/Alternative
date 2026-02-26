@@ -244,6 +244,10 @@ export const LANG_DATA = {
     deliveryTimeline:"DELIVERY TIMELINE",
     stepReserve:"Reserve", stepSource:"Source", stepVerify:"Verify", stepShip:"Ship", stepReceive:"Receive", stepToday:"Today",
     orderNow:"Order Now", fromSameCollection:"From the same collection",
+    // Complete the Look
+    completeLook:"COMPLETE THE LOOK", completeLookTitle:"Style it your way",
+    completeLookSub:"Pair this piece with these curated suggestions",
+    completeLookTotal:"COMPLETE LOOK TOTAL",
     // Catalog extras
     sortOurPicks:"Our Picks", sortNewest:"Newest first",
     sortPriceHigh:"Price: high to low", sortPriceLow:"Price: low to high",
@@ -534,6 +538,10 @@ export const LANG_DATA = {
     deliveryTimeline:"მიწოდების ვადები",
     stepReserve:"რეზერვი", stepSource:"მოძიება", stepVerify:"შემოწმება", stepShip:"გაგზავნა", stepReceive:"მიღება", stepToday:"დღეს",
     orderNow:"შეკვეთა", fromSameCollection:"ამავე კოლექციიდან",
+    // Complete the Look
+    completeLook:"შეავსე ლუქი", completeLookTitle:"შექმენი შენი სტილი",
+    completeLookSub:"ამ ნივთთან ერთად გირჩევთ ატაროთ ესენი",
+    completeLookTotal:"სრული ლუქის ღირებულება",
     sortOurPicks:"ჩვენი არჩევანი", sortNewest:"ახალი პირველი",
     sortPriceHigh:"ფასი: ძვირიდან", sortPriceLow:"ფასი: იაფიდან",
     preorderModel:"წინასწარი შეკვეთა",
@@ -837,6 +845,10 @@ export const LANG_DATA = {
     deliveryTimeline:"СРОКИ ДОСТАВКИ",
     stepReserve:"Резерв", stepSource:"Закупка", stepVerify:"Проверка", stepShip:"Отправка", stepReceive:"Получение", stepToday:"Сегодня",
     orderNow:"Заказать", fromSameCollection:"Из той же коллекции",
+    // Complete the Look
+    completeLook:"ЗАВЕРШИТЕ ОБРАЗ", completeLookTitle:"Создайте свой стиль",
+    completeLookSub:"Сочетайте эту вещь с нашими рекомендациями",
+    completeLookTotal:"СТОИМОСТЬ ВСЕГО ОБРАЗА",
     sortOurPicks:"Наш выбор", sortNewest:"Сначала новые",
     sortPriceHigh:"Цена: по убыванию", sortPriceLow:"Цена: по возрастанию",
     preorderModel:"ПРЕДЗАКАЗ",
