@@ -4,6 +4,7 @@ import { BI } from '../constants/images.js';
 import { PRODUCTS } from '../constants/data.js';
 import HoverBtn from '../components/ui/HoverBtn.jsx';
 import ProductCard from '../components/ui/ProductCard.jsx';
+import Footer from '../components/layout/Footer.jsx';
 
 // ── CATALOG PAGE ──────────────────────────────────────────────────────────────
 export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,initSection,initSub,L,toast,user,setUser,mobile}) {
@@ -232,6 +233,7 @@ export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,ini
           </div>
         )}
       </div>
+      <Footer setPage={setPage} L={L} mobile={mobile}/>
     </div>
   );
 }
