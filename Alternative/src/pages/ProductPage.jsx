@@ -27,6 +27,21 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
   const totalPrice=effectivePrice;
   const related=p?PRODUCTS.filter(x=>x.section===p.section&&x.cat===p.cat&&x.id!==p.id).slice(0,4):[];
 
+  // ── COMPLETE THE LOOK — smart outfit builder ──
+  const outfit=(()=>{
+    if(!p)return[];
+    const pool=PRODUCTS.filter(x=>x.section===p.section&&x.id!==p.id);
+    const catOrder={Bags:["Shoes","Clothing","Accessories","Watches"],Shoes:["Bags","Clothing","Accessories","Watches"],Clothing:["Bags","Shoes","Accessories","Watches"],Accessories:["Bags","Shoes","Clothing","Watches"],Watches:["Bags","Clothing","Shoes","Accessories"]};
+    const prio=catOrder[p.cat]||["Bags","Shoes","Clothing","Accessories","Watches"];
+    const picks=[];const used=new Set();
+    for(const cat of prio){
+      if(picks.length>=3)break;
+      const c=pool.filter(x=>x.cat===cat&&!used.has(x.id));
+      if(c.length>0){picks.push(c[p.id%c.length]);used.add(c[p.id%c.length].id);}
+    }
+    return picks;
+  })();
+
   useEffect(()=>{setSelectedSize(null);setSizeError(false);setActiveImg(0);},[p?.id]);
 
   if (!p) return (
@@ -209,11 +224,64 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
         </div>
       </div>
 
+      {/* ── COMPLETE THE LOOK ── */}
+      {outfit.length>0&&(
+        <div style={{borderTop:`1px solid ${C.lgray}`,padding:mobile?"48px 0":"72px 0",background:C.cream}}>
+          <div style={{maxWidth:1360,margin:"0 auto",padding:mobile?"0 16px":"0 40px"}}>
+            <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:8}}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.tan} strokeWidth="1.5"><path d="M6.5 6.5h11v11h-11z"/><path d="M8.5 2v4.5"/><path d="M15.5 2v4.5"/><path d="M8.5 17.5V22"/><path d="M15.5 17.5V22"/><path d="M2 8.5h4.5"/><path d="M2 15.5h4.5"/><path d="M17.5 8.5H22"/><path d="M17.5 15.5H22"/></svg>
+              <p style={{...T.labelSm,color:C.tan,fontSize:10,letterSpacing:"0.18em"}}>{L.completeLook||"COMPLETE THE LOOK"}</p>
+            </div>
+            <h2 style={{fontFamily:"'Alido',serif",fontSize:mobile?24:30,fontWeight:300,color:C.black,marginBottom:6}}>{L.completeLookTitle||"Style it your way"}</h2>
+            <p style={{...T.body,color:C.gray,fontSize:13,marginBottom:mobile?24:36,maxWidth:480}}>{L.completeLookSub||"Pair this piece with these curated suggestions"}</p>
+
+            <div style={{display:"grid",gridTemplateColumns:mobile?`repeat(${Math.min(outfit.length,2)},1fr)`:`repeat(${outfit.length},1fr)`,gap:mobile?12:20}}>
+              {outfit.map((item,i)=>(
+                <div key={item.id} onClick={()=>{setPage("product",item);window.scrollTo({top:0,behavior:"smooth"});}}
+                  style={{cursor:"pointer",position:"relative",transition:"transform 0.3s"}}>
+                  <div style={{position:"relative",overflow:"hidden",marginBottom:12,background:C.offwhite}}>
+                    <img src={item.img} alt={item.name} style={{width:"100%",height:mobile?200:280,objectFit:"cover",transition:"transform 0.4s"}}
+                      onMouseEnter={e=>e.currentTarget.style.transform="scale(1.03)"}
+                      onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}/>
+                    <div style={{position:"absolute",top:10,left:10,background:"rgba(0,0,0,0.75)",padding:"4px 10px"}}>
+                      <span style={{...T.labelSm,color:C.white,fontSize:7,letterSpacing:"0.1em"}}>{item.cat.toUpperCase()}</span>
+                    </div>
+                    {/* "+" connector between items */}
+                    {i<outfit.length-1&&!mobile&&(
+                      <div style={{position:"absolute",right:-14,top:"50%",transform:"translateY(-50%)",width:28,height:28,borderRadius:"50%",background:C.white,border:`1px solid ${C.lgray}`,display:"flex",alignItems:"center",justifyContent:"center",zIndex:2,boxShadow:"0 1px 4px rgba(0,0,0,0.08)"}}>
+                        <span style={{color:C.tan,fontSize:16,fontWeight:300,lineHeight:1}}>+</span>
+                      </div>
+                    )}
+                  </div>
+                  <p style={{...T.labelSm,color:C.tan,fontSize:8,letterSpacing:"0.15em",marginBottom:3}}>{item.brand}</p>
+                  <p style={{...T.bodySm,color:C.black,fontSize:mobile?12:13,marginBottom:4}}>{L&&L.localNames&&L.localNames[item.name]||item.name}</p>
+                  <p style={{fontFamily:"'Alido',serif",fontSize:15,color:item.sale?C.red:C.black}}>
+                    GEL {item.sale||item.price}
+                    {item.sale&&<span style={{fontSize:12,color:C.gray,textDecoration:"line-through",marginLeft:6}}>GEL {item.price}</span>}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* Total outfit price */}
+            <div style={{marginTop:mobile?24:32,padding:"16px 20px",background:C.offwhite,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12}}>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.tan} strokeWidth="1.5"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                <span style={{...T.labelSm,color:C.gray,fontSize:9,letterSpacing:"0.1em"}}>{L.completeLookTotal||"COMPLETE LOOK TOTAL"}</span>
+              </div>
+              <span style={{fontFamily:"'Alido',serif",fontSize:22,color:C.black}}>
+                GEL {effectivePrice + outfit.reduce((sum,it)=>(sum+(it.sale||it.price)),0)}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {related.length>0&&(
         <div style={{borderTop:`1px solid ${C.lgray}`,padding:"64px 0",background:C.offwhite}}>
           <div style={{maxWidth:1360,margin:"0 auto",padding:"0 40px"}}>
             <p style={{...T.labelSm,color:C.tan,marginBottom:10}}>{L.fromSameCollection}</p>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:3}}>
+            <div style={{display:"grid",gridTemplateColumns:mobile?"repeat(2,1fr)":"repeat(4,1fr)",gap:3}}>
               {related.map(item=><ProductCard key={item.id} product={item} wishlist={wishlist} onWishlist={onWishlist} L={L}
                 onSelect={()=>{setPage("product",item);window.scrollTo({top:0,behavior:"smooth"});}}/>)}
             </div>
