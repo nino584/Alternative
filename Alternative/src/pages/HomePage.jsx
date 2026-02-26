@@ -6,9 +6,11 @@ import { IconCheck, IconPackage, IconVideo } from '../components/icons/Icons.jsx
 import HoverBtn from '../components/ui/HoverBtn.jsx';
 import ProductCard from '../components/ui/ProductCard.jsx';
 import Footer from '../components/layout/Footer.jsx';
+import SEO from '../components/SEO.jsx';
+import { pageMeta } from '../utils/seo.js';
 
 // ── HOMEPAGE ──────────────────────────────────────────────────────────────────
-export default function HomePage({setPage,setSelected,L,mobile}) {
+export default function HomePage({setPage,setSelected,L,mobile,products:productsProp,wishlist,onWishlist}) {
   const [vis,setVis]=useState(false);
   const [heroSrc,setHeroSrc]=useState(HERO_IMAGE);
   useEffect(()=>{const t=setTimeout(()=>setVis(true),80);return()=>clearTimeout(t);},[]);
@@ -17,6 +19,7 @@ export default function HomePage({setPage,setSelected,L,mobile}) {
 
   return (
     <div style={{background:C.cream}}>
+      <SEO {...pageMeta("home")} />
       <section style={mobile?{minHeight:"100vh",display:"flex",flexDirection:"column",overflow:"hidden",position:"relative",paddingTop:60}:{height:"100vh",display:"grid",gridTemplateColumns:"1fr 1fr",overflow:"hidden",minHeight:600,position:"relative"}}>
         {mobile&&(
           <div style={{height:280,overflow:"hidden",flexShrink:0}}>
@@ -77,7 +80,7 @@ export default function HomePage({setPage,setSelected,L,mobile}) {
             <button onClick={()=>setPage("catalog")} style={{background:"none",border:"none",...T.bodySm,color:C.gray,textDecoration:"underline",cursor:"pointer",fontSize:mobile?11:undefined}}>View all →</button>
           </div>
           <div style={{display:"grid",gridTemplateColumns:mobile?"1fr 1fr":"repeat(3,1fr)",gap:3}}>
-            {PRODUCTS.slice(0,mobile?4:3).map(p=><ProductCard key={p.id} product={p} onSelect={()=>{setPage("product",p);}} L={L} mobile={mobile}/>)}
+            {(productsProp||PRODUCTS).slice(0,mobile?4:3).map(p=><ProductCard key={p.id} product={p} onSelect={()=>{setPage("product",p);}} wishlist={wishlist} onWishlist={onWishlist} L={L} mobile={mobile}/>)}
           </div>
         </div>
       </section>
@@ -88,8 +91,8 @@ export default function HomePage({setPage,setSelected,L,mobile}) {
           <h2 style={{...T.displayMd,color:C.black,marginBottom:mobile?28:44,fontSize:mobile?"clamp(22px,6vw,32px)":undefined}}>{L.collections}</h2>
           <div style={{display:"grid",gridTemplateColumns:mobile?"1fr":"1fr 1fr 1fr",gap:3}}>
             {[{name:L.womenswear,section:"Womenswear",src:BI.bag_stone,sub:L.womensSub},{name:L.menswear,section:"Menswear",src:BI.man_editorial,sub:L.mensSub},{name:L.kidswear,section:"Kidswear",src:BI.packaging,sub:L.kidsSub}].map((cat,i)=>(
-              <div key={i} onClick={()=>{window.__initSection=cat.section;setPage("catalog");}} style={{position:"relative",height:mobile?200:340,cursor:"pointer",overflow:"hidden"}}>
-                <img src={cat.src} alt={cat.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+              <div key={i} onClick={()=>{window.__initSection=cat.section;setPage("catalog");}} style={{position:"relative",height:mobile?260:420,cursor:"pointer",overflow:"hidden"}}>
+                <img src={cat.src} alt={`${cat.name} collection at Alternative`} loading="lazy" style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"top center"}}/>
                 <div style={{position:"absolute",inset:0,background:"linear-gradient(to top, rgba(25,25,25,0.62) 0%, transparent 52%)"}}/>
                 <div style={{position:"absolute",bottom:mobile?16:24,left:mobile?16:24}}>
                   <p style={{...T.displaySm,color:C.white,marginBottom:4,fontSize:mobile?18:undefined}}>{cat.name}</p>
@@ -104,7 +107,7 @@ export default function HomePage({setPage,setSelected,L,mobile}) {
       <section style={{background:C.black,padding:mobile?"48px 0":"72px 0"}}>
         <div style={{maxWidth:1360,margin:"0 auto",padding:`0 ${px}`,display:"grid",gridTemplateColumns:mobile?"1fr":"1fr 1fr",gap:mobile?32:72,alignItems:"center"}}>
           <div style={{position:"relative",height:mobile?220:380,overflow:"hidden",order:mobile?1:0}}>
-            <img src={BI.store_interior} alt="Video service" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+            <img src={BI.store_interior} alt="Video verification service at Alternative" loading="lazy" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
             <div style={{position:"absolute",inset:0,background:"rgba(25,25,25,0.28)"}}/>
             <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:50,height:50,borderRadius:"50%",border:"2px solid rgba(255,255,255,0.8)",display:"flex",alignItems:"center",justifyContent:"center"}}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="rgba(255,255,255,0.9)"><polygon points="5 3 19 12 5 21 5 3"/></svg>
@@ -126,13 +129,13 @@ export default function HomePage({setPage,setSelected,L,mobile}) {
             <h2 style={{...T.displayMd,color:C.white,marginBottom:mobile?16:24,lineHeight:1.2,fontSize:mobile?"clamp(20px,5vw,28px)":undefined}}>{L.verifyTitle||"Every item is verified before it reaches you."}</h2>
             <p style={{...T.body,color:C.lgray,lineHeight:1.9,marginBottom:mobile?24:36,fontSize:mobile?13:undefined}}>{L.verifyBody||"Our dedicated team physically handles every piece — checking hardware, stitching, and material quality — before it ships. What we verify is what arrives."}</p>
             <div style={{display:"flex",gap:mobile?24:40}}>
-              {[["500+",L.itemsVerified],["98%",L.custSatisfaction],["4.9",L.avgRating]].map(([n,l])=>(
+              {[["50+",L.itemsVerified],["98%",L.custSatisfaction],["4.9",L.avgRating]].map(([n,l])=>(
                 <div key={n}><p style={{fontFamily:"'Alido',serif",fontSize:mobile?24:30,fontWeight:300,color:C.tan,lineHeight:1}}>{n}</p><p style={{...T.labelSm,color:C.lgray,marginTop:5,fontSize:8}}>{l}</p></div>
               ))}
             </div>
           </div>
           <div style={{height:mobile?220:380,overflow:"hidden",position:"relative"}}>
-            <img src={BI.bag_stone} alt="Quality assurance" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+            <img src={BI.bag_stone} alt="Trusted sourcing and quality verification" loading="lazy" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
             <div style={{position:"absolute",inset:0,background:"rgba(25,25,25,0.15)"}}/>
           </div>
         </div>

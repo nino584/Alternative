@@ -3,6 +3,8 @@ import { C, T } from '../constants/theme.js';
 import { IconCheck } from '../components/icons/Icons.jsx';
 import HoverBtn from '../components/ui/HoverBtn.jsx';
 import Footer from '../components/layout/Footer.jsx';
+import SEO from '../components/SEO.jsx';
+import { pageMeta, breadcrumbSchema } from '../utils/seo.js';
 
 // ── MEMBERSHIP PAGE ──────────────────────────────────────────────────────────
 export default function MembershipPage({setPage,L,mobile}) {
@@ -16,6 +18,7 @@ export default function MembershipPage({setPage,L,mobile}) {
   },[]);
   return (
     <div style={{paddingTop:mobile?52:80,background:C.cream}}>
+      <SEO {...pageMeta("membership")} schema={breadcrumbSchema([{name:"Home",url:"/"},{name:"Membership"}])} />
       {/* HERO */}
       <div style={{background:C.black,padding:mobile?"48px 0":"72px 0"}}>
         <div style={{maxWidth:900,margin:"0 auto",padding:`0 ${px}`,textAlign:"center"}}>

@@ -34,8 +34,11 @@ export const STYLES = `
   html{scroll-behavior:smooth}
   body{font-family:'TT Interphases Pro',sans-serif;background:#e7e8e1;color:#191919;-webkit-font-smoothing:antialiased}
   ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:#e7e8e1}::-webkit-scrollbar-thumb{background:#b19a7a}
+  html{scrollbar-width:thin;scrollbar-color:#b19a7a #e7e8e1}
   button{cursor:pointer;font-family:'TT Interphases Pro',sans-serif}
   input,select,textarea{font-family:'TT Interphases Pro',sans-serif;-webkit-appearance:none}
+  :focus-visible{outline:2px solid #b19a7a;outline-offset:2px}
+  input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;border-color:#b19a7a !important}
   img{display:block}
   @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
   @keyframes fadeIn{from{opacity:0}to{opacity:1}}

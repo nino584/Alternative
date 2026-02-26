@@ -1,5 +1,7 @@
 import { C, T } from '../constants/theme.js';
 import Footer from '../components/layout/Footer.jsx';
+import SEO from '../components/SEO.jsx';
+import { pageMeta, breadcrumbSchema } from '../utils/seo.js';
 
 const LEGAL_CONTENT = {
   privacy: {
@@ -80,6 +82,7 @@ export default function LegalPage({type,setPage,L,mobile}) {
 
   return (
     <div style={{paddingTop:mobile?52:80,background:C.cream}}>
+      <SEO {...pageMeta(type)} schema={breadcrumbSchema([{name:"Home",url:"/"},{name:content.title}])} />
       {/* HEADER */}
       <div style={{borderBottom:`1px solid ${C.lgray}`,padding:mobile?"28px 0":"40px 0"}}>
         <div style={{maxWidth:900,margin:"0 auto",padding:`0 ${px}`}}>

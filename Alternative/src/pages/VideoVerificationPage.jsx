@@ -4,11 +4,14 @@ import { VIDEO_VERIFICATION_GEL } from '../constants/config.js';
 import { IconVideo, IconCheck } from '../components/icons/Icons.jsx';
 import HoverBtn from '../components/ui/HoverBtn.jsx';
 import Footer from '../components/layout/Footer.jsx';
+import SEO from '../components/SEO.jsx';
+import { pageMeta, breadcrumbSchema } from '../utils/seo.js';
 
 // ── VIDEO VERIFICATION PAGE ──────────────────────────────────────────────────
 export default function VideoVerificationPage({setPage,L,mobile}) {
   return (
     <div style={{paddingTop:mobile?52:80,background:C.cream}}>
+      <SEO {...pageMeta("video-verification")} schema={breadcrumbSchema([{name:"Home",url:"/"},{name:"Video Verification"}])} />
       {/* HERO */}
       <div style={{background:C.black,padding:mobile?"48px 0":"72px 0"}}>
         <div style={{maxWidth:900,margin:"0 auto",padding:mobile?"0 16px":"0 40px",textAlign:"center"}}>
@@ -24,7 +27,7 @@ export default function VideoVerificationPage({setPage,L,mobile}) {
       <div style={{maxWidth:1360,margin:"0 auto",padding:mobile?"40px 16px":"64px 40px"}}>
         <div style={{display:"grid",gridTemplateColumns:mobile?"1fr":"1fr 1fr",gap:mobile?32:72,alignItems:"center"}}>
           <div style={{position:"relative",height:mobile?240:400,overflow:"hidden"}}>
-            <img src={BI.store_interior} alt="Video verification" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+            <img src={BI.store_interior} alt="Video verification service at Alternative" loading="lazy" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
             <div style={{position:"absolute",inset:0,background:"rgba(25,25,25,0.28)"}}/>
             <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:60,height:60,borderRadius:"50%",border:"2px solid rgba(255,255,255,0.8)",display:"flex",alignItems:"center",justifyContent:"center"}}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="rgba(255,255,255,0.9)"><polygon points="5 3 19 12 5 21 5 3"/></svg>

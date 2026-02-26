@@ -1,0 +1,68 @@
+import { Router } from 'express';
+import { z } from 'zod';
+import { getAllProducts, getProductById, createProduct, updateProduct, deleteProduct } from '../db/store.js';
+import { authenticate } from '../middleware/auth.js';
+import { requireRole } from '../middleware/rbac.js';
+import { validate } from '../middleware/validate.js';
+
+const router = Router();
+
+const productSchema = z.object({
+  name: z.string().min(1).max(200),
+  section: z.enum(['Womenswear', 'Menswear', 'Kidswear']),
+  cat: z.string().min(1).max(50),
+  sub: z.string().max(50).optional().default(''),
+  color: z.string().max(50).optional().default(''),
+  price: z.number().positive(),
+  sale: z.number().positive().nullable().optional(),
+  lead: z.string().max(50).optional().default(''),
+  tag: z.string().max(20).optional().default(''),
+  img: z.string().optional().default(''),
+  images: z.array(z.string()).optional().default([]),
+  sizes: z.array(z.string()).min(1),
+  fit: z.object({
+    fit: z.string(),
+    notes: z.string(),
+  }).optional(),
+  brand: z.string().max(100).optional().default(''),
+  desc: z.string().max(2000).optional().default(''),
+});
+
+// ── GET /api/products — public ────────────────────────────────────────────
+router.get('/', (req, res) => {
+  const products = getAllProducts();
+  res.json({ products });
+});
+
+// ── GET /api/products/:id — public ────────────────────────────────────────
+router.get('/:id', (req, res) => {
+  const product = getProductById(parseInt(req.params.id, 10));
+  if (!product) return res.status(404).json({ error: 'Product not found' });
+  res.json({ product });
+});
+
+// ── POST /api/products — admin only ───────────────────────────────────────
+router.post('/', authenticate, requireRole('admin'), validate(productSchema), (req, res) => {
+  const products = getAllProducts();
+  const maxId = products.reduce((m, p) => Math.max(m, p.id), 0);
+  const product = createProduct({ ...req.validated, id: maxId + 1 });
+  res.status(201).json({ product });
+});
+
+// ── PUT /api/products/:id — admin only ────────────────────────────────────
+router.put('/:id', authenticate, requireRole('admin'), validate(productSchema), (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const product = updateProduct(id, req.validated);
+  if (!product) return res.status(404).json({ error: 'Product not found' });
+  res.json({ product });
+});
+
+// ── DELETE /api/products/:id — admin only ─────────────────────────────────
+router.delete('/:id', authenticate, requireRole('admin'), (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const ok = deleteProduct(id);
+  if (!ok) return res.status(404).json({ error: 'Product not found' });
+  res.json({ ok: true });
+});
+
+export default router;

@@ -3,6 +3,8 @@ import { C, T } from '../constants/theme.js';
 import { WHATSAPP_NUMBER } from '../constants/config.js';
 import HoverBtn from '../components/ui/HoverBtn.jsx';
 import Footer from '../components/layout/Footer.jsx';
+import SEO from '../components/SEO.jsx';
+import { pageMeta, breadcrumbSchema } from '../utils/seo.js';
 
 // ── CONTACT PAGE ─────────────────────────────────────────────────────────────
 export default function ContactPage({setPage,L,mobile}) {
@@ -21,6 +23,7 @@ export default function ContactPage({setPage,L,mobile}) {
 
   return (
     <div style={{paddingTop:mobile?52:80,background:C.cream}}>
+      <SEO {...pageMeta("contact")} schema={breadcrumbSchema([{name:"Home",url:"/"},{name:"Contact"}])} />
       {/* HEADER */}
       <div style={{borderBottom:`1px solid ${C.lgray}`,padding:mobile?"28px 0":"40px 0"}}>
         <div style={{maxWidth:900,margin:"0 auto",padding:`0 ${px}`}}>
@@ -86,14 +89,14 @@ export default function ContactPage({setPage,L,mobile}) {
               ].map(f=>(
                 <div key={f.key} style={{marginBottom:16}}>
                   <label style={{...T.labelSm,color:C.gray,fontSize:9,display:"block",marginBottom:6}}>{f.label}</label>
-                  <input type={f.type} placeholder={f.placeholder} value={form[f.key]} onChange={e=>setForm({...form,[f.key]:e.target.value})}
+                  <input type={f.type} placeholder={f.placeholder} value={form[f.key]} onChange={e=>setForm({...form,[f.key]:e.target.value})} maxLength={f.key==="email"?254:100}
                     style={{width:"100%",padding:"12px 14px",border:`1px solid ${C.lgray}`,background:C.white,fontSize:14,color:C.black,outline:"none",...T.body}}/>
                 </div>
               ))}
               <div style={{marginBottom:20}}>
                 <label style={{...T.labelSm,color:C.gray,fontSize:9,display:"block",marginBottom:6}}>{L.contactMessageLabel}</label>
                 <textarea placeholder={L.contactMessagePh} value={form.message} onChange={e=>setForm({...form,message:e.target.value})}
-                  rows={5} style={{width:"100%",padding:"12px 14px",border:`1px solid ${C.lgray}`,background:C.white,fontSize:14,color:C.black,outline:"none",resize:"vertical",...T.body}}/>
+                  rows={5} maxLength={2000} style={{width:"100%",padding:"12px 14px",border:`1px solid ${C.lgray}`,background:C.white,fontSize:14,color:C.black,outline:"none",resize:"vertical",...T.body}}/>
               </div>
               <HoverBtn type="submit" variant="primary" style={{width:"100%",padding:"15px 24px"}}>
                 {sent?L.contactSent:L.contactSend}

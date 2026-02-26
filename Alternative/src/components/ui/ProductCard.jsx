@@ -1,15 +1,15 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { C, T } from '../../constants/theme.js';
 
 // ── PRODUCT CARD ──────────────────────────────────────────────────────────────
-export default function ProductCard({product:p,onSelect,wishlist,onWishlist,L,mobile}) {
+export default memo(function ProductCard({product:p,onSelect,wishlist,onWishlist,L,mobile}) {
   const [h,setH]=useState(false);
   const wished=wishlist?.includes(p.id);
   return (
     <div onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)} onClick={onSelect}
       style={{cursor:"pointer",background:C.offwhite,overflow:"hidden",position:"relative"}}>
-      <div style={{height:mobile?280:340,overflow:"hidden",position:"relative"}}>
-        <img src={p.img} alt={p.name} style={{width:"100%",height:"100%",objectFit:"cover",transform:h?"scale(1.04)":"scale(1)",transition:"transform 0.6s ease"}}/>
+      <div style={{aspectRatio:"1/1",overflow:"hidden",position:"relative",background:"#ffffff"}}>
+        <img src={p.img} alt={`${p.brand} ${p.name} in ${p.color}`} loading="lazy" onError={e=>{e.target.style.opacity="0.3";}} style={{width:"100%",height:"100%",objectFit:"contain",transform:h?"scale(1.04)":"scale(1)",transition:"transform 0.6s ease"}}/>
         <div style={{position:"absolute",top:10,left:10,display:"flex",gap:5,flexWrap:"wrap"}}>
           {p.tag==="Sale"&&<span style={{...T.labelSm,color:C.white,background:C.red,padding:"4px 10px",fontSize:8}}>SALE</span>}
           {p.tag==="New"&&<span style={{...T.labelSm,color:C.white,background:C.black,padding:"4px 10px",fontSize:8}}>NEW</span>}
@@ -44,4 +44,4 @@ export default function ProductCard({product:p,onSelect,wishlist,onWishlist,L,mo
       </div>
     </div>
   );
-}
+});

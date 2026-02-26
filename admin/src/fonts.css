@@ -1,0 +1,39 @@
+@font-face {
+  font-family: 'Alido';
+  src: url('../public/fonts/Alido.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'TT Interphases Pro';
+  src: url('../public/fonts/TT-Interphases-Pro-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'TT Interphases Pro';
+  src: url('../public/fonts/TT-Interphases-Pro-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'TT Interphases Pro';
+  src: url('../public/fonts/TT-Interphases-Pro-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'TT Interphases Pro';
+  src: url('../public/fonts/TT-Interphases-Pro-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}

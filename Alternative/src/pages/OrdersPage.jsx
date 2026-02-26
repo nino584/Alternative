@@ -1,25 +1,22 @@
 import { useState, useEffect } from 'react';
 import { C, T } from '../constants/theme.js';
 import { ORDER_STATUSES } from '../constants/data.js';
-import { VIDEO_VERIFICATION_GEL } from '../constants/config.js';
 import HoverBtn from '../components/ui/HoverBtn.jsx';
 import Footer from '../components/layout/Footer.jsx';
 
 // ── ORDERS PAGE ───────────────────────────────────────────────────────────────
 export default function OrdersPage({mobile,orders,setPage,toast,L}) {
   const allOrders = orders || [];
-  const [active,setActive]=useState(allOrders[0] ?? null);
+  const [activeIdx,setActiveIdx]=useState(0);
 
-  useEffect(()=>{if(allOrders.length>0&&!active)setActive(allOrders[0]);},[allOrders.length]);
+  useEffect(()=>{if(allOrders.length>0)setActiveIdx(0);},[allOrders.length]);
 
-  const current=active||allOrders[0];
-  const si=ORDER_STATUSES.findIndex(s=>s.key===current?.status);
+  const current=allOrders[activeIdx]||null;
+  const si=current?ORDER_STATUSES.findIndex(s=>s.key===current.status):0;
   const labelMap={reserved:"statusReservedLabel",sourcing:"statusSourcingLabel",confirmed:"statusConfirmedLabel",shipped:"statusShippedLabel",delivered:"statusDeliveredLabel"};
   const descMap={reserved:"statusReservedDesc",sourcing:"statusSourcingDesc",confirmed:"statusConfirmedDesc",shipped:"statusShippedDesc",delivered:"statusDeliveredDesc"};
   const sLabel=(s)=>L[labelMap[s.key]]||s.label;
   const sDesc=(s)=>L[descMap[s.key]]||s.desc;
-  const orderTotal=current?(current.sale||current.price)+(current.wantVideo?VIDEO_VERIFICATION_GEL:0):0;
-  const balanceDue=current?orderTotal-(current.depositPaid||0):0;
 
   const handleCancel=()=>{
     if(window.confirm&&window.confirm(L&&L.cancelConfirm||"Cancel this order? Your payment will be fully refunded.")){
@@ -40,7 +37,7 @@ export default function OrdersPage({mobile,orders,setPage,toast,L}) {
         </div>
         <div style={{maxWidth:1360,margin:"0 auto",padding:"60px 40px 80px",textAlign:"center"}}>
           <p style={{...T.displaySm,color:C.gray,marginBottom:16}}>{L&&L.noOrdersYet||"No orders yet."}</p>
-          <p style={{...T.bodySm,color:C.gray,marginBottom:28}}>{L&&L.noOrdersHint||"Reserve items from the collection to see them here."}</p>
+          <p style={{...T.bodySm,color:C.gray,marginBottom:28}}>{L&&L.noOrdersHint||"Items you purchase will appear here."}</p>
           <HoverBtn onClick={()=>setPage("catalog")} variant="primary">{L&&L.exploreCollection||"Explore Collection"}</HoverBtn>
         </div>
       </div>
@@ -60,16 +57,21 @@ export default function OrdersPage({mobile,orders,setPage,toast,L}) {
       </div>
 
       <div style={{maxWidth:1360,margin:"0 auto",padding:"32px 40px 80px",display:"grid",gridTemplateColumns:mobile?"1fr":"300px 1fr",gap:mobile?20:32}}>
+        {/* Order list sidebar */}
         <div>
-          {allOrders.map(o=>{
+          {allOrders.map((o,idx)=>{
             const osi=ORDER_STATUSES.findIndex(s=>s.key===o.status);
-            const isA=current?.orderId===o.orderId;
+            const isA=idx===activeIdx;
+            const itemCount=o.items?o.items.length:1;
+            const firstItem=o.items?o.items[0]:o;
             return (
-              <div key={o.orderId} onClick={()=>setActive(o)} style={{padding:16,marginBottom:2,cursor:"pointer",background:isA?C.offwhite:C.cream,border:isA?`1px solid ${C.tan}`:"1px solid transparent",transition:"all 0.2s"}}>
+              <div key={o.orderId} onClick={()=>setActiveIdx(idx)} style={{padding:16,marginBottom:2,cursor:"pointer",background:isA?C.offwhite:C.cream,border:isA?`1px solid ${C.tan}`:"1px solid transparent",transition:"all 0.2s"}}>
                 <div style={{display:"flex",gap:12,alignItems:"flex-start"}}>
-                  <img src={o.img} alt="" style={{width:48,height:48,objectFit:"cover",flexShrink:0}}/>
+                  <img src={firstItem.img} alt="" style={{width:48,height:48,objectFit:"cover",flexShrink:0}}/>
                   <div style={{flex:1,minWidth:0}}>
-                    <p style={{...T.heading,color:C.black,fontSize:12,marginBottom:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{o.name}</p>
+                    <p style={{...T.heading,color:C.black,fontSize:12,marginBottom:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                      {itemCount>1?`${itemCount} items`:firstItem.name}
+                    </p>
                     <p style={{...T.labelSm,color:C.gray,fontSize:8,marginBottom:6}}>{o.orderId}</p>
                     <div style={{display:"flex",gap:6,alignItems:"center"}}>
                       <div style={{width:5,height:5,borderRadius:"50%",background:ORDER_STATUSES[osi]?.color||C.tan,flexShrink:0}}/>
@@ -83,8 +85,10 @@ export default function OrdersPage({mobile,orders,setPage,toast,L}) {
           })}
         </div>
 
+        {/* Order detail */}
         {current&&(
           <div>
+            {/* Status bar */}
             <div style={{marginBottom:28}}>
               <div style={{display:"flex",marginBottom:8,gap:2}}>
                 {ORDER_STATUSES.map((s,i)=><div key={i} style={{flex:1,height:3,background:i<=si?s.color:C.lgray,transition:"background 0.3s"}}/>)}
@@ -96,29 +100,45 @@ export default function OrdersPage({mobile,orders,setPage,toast,L}) {
               </div>
             </div>
 
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:24,marginBottom:24}}>
-              <img src={current.img} alt={current.name} style={{width:"100%",height:220,objectFit:"cover"}}/>
-              <div>
-                <p style={{...T.labelSm,color:C.tan,fontSize:9,marginBottom:6}}>{current.orderId}</p>
-                <h2 style={{fontFamily:"'Alido',serif",fontSize:26,fontWeight:300,color:C.black,lineHeight:1.2,marginBottom:6}}>{current.name}</h2>
-                <p style={{...T.bodySm,color:C.gray,marginBottom:18}}>{current.color}{current.selectedSize&&current.selectedSize!=="One Size"?" · "+current.selectedSize:""}</p>
-                <div style={{padding:16,background:C.offwhite,borderLeft:`3px solid ${ORDER_STATUSES[si]?.color||C.tan}`,marginBottom:14}}>
-                  <p style={{...T.labelSm,color:ORDER_STATUSES[si]?.color||C.tan,marginBottom:5,fontSize:9}}>{L.currentStatus||"Current status"}</p>
-                  <p style={{...T.label,color:C.black,fontSize:11,marginBottom:4}}>{ORDER_STATUSES[si]?sLabel(ORDER_STATUSES[si]):""}</p>
-                  <p style={{...T.bodySm,color:C.gray,lineHeight:1.7,fontSize:12}}>{ORDER_STATUSES[si]?sDesc(ORDER_STATUSES[si]):""}</p>
+            {/* Order items */}
+            <div style={{marginBottom:24}}>
+              <p style={{...T.labelSm,color:C.tan,fontSize:9,marginBottom:12}}>{current.orderId}</p>
+              {(current.items||[current]).map((item,i)=>(
+                <div key={i} style={{display:"flex",gap:16,padding:"14px 0",borderBottom:`1px solid ${C.lgray}`}}>
+                  <img src={item.img} alt={item.name} style={{width:mobile?64:80,height:mobile?64:80,objectFit:"cover",flexShrink:0}}/>
+                  <div style={{flex:1}}>
+                    {item.brand&&<p style={{...T.labelSm,color:C.tan,fontSize:8,letterSpacing:"0.12em",marginBottom:2}}>{item.brand}</p>}
+                    <p style={{fontFamily:"'Alido',serif",fontSize:mobile?16:20,fontWeight:300,color:C.black,lineHeight:1.2,marginBottom:4}}>{item.name}</p>
+                    <p style={{...T.bodySm,color:C.gray,fontSize:12}}>{item.color}{item.selectedSize&&item.selectedSize!=="One Size"?" · "+item.selectedSize:""}</p>
+                    <p style={{fontFamily:"'Alido',serif",fontSize:16,color:item.sale?C.red:C.black,marginTop:6}}>GEL {item.sale||item.price}</p>
+                  </div>
                 </div>
-                {current.wantVideo&&(
-                  <div style={{padding:"10px 14px",background:`rgba(177,154,122,0.08)`,border:`1px solid ${C.tan}`,marginBottom:14}}>
-                    <p style={{...T.labelSm,color:C.tan,fontSize:9}}>▷ {L.videoIncluded||"Video verification included — will be sent to WhatsApp before dispatch"}</p>
-                  </div>
-                )}
-                {[["Amount paid",`GEL ${current.depositPaid}`],["Total",`GEL ${orderTotal}`]].map(([k,v])=>(
-                  <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:`1px solid ${C.lgray}`}}>
-                    <span style={{...T.labelSm,color:C.gray,fontSize:9}}>{k}</span>
-                    <span style={{...T.bodySm,color:C.black}}>{v}</span>
-                  </div>
-                ))}
+              ))}
+            </div>
+
+            {/* Status info */}
+            <div style={{padding:16,background:C.offwhite,borderLeft:`3px solid ${ORDER_STATUSES[si]?.color||C.tan}`,marginBottom:20}}>
+              <p style={{...T.labelSm,color:ORDER_STATUSES[si]?.color||C.tan,marginBottom:5,fontSize:9}}>{L.currentStatus||"Current status"}</p>
+              <p style={{...T.label,color:C.black,fontSize:11,marginBottom:4}}>{ORDER_STATUSES[si]?sLabel(ORDER_STATUSES[si]):""}</p>
+              <p style={{...T.bodySm,color:C.gray,lineHeight:1.7,fontSize:12}}>{ORDER_STATUSES[si]?sDesc(ORDER_STATUSES[si]):""}</p>
+            </div>
+
+            {current.wantVideo&&(
+              <div style={{padding:"10px 14px",background:`rgba(177,154,122,0.08)`,border:`1px solid ${C.tan}`,marginBottom:20}}>
+                <p style={{...T.labelSm,color:C.tan,fontSize:9}}>{L.videoIncluded||"Video verification included — will be sent to WhatsApp before dispatch"}</p>
               </div>
+            )}
+
+            {/* Totals */}
+            <div style={{marginBottom:20}}>
+              {[
+                [L?.total||"Total",`GEL ${current.total||0}`],
+              ].map(([k,v])=>(
+                <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid ${C.lgray}`}}>
+                  <span style={{...T.label,color:C.black,fontSize:10}}>{k}</span>
+                  <span style={{fontFamily:"'Alido',serif",fontSize:18,color:C.black}}>{v}</span>
+                </div>
+              ))}
             </div>
 
             {(current.status==="reserved"||current.status==="sourcing")&&(

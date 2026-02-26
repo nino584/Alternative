@@ -4,27 +4,64 @@ import { VIDEO_VERIFICATION_GEL } from '../constants/config.js';
 import { IconCheck, IconVideo } from '../components/icons/Icons.jsx';
 import HoverBtn from '../components/ui/HoverBtn.jsx';
 
+const ADDR_KEY = "alternative_addresses";
+function loadAddresses() {
+  try { const r = localStorage.getItem(ADDR_KEY); return r ? JSON.parse(r) : []; } catch { return []; }
+}
+
 // ── PREORDER MODAL ────────────────────────────────────────────────────────────
-export default function PreorderModal({product:p,selectedSize,onClose,onComplete,setPage,L}) {
+export default function PreorderModal({product:p,selectedSize,onClose,onComplete,setPage,L,user}) {
   const [step,setStep]=useState(1);
-  const [form,setForm]=useState({name:"",phone:"",notes:""});
   const [wantVideo,setWantVideo]=useState(false);
   const [payMethod,setPayMethod]=useState("BOG");
   const [formError,setFormError]=useState("");
   const effectivePrice=p.sale||p.price;
   const totalPrice=effectivePrice;
 
+  // ── GUEST form state ──
+  const [guestForm,setGuestForm]=useState({firstName:"",lastName:"",email:"",phone:"",address:"",city:"",country:"Georgia",postal:"",notes:""});
+
+  // ── LOGGED-IN: load saved addresses ──
+  const [savedAddresses]=useState(()=>user?loadAddresses():[]);
+  const defaultAddr=savedAddresses.find(a=>a.isDefault)||savedAddresses[0]||null;
+  const [selectedAddr,setSelectedAddr]=useState(defaultAddr);
+  const [loggedNotes,setLoggedNotes]=useState("");
+
+  // pre-fill phone from selected address for logged-in user
+  const loggedPhone=selectedAddr?.phone||"";
+  const loggedName=user?.name||"";
+
+  const isGuest=!user;
+
   const handleNext=()=>{
     if (step===1){
-      if (!form.name.trim()||!form.phone.trim()){setFormError(L&&L.enterNamePhone||'Enter name and WhatsApp.');return;}
+      if (isGuest) {
+        // Guest validation — require all essential fields
+        if (!guestForm.firstName.trim()||!guestForm.lastName.trim()){setFormError(L?.fillRequired||"Please fill in all required fields.");return;}
+        if (!guestForm.email.includes("@")){setFormError(L?.validEmail||"Please enter a valid email address.");return;}
+        if (!guestForm.phone.trim()){setFormError(L?.enterPhone||"Please enter your phone number.");return;}
+        if (!guestForm.address.trim()||!guestForm.city.trim()){setFormError(L?.enterAddress||"Please enter your shipping address.");return;}
+      } else {
+        // Logged-in — must have an address selected
+        if (!selectedAddr){setFormError(L?.selectAddress||"Please select or add a shipping address.");return;}
+      }
       setFormError("");
       setStep(2);
     } else if (step===2){
       const orderId="ALT-2026-"+String(Math.floor(Math.random()*9000)+1000);
-      onComplete({...p,orderId,status:"reserved",depositPaid:totalPrice,selectedSize,wantVideo,customerName:form.name,phone:form.phone});
+      const customerName=isGuest?`${guestForm.firstName} ${guestForm.lastName}`.trim():loggedName;
+      const phone=isGuest?guestForm.phone:loggedPhone;
+      const notes=isGuest?guestForm.notes:loggedNotes;
+      const shippingAddress=isGuest
+        ?{address:guestForm.address,city:guestForm.city,country:guestForm.country,postal:guestForm.postal}
+        :{address:selectedAddr?.line1,city:selectedAddr?.city,country:selectedAddr?.country,postal:selectedAddr?.postal};
+      onComplete({...p,orderId,status:"reserved",depositPaid:totalPrice,selectedSize,wantVideo,customerName,phone,email:isGuest?guestForm.email:user.email,notes,shippingAddress});
       setStep(3);
     }
   };
+
+  const inputStyle=(hasError)=>({width:"100%",padding:"12px 14px",border:`1px solid ${hasError?C.red:C.lgray}`,background:C.white,fontSize:14,color:C.black,outline:"none",fontFamily:"'TT Interphases Pro',sans-serif"});
+  const labelStyle={...T.labelSm,color:C.gray,fontSize:9,display:"block",marginBottom:6};
 
   return (
     <div style={{position:"fixed",inset:0,zIndex:300,display:"flex"}}>
@@ -32,36 +69,146 @@ export default function PreorderModal({product:p,selectedSize,onClose,onComplete
       <div style={{position:"relative",marginLeft:"auto",width:"100%",maxWidth:500,background:C.cream,height:"100%",overflow:"auto",animation:"slideRight 0.3s ease",boxShadow:"-12px 0 50px rgba(0,0,0,0.2)"}}>
         <div style={{padding:"24px 32px",borderBottom:`1px solid ${C.lgray}`,display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,background:C.cream,zIndex:2}}>
           <div>
-            <p style={{...T.labelSm,color:C.tan,fontSize:9,marginBottom:4}}>Step {step} of 3</p>
-            <p style={{...T.heading,color:C.black}}>{step===1?(L&&L.yourDetails||'Your Details'):step===2?(L&&L.reviewPay||'Review & Pay'):(L&&L.orderConfirmed||'Order Confirmed')}</p>
+            <p style={{...T.labelSm,color:C.tan,fontSize:9,marginBottom:4}}>{L?.stepOf?`${L.stepOf.replace("{n}",step).replace("{t}","3")}`:`STEP ${step} OF 3`}</p>
+            <p style={{...T.heading,color:C.black}}>{step===1?(L?.yourDetails||"Your Details"):step===2?(L?.reviewPay||"Review & Pay"):(L?.orderConfirmed||"Order Confirmed")}</p>
           </div>
-          <button onClick={onClose} style={{background:"none",border:"none",color:C.gray,fontSize:22}}>×</button>
+          <button onClick={onClose} style={{background:"none",border:"none",color:C.gray,fontSize:22,cursor:"pointer"}}>×</button>
         </div>
         <div style={{display:"flex"}}>
           {[1,2,3].map(n=><div key={n} style={{flex:1,height:3,background:step>=n?C.tan:C.lgray,transition:"background 0.3s",marginRight:n<3?1:0}}/>)}
         </div>
 
         <div style={{padding:"28px 32px"}}>
+          {/* Product summary */}
           <div style={{display:"flex",gap:12,padding:14,background:C.offwhite,marginBottom:24}}>
             <img src={p.img} alt={p.name} style={{width:56,height:56,objectFit:"cover",flexShrink:0}}/>
             <div>
-              <p style={{...T.heading,color:C.black,fontSize:13,marginBottom:2}}>{L&&L.localNames&&L.localNames[p.name]||p.name}</p>
+              <p style={{...T.heading,color:C.black,fontSize:13,marginBottom:2}}>{L?.localNames?.[p.name]||p.name}</p>
               <p style={{...T.labelSm,color:C.gray,fontSize:9,marginBottom:5}}>{p.color}{selectedSize&&selectedSize!=="One Size"?" · "+selectedSize:""}</p>
               <p style={{...T.bodySm,color:C.tan}}>GEL {effectivePrice} total</p>
             </div>
           </div>
 
+          {/* ── STEP 1: DETAILS ── */}
           {step===1&&(
             <>
-              <p style={{...T.label,color:C.black,fontSize:11,marginBottom:16}}>{L&&L.contactDetails||'Contact Details'}</p>
-              {formError&&<p style={{...T.bodySm,color:C.red,marginBottom:14}}>{formError}</p>}
-              {[[L&&L.fullName||"Full name *","name","text","Your full name"],[L&&L.whatsapp||"WhatsApp *","phone","tel","+995 5XX XXX XXX"],[L&&L.notes||"Notes","notes","text",L&&L.notesPlaceholder||"Notes…"]].map(([label,key,type,ph])=>(
-                <div key={key} style={{marginBottom:16}}>
-                  <label style={{...T.labelSm,color:C.gray,fontSize:9,display:"block",marginBottom:6}}>{label}</label>
-                  <input type={type} placeholder={ph} value={form[key]} onChange={e=>setForm({...form,[key]:e.target.value})}
-                    style={{width:"100%",padding:"12px 14px",border:`1px solid ${(key==="name"||key==="phone")&&formError&&!form[key].trim()?C.red:C.lgray}`,background:C.white,fontSize:14,color:C.black,outline:"none"}}/>
-                </div>
-              ))}
+              {/* LOGGED IN user — quick checkout */}
+              {!isGuest&&(
+                <>
+                  <div style={{padding:"16px 18px",background:C.offwhite,marginBottom:20,display:"flex",alignItems:"center",gap:12}}>
+                    <div style={{width:36,height:36,borderRadius:"50%",background:C.tan,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.white} strokeWidth="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                    </div>
+                    <div>
+                      <p style={{...T.heading,color:C.black,fontSize:13}}>{user.name}</p>
+                      <p style={{...T.bodySm,color:C.gray,fontSize:11}}>{user.email}</p>
+                    </div>
+                    <div style={{marginLeft:"auto"}}>
+                      <IconCheck size={16} color={C.tan} stroke={2}/>
+                    </div>
+                  </div>
+
+                  <p style={{...T.label,color:C.black,fontSize:11,marginBottom:12}}>{L?.shippingAddress||"SHIPPING ADDRESS"}</p>
+                  {formError&&<p style={{...T.bodySm,color:C.red,marginBottom:14}}>{formError}</p>}
+
+                  {savedAddresses.length>0?(
+                    <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:20}}>
+                      {savedAddresses.map((addr,i)=>(
+                        <div key={addr.id||i} onClick={()=>setSelectedAddr(addr)}
+                          style={{padding:"14px 16px",border:`1.5px solid ${selectedAddr?.id===addr.id?C.tan:C.lgray}`,background:selectedAddr?.id===addr.id?"rgba(177,154,122,0.04)":"transparent",cursor:"pointer",transition:"all 0.2s"}}>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                            <p style={{...T.heading,color:C.black,fontSize:12}}>{addr.name}{addr.isDefault&&<span style={{...T.labelSm,color:C.tan,fontSize:8,marginLeft:8}}>DEFAULT</span>}</p>
+                            <div style={{width:16,height:16,borderRadius:"50%",border:`2px solid ${selectedAddr?.id===addr.id?C.tan:C.lgray}`,background:selectedAddr?.id===addr.id?C.tan:"transparent",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s"}}>
+                              {selectedAddr?.id===addr.id&&<div style={{width:6,height:6,borderRadius:"50%",background:C.white}}/>}
+                            </div>
+                          </div>
+                          <p style={{...T.bodySm,color:C.gray,fontSize:11,lineHeight:1.5}}>{addr.line1}{addr.line2?", "+addr.line2:""}</p>
+                          <p style={{...T.bodySm,color:C.gray,fontSize:11}}>{addr.city}{addr.postal?", "+addr.postal:""} · {addr.country}</p>
+                          {addr.phone&&<p style={{...T.bodySm,color:C.gray,fontSize:11,marginTop:2}}>{addr.phone}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  ):(
+                    <div style={{padding:"20px 16px",border:`1px dashed ${C.lgray}`,textAlign:"center",marginBottom:20}}>
+                      <p style={{...T.bodySm,color:C.gray,marginBottom:10}}>{L?.noSavedAddresses||"No saved addresses"}</p>
+                      <HoverBtn onClick={()=>{onClose();setPage("account");}} variant="secondary" style={{padding:"10px 20px",fontSize:11}}>
+                        {L?.addInAccount||"Add Address in Account →"}
+                      </HoverBtn>
+                    </div>
+                  )}
+
+                  <div style={{marginBottom:16}}>
+                    <label style={labelStyle}>{L?.notes||"NOTES"}</label>
+                    <input type="text" placeholder={L?.notesPlaceholder||"Size questions, color preferences..."} value={loggedNotes} onChange={e=>setLoggedNotes(e.target.value)} style={inputStyle(false)}/>
+                  </div>
+                </>
+              )}
+
+              {/* GUEST user — full form like Farfetch */}
+              {isGuest&&(
+                <>
+                  <div style={{padding:"14px 18px",background:"rgba(177,154,122,0.06)",border:`1px solid rgba(177,154,122,0.15)`,marginBottom:20,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                    <p style={{...T.bodySm,color:C.brown,fontSize:12}}>{L?.haveAccount||"Already have an account?"}</p>
+                    <button onClick={()=>{onClose();setPage("auth");}} style={{background:"none",border:"none",...T.label,color:C.tan,fontSize:11,cursor:"pointer",textDecoration:"underline"}}>{L?.signInBtn||"Sign In"}</button>
+                  </div>
+
+                  <p style={{...T.label,color:C.black,fontSize:11,marginBottom:16}}>{L?.contactDetails||"CONTACT DETAILS"}</p>
+                  {formError&&<p style={{...T.bodySm,color:C.red,marginBottom:14}}>{formError}</p>}
+
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:0}}>
+                    <div style={{marginBottom:16}}>
+                      <label style={labelStyle}>{L?.firstName||"FIRST NAME"} *</label>
+                      <input type="text" placeholder="Nino" value={guestForm.firstName} onChange={e=>setGuestForm({...guestForm,firstName:e.target.value})} style={inputStyle(formError&&!guestForm.firstName.trim())}/>
+                    </div>
+                    <div style={{marginBottom:16}}>
+                      <label style={labelStyle}>{L?.lastName||"LAST NAME"} *</label>
+                      <input type="text" placeholder="Gogishvili" value={guestForm.lastName} onChange={e=>setGuestForm({...guestForm,lastName:e.target.value})} style={inputStyle(formError&&!guestForm.lastName.trim())}/>
+                    </div>
+                  </div>
+
+                  <div style={{marginBottom:16}}>
+                    <label style={labelStyle}>{L?.emailAddress||"EMAIL ADDRESS"} *</label>
+                    <input type="email" placeholder="nino@example.com" value={guestForm.email} onChange={e=>setGuestForm({...guestForm,email:e.target.value})} style={inputStyle(formError&&!guestForm.email.includes("@"))}/>
+                  </div>
+
+                  <div style={{marginBottom:16}}>
+                    <label style={labelStyle}>{L?.whatsapp||"WHATSAPP NUMBER"} *</label>
+                    <input type="tel" placeholder="+995 5XX XXX XXX" value={guestForm.phone} onChange={e=>setGuestForm({...guestForm,phone:e.target.value})} style={inputStyle(formError&&!guestForm.phone.trim())}/>
+                  </div>
+
+                  <p style={{...T.label,color:C.black,fontSize:11,marginBottom:16,marginTop:8}}>{L?.shippingAddress||"SHIPPING ADDRESS"}</p>
+
+                  <div style={{marginBottom:16}}>
+                    <label style={labelStyle}>{L?.addressLine||"ADDRESS"} *</label>
+                    <input type="text" placeholder={L?.addressPlaceholder||"Street address, apartment, floor"} value={guestForm.address} onChange={e=>setGuestForm({...guestForm,address:e.target.value})} style={inputStyle(formError&&!guestForm.address.trim())}/>
+                  </div>
+
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                    <div style={{marginBottom:16}}>
+                      <label style={labelStyle}>{L?.city||"CITY"} *</label>
+                      <input type="text" placeholder="Tbilisi" value={guestForm.city} onChange={e=>setGuestForm({...guestForm,city:e.target.value})} style={inputStyle(formError&&!guestForm.city.trim())}/>
+                    </div>
+                    <div style={{marginBottom:16}}>
+                      <label style={labelStyle}>{L?.postalCode||"POSTAL CODE"}</label>
+                      <input type="text" placeholder="0100" value={guestForm.postal} onChange={e=>setGuestForm({...guestForm,postal:e.target.value})} style={inputStyle(false)}/>
+                    </div>
+                  </div>
+
+                  <div style={{marginBottom:16}}>
+                    <label style={labelStyle}>{L?.country||"COUNTRY"}</label>
+                    <select value={guestForm.country} onChange={e=>setGuestForm({...guestForm,country:e.target.value})} style={{...inputStyle(false),cursor:"pointer",appearance:"auto"}}>
+                      {["Georgia","Turkey","Armenia","Azerbaijan","Russia","USA","Germany","France","UK","Italy","Other"].map(c=><option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+
+                  <div style={{marginBottom:16}}>
+                    <label style={labelStyle}>{L?.notes||"NOTES"}</label>
+                    <input type="text" placeholder={L?.notesPlaceholder||"Size questions, color preferences..."} value={guestForm.notes} onChange={e=>setGuestForm({...guestForm,notes:e.target.value})} style={inputStyle(false)}/>
+                  </div>
+                </>
+              )}
+
+              {/* Video verification — shared */}
               <p style={{...T.labelSm,color:C.tan,fontSize:8,marginBottom:8,marginTop:8}}>VIDEO VERIFICATION</p>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                 <button type="button" onClick={()=>setWantVideo(false)}
@@ -71,7 +218,7 @@ export default function PreorderModal({product:p,selectedSize,onClose,onComplete
                 </button>
                 <button type="button" onClick={()=>setWantVideo(true)}
                   style={{padding:"14px 10px",background:wantVideo?C.black:"transparent",border:`1.5px solid ${wantVideo?C.tan:C.lgray}`,cursor:"pointer",textAlign:"center",position:"relative",transition:"all 0.2s"}}>
-                  {<div style={{position:"absolute",top:-1,right:-1,background:C.tan,padding:"2px 8px"}}><span style={{...T.labelSm,color:C.white,fontSize:6}}>RECOMMENDED</span></div>}
+                  <div style={{position:"absolute",top:-1,right:-1,background:C.tan,padding:"2px 8px"}}><span style={{...T.labelSm,color:C.white,fontSize:6}}>RECOMMENDED</span></div>
                   <p style={{...T.label,fontSize:10,color:wantVideo?C.white:C.black,marginBottom:2,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
                     <IconVideo size={12} color={wantVideo?C.white:C.black} stroke={1.6}/>
                     With Video
@@ -82,27 +229,45 @@ export default function PreorderModal({product:p,selectedSize,onClose,onComplete
             </>
           )}
 
+          {/* ── STEP 2: REVIEW & PAY ── */}
           {step===2&&(
             <>
-              <p style={{...T.label,color:C.black,fontSize:11,marginBottom:16}}>{L&&L.orderSummary||"Order Summary"}</p>
+              <p style={{...T.label,color:C.black,fontSize:11,marginBottom:16}}>{L?.orderSummary||"ORDER SUMMARY"}</p>
               {[
-                [L&&L.item||"Item",L&&L.localNames&&L.localNames[p.name]||p.name],[L&&L.size||"Size",selectedSize||"One Size"],[L&&L.leadTime||"Lead time",p.lead],
-                [L&&L.depositNow||"Payment",`GEL ${totalPrice}`],
-                ...(wantVideo?[[L&&L.videoVerif||"Video verification",`GEL ${VIDEO_VERIFICATION_GEL}`]]:[]),
-                [L&&L.total||"Total",`GEL ${totalPrice+(wantVideo?VIDEO_VERIFICATION_GEL:0)}`],
+                [L?.item||"Item",L?.localNames?.[p.name]||p.name],
+                [L?.size||"Size",selectedSize||"One Size"],
+                [L?.leadTime||"Lead time",p.lead],
+                [L?.depositNow||"Payment",`GEL ${totalPrice}`],
+                ...(wantVideo?[[L?.videoVerif||"Video verification",`GEL ${VIDEO_VERIFICATION_GEL}`]]:[]),
+                [L?.total||"Total",`GEL ${totalPrice+(wantVideo?VIDEO_VERIFICATION_GEL:0)}`],
               ].map(([k,v],i,arr)=>(
                 <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"9px 0",borderBottom:`1px solid ${C.lgray}`,fontWeight:i===arr.length-1?500:300}}>
                   <span style={{...T.labelSm,color:i===arr.length-1?C.black:C.gray,fontSize:9}}>{k}</span>
                   <span style={{...T.bodySm,color:i===arr.length-1?C.black:C.gray,fontWeight:i===arr.length-1?500:300}}>{v}</span>
                 </div>
               ))}
-              <div style={{padding:"14px 16px",background:C.offwhite,margin:"16px 0",borderLeft:`3px solid ${C.tan}`}}>
+
+              {/* Shipping info summary */}
+              <div style={{marginTop:20,marginBottom:16}}>
+                <p style={{...T.label,color:C.black,fontSize:11,marginBottom:12}}>{L?.shippingTo||"SHIPPING TO"}</p>
+                <div style={{padding:"14px 16px",background:C.offwhite}}>
+                  <p style={{...T.heading,color:C.black,fontSize:12,marginBottom:4}}>{isGuest?`${guestForm.firstName} ${guestForm.lastName}`:loggedName}</p>
+                  <p style={{...T.bodySm,color:C.gray,fontSize:11,lineHeight:1.6}}>
+                    {isGuest?guestForm.address:selectedAddr?.line1}<br/>
+                    {isGuest?`${guestForm.city}${guestForm.postal?", "+guestForm.postal:""} · ${guestForm.country}`:`${selectedAddr?.city||""}${selectedAddr?.postal?", "+selectedAddr.postal:""} · ${selectedAddr?.country||""}`}
+                  </p>
+                  <p style={{...T.bodySm,color:C.gray,fontSize:11,marginTop:4}}>{isGuest?guestForm.phone:loggedPhone}</p>
+                </div>
+              </div>
+
+              <div style={{padding:"14px 16px",background:C.offwhite,margin:"0 0 16px",borderLeft:`3px solid ${C.tan}`}}>
                 <p style={{...T.bodySm,color:C.brown,lineHeight:1.7,fontSize:12}}>
-                  {L&&L.refundNote||'Fully refundable if you cancel before shipping.'}{wantVideo?" Video will be sent to your WhatsApp before dispatch.":""}
+                  {L?.refundNote||"Fully refundable if you cancel before shipping."}{wantVideo?" Video will be sent to your WhatsApp before dispatch.":""}
                 </p>
               </div>
-              <p style={{...T.label,color:C.black,fontSize:11,marginBottom:12}}>{L&&L.paymentMethod||"Payment Method"}</p>
-              {[["BOG",L&&L.bogTransfer||"BOG / TBC Bank Transfer",L&&L.recommended||"Recommended"],["card",L&&L.cardPayment||"Card Payment",""]].map(([v,m,tag])=>(
+
+              <p style={{...T.label,color:C.black,fontSize:11,marginBottom:12}}>{L?.paymentMethod||"PAYMENT METHOD"}</p>
+              {[["BOG",L?.bogTransfer||"BOG / TBC Bank Transfer",L?.recommended||"Recommended"],["card",L?.cardPayment||"Card Payment",""]].map(([v,m,tag])=>(
                 <div key={v} onClick={()=>setPayMethod(v)} style={{display:"flex",alignItems:"center",gap:12,padding:12,border:`1px solid ${payMethod===v?C.tan:C.lgray}`,marginBottom:8,cursor:"pointer",transition:"border-color 0.2s"}}>
                   <div style={{width:14,height:14,borderRadius:"50%",border:`2px solid ${payMethod===v?C.tan:C.lgray}`,background:payMethod===v?C.tan:"transparent",transition:"all 0.2s",flexShrink:0}}/>
                   <span style={{...T.bodySm,color:C.black}}>{m}</span>
@@ -112,18 +277,19 @@ export default function PreorderModal({product:p,selectedSize,onClose,onComplete
             </>
           )}
 
+          {/* ── STEP 3: CONFIRMATION ── */}
           {step===3&&(
             <div style={{textAlign:"center",padding:"16px 0"}}>
               <div style={{width:56,height:56,borderRadius:"50%",border:`2px solid ${C.tan}`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
                 <IconCheck size={28} color={C.tan} stroke={2}/>
               </div>
-              <h3 style={{fontFamily:"'Alido',serif",fontSize:28,fontWeight:300,color:C.black,marginBottom:12}}>{L&&L.orderConfirmed||"Order Confirmed"}</h3>
+              <h3 style={{fontFamily:"'Alido',serif",fontSize:28,fontWeight:300,color:C.black,marginBottom:12}}>{L?.orderConfirmed||"Order Confirmed"}</h3>
               <p style={{...T.body,color:C.gray,marginBottom:24,lineHeight:1.8}}>
-{L&&L.contactNote||"We will contact you on WhatsApp at"} <strong>{form.phone}</strong> {L&&L.within2h||"within 2 hours."}
-{wantVideo&&(L&&L.videoShipping||" Video will be sent before shipping.")}
+                {L?.contactNote||"We will contact you on WhatsApp at"} <strong>{isGuest?guestForm.phone:loggedPhone}</strong> {L?.within2h||"within 2 hours."}
+                {wantVideo&&(L?.videoShipping||" Video will be sent before shipping.")}
               </p>
               <div style={{background:C.offwhite,padding:16,textAlign:"left",marginBottom:24}}>
-                {[[L&&L.status||"Status",L&&L.processing||"Processing"],[L&&L.leadTime||"Lead time",p.lead],[L&&L.depositDue||"Amount due",`GEL ${totalPrice}`]].map(([k,v])=>(
+                {[[L?.status||"Status",L?.processing||"Processing"],[L?.leadTime||"Lead time",p.lead],[L?.depositDue||"Amount due",`GEL ${totalPrice+(wantVideo?VIDEO_VERIFICATION_GEL:0)}`]].map(([k,v])=>(
                   <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:`1px solid ${C.lgray}`}}>
                     <span style={{...T.labelSm,color:C.gray,fontSize:9}}>{k}</span>
                     <span style={{...T.bodySm,color:C.black}}>{v}</span>
@@ -134,8 +300,14 @@ export default function PreorderModal({product:p,selectedSize,onClose,onComplete
           )}
 
           <HoverBtn onClick={step===3?()=>{onClose();setPage&&setPage("orders");}:handleNext} variant="primary" style={{width:"100%",padding:"15px 24px"}}>
-{step===1?(L&&L.reviewOrder||"Review Order →"):step===2?`${L&&L.confirmPay||"Confirm & Pay"} — GEL ${totalPrice+(wantVideo?VIDEO_VERIFICATION_GEL:0)}`:(L&&L.viewMyOrders||"View My Orders →")}
+            {step===1?(L?.reviewOrder||"Review Order →"):step===2?`${L?.confirmPay||"Confirm & Pay"} — GEL ${totalPrice+(wantVideo?VIDEO_VERIFICATION_GEL:0)}`:(L?.viewMyOrders||"View My Orders →")}
           </HoverBtn>
+
+          {step===1&&isGuest&&(
+            <p style={{...T.bodySm,color:C.gray,fontSize:10,textAlign:"center",marginTop:14,lineHeight:1.6}}>
+              {L?.checkoutDisclaimer||"By placing an order you agree to our"} <button onClick={()=>{onClose();setPage("terms");}} style={{background:"none",border:"none",color:C.tan,fontSize:10,cursor:"pointer",textDecoration:"underline",padding:0,fontFamily:"inherit"}}>{L?.termsLink||"Terms & Conditions"}</button>
+            </p>
+          )}
         </div>
       </div>
     </div>

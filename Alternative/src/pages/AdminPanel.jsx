@@ -20,11 +20,72 @@ const SECTIONS = ["Womenswear", "Menswear", "Kidswear"];
 const CATEGORIES = ["Clothing", "Shoes", "Bags", "Accessories", "Watches"];
 const TAGS = ["", "New", "Sale", "Popular", "Limited"];
 
+// ── SIZE PRESETS ──────────────────────────────────────────────────────────────
+const CLOTHING_SIZES = ["XXS","XS","S","M","L","XL","XXL","XXXL"];
+const SHOE_SIZES = ["36","37","38","39","40","41","42","43","44","45"];
+const KIDS_CLOTHING_SIZES = ["80","86","92","98","104","110","116","122","128","134","140","146","152","158","164"];
+const KIDS_SHOE_SIZES = ["20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35"];
+const FIT_OPTIONS = ["True to Size","Runs Small","Runs Large"];
+
+// ── BRAND LIST ───────────────────────────────────────────────────────────────
+const BRAND_LIST = [
+  "Acne Studios","Ahlem","Alaia","Alessandra Rich","Alexander McQueen",
+  "Alexander Wang","Ami Paris","Amina Muaddi","Balenciaga","Baziszt",
+  "Bernadette","Blumarine","Bottega Veneta","Brioni","Brunello Cucinelli",
+  "Burberry","Cartier","Celine","Cesare Attolini","Chloé",
+  "Christian Louboutin","Diesel","Dior","District Vision","Dita",
+  "Dolce & Gabbana","Dries Van Noten","Dsquared2","Fendi","Givenchy",
+  "Golden Goose","Gucci","Jacquemus","Jimmy Choo","Kuboraum",
+  "Lardini","LBM","Loewe","Loro Piana","Magda Butrym",
+  "Maison Margiela","Manzoni 24","Max Mara","Miu Miu","Moncler",
+  "Moschino","Off-White","Palm Angels","Phoebe Philo","Prada",
+  "R13","Rick Owens","Saint Laurent","Salvatore Ferragamo","Sato",
+  "Seraphine","Simonetta Ravizza","Stone Island","T Henri","The Row",
+  "Thom Browne","Tod's","Tom Ford","Valentino","Versace",
+  "Vetements","Wardrobe NYC","Zegna",
+];
+
+// ── COLOR LIST ───────────────────────────────────────────────────────────────
+const COLOR_LIST = [
+  { name: "Black", hex: "#000000" },
+  { name: "White", hex: "#FFFFFF" },
+  { name: "Cream", hex: "#FFFDD0" },
+  { name: "Ivory", hex: "#FFFFF0" },
+  { name: "Beige", hex: "#F5F5DC" },
+  { name: "Nude", hex: "#E3BC9A" },
+  { name: "Camel", hex: "#C19A6B" },
+  { name: "Tan", hex: "#D2B48C" },
+  { name: "Brown", hex: "#8B4513" },
+  { name: "Cognac", hex: "#9A463D" },
+  { name: "Burgundy", hex: "#800020" },
+  { name: "Red", hex: "#CC0000" },
+  { name: "Coral", hex: "#FF7F50" },
+  { name: "Orange", hex: "#FF8C00" },
+  { name: "Yellow", hex: "#FFD700" },
+  { name: "Gold", hex: "#D4AF37" },
+  { name: "Pink", hex: "#FFC0CB" },
+  { name: "Blush", hex: "#DE5D83" },
+  { name: "Mauve", hex: "#E0B0FF" },
+  { name: "Lavender", hex: "#E6E6FA" },
+  { name: "Purple", hex: "#800080" },
+  { name: "Navy", hex: "#000080" },
+  { name: "Blue", hex: "#0000CD" },
+  { name: "Light Blue", hex: "#ADD8E6" },
+  { name: "Teal", hex: "#008080" },
+  { name: "Green", hex: "#228B22" },
+  { name: "Olive", hex: "#808000" },
+  { name: "Khaki", hex: "#C3B091" },
+  { name: "Gray", hex: "#808080" },
+  { name: "Charcoal", hex: "#36454F" },
+  { name: "Silver", hex: "#C0C0C0" },
+  { name: "Multi", hex: null },
+];
+
 // ── EMPTY PRODUCT FORM ───────────────────────────────────────────────────────
 const EMPTY_PRODUCT = {
   name: "", brand: "", section: "Womenswear", cat: "Clothing",
-  color: "", price: "", sale: "", sizes: "", lead: "",
-  tag: "", desc: "", img: "",
+  color: "", price: "", sale: "", sizes: [], lead: "",
+  tag: "", desc: "", images: [], mainImgIndex: 0, fit: "True to Size", oneSize: false,
 };
 
 // ── DEMO ORDERS ──────────────────────────────────────────────────────────────
@@ -60,10 +121,14 @@ export default function AdminPanel({ mobile, user, setPage, orders, toast, L, pr
   const [editingProduct, setEditingProduct] = useState(null);
   const [productForm, setProductForm] = useState({ ...EMPTY_PRODUCT });
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [brandSearch, setBrandSearch] = useState("");
+  const [brandDropdownOpen, setBrandDropdownOpen] = useState(false);
+  const [colorSearch, setColorSearch] = useState("");
+  const [colorDropdownOpen, setColorDropdownOpen] = useState(false);
 
   // ── Auth guard ───────────────────────────────────────────────────────────
-  useEffect(() => { if (!user?.isAdmin) setPage("home"); }, [user]);
-  if (!user?.isAdmin) return null;
+  useEffect(() => { if (user?.role!=="admin") setPage("home"); }, [user]);
+  if (user?.role!=="admin") return null;
 
   // ── Build order list ─────────────────────────────────────────────────────
   const realOrders = (orders || []).map(o => ({
@@ -127,6 +192,9 @@ export default function AdminPanel({ mobile, user, setPage, orders, toast, L, pr
 
   const openEditProduct = (p) => {
     setEditingProduct(p.id);
+    const isOneSize = !p.sizes || p.sizes.length === 0 || (p.sizes.length === 1 && p.sizes[0] === "One Size");
+    const existingImages = p.images && p.images.length > 0 ? p.images : (p.img ? [p.img] : []);
+    const mainIdx = p.img && existingImages.length > 0 ? Math.max(0, existingImages.indexOf(p.img)) : 0;
     setProductForm({
       name: p.name || "",
       brand: p.brand || "",
@@ -135,11 +203,14 @@ export default function AdminPanel({ mobile, user, setPage, orders, toast, L, pr
       color: p.color || "",
       price: p.price ? String(p.price) : "",
       sale: p.sale ? String(p.sale) : "",
-      sizes: (p.sizes || []).join(", "),
+      sizes: isOneSize ? [] : (p.sizes || []),
       lead: p.lead || "",
       tag: p.tag || "",
       desc: p.desc || "",
-      img: p.img || "",
+      images: existingImages,
+      mainImgIndex: mainIdx,
+      fit: p.fit?.fit || "True to Size",
+      oneSize: isOneSize,
     });
     setShowProductForm(true);
   };
@@ -148,64 +219,108 @@ export default function AdminPanel({ mobile, user, setPage, orders, toast, L, pr
     setShowProductForm(false);
     setEditingProduct(null);
     setProductForm({ ...EMPTY_PRODUCT });
+    setBrandSearch("");
+    setBrandDropdownOpen(false);
+    setColorSearch("");
+    setColorDropdownOpen(false);
   };
 
   const saveProduct = () => {
-    if (!productForm.name.trim() || !productForm.price.trim()) {
+    if (!productForm.name.trim() || !String(productForm.price).trim()) {
       toast("Name and price are required", "error");
       return;
     }
-    const parsedSizes = productForm.sizes
-      ? productForm.sizes.split(",").map(s => s.trim()).filter(Boolean)
-      : ["One Size"];
+    if (!setProducts) {
+      toast("Cannot save — products not connected", "error");
+      return;
+    }
+    const finalSizes = productForm.oneSize ? ["One Size"] : (productForm.sizes.length > 0 ? productForm.sizes : ["One Size"]);
+
+    const mainImg = productForm.images.length > 0 ? productForm.images[productForm.mainImgIndex] || productForm.images[0] : "";
+    const productData = {
+      name: productForm.name.trim(),
+      brand: productForm.brand.trim(),
+      section: productForm.section,
+      cat: productForm.cat,
+      sub: productForm.cat,
+      color: productForm.color.trim(),
+      price: Number(productForm.price) || 0,
+      sale: productForm.sale ? Number(productForm.sale) : null,
+      sizes: finalSizes,
+      lead: productForm.lead.trim(),
+      tag: productForm.tag,
+      desc: productForm.desc.trim(),
+      img: mainImg,
+      images: productForm.images,
+      fit: { fit: productForm.fit, notes: "" },
+    };
 
     if (editingProduct !== null) {
-      // Update existing
-      const updated = productList.map(p =>
-        p.id === editingProduct
-          ? {
-            ...p,
-            name: productForm.name.trim(),
-            brand: productForm.brand.trim(),
-            section: productForm.section,
-            cat: productForm.cat,
-            color: productForm.color.trim(),
-            price: Number(productForm.price) || 0,
-            sale: productForm.sale ? Number(productForm.sale) : null,
-            sizes: parsedSizes,
-            lead: productForm.lead.trim(),
-            tag: productForm.tag,
-            desc: productForm.desc.trim(),
-            img: productForm.img.trim(),
-          }
-          : p
-      );
+      const updated = productList.map(p => p.id === editingProduct ? { ...p, ...productData } : p);
       setProducts(updated);
       toast(L && L.productUpdated || "Product updated", "success");
     } else {
-      // Add new
       const newId = productList.length > 0 ? Math.max(...productList.map(p => p.id)) + 1 : 1;
-      const newProduct = {
-        id: newId,
-        name: productForm.name.trim(),
-        brand: productForm.brand.trim(),
-        section: productForm.section,
-        cat: productForm.cat,
-        sub: productForm.cat,
-        color: productForm.color.trim(),
-        price: Number(productForm.price) || 0,
-        sale: productForm.sale ? Number(productForm.sale) : null,
-        sizes: parsedSizes,
-        lead: productForm.lead.trim(),
-        tag: productForm.tag,
-        desc: productForm.desc.trim(),
-        img: productForm.img.trim(),
-        fit: { fit: "True to size", notes: "" },
-      };
-      setProducts([...productList, newProduct]);
+      setProducts([...productList, { id: newId, ...productData }]);
       toast(L && L.productAdded || "Product added", "success");
     }
     cancelProductForm();
+  };
+
+  // ── Image upload handler (multiple) ─────────────────────────────────
+  const handleImageUpload = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    const imageFiles = files.filter(f => f.type.startsWith("image/"));
+    if (imageFiles.length === 0) { toast("Please select image files", "error"); return; }
+    Promise.all(imageFiles.map(file => new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => resolve(ev.target.result);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(file);
+    }))).then(results => {
+      const valid = results.filter(Boolean);
+      if (valid.length > 0) {
+        setProductForm(f => ({ ...f, images: [...f.images, ...valid] }));
+        toast(`${valid.length} photo${valid.length > 1 ? "s" : ""} added`, "success");
+      }
+    });
+    e.target.value = "";
+  };
+
+  const addImageUrl = (url) => {
+    if (!url.trim()) return;
+    setProductForm(f => ({ ...f, images: [...f.images, url.trim()] }));
+  };
+
+  const removeImage = (idx) => {
+    setProductForm(f => {
+      const newImages = f.images.filter((_, i) => i !== idx);
+      let newMain = f.mainImgIndex;
+      if (idx === f.mainImgIndex) newMain = 0;
+      else if (idx < f.mainImgIndex) newMain = f.mainImgIndex - 1;
+      return { ...f, images: newImages, mainImgIndex: Math.min(newMain, Math.max(0, newImages.length - 1)) };
+    });
+  };
+
+  const setMainImage = (idx) => {
+    setProductForm(f => ({ ...f, mainImgIndex: idx }));
+  };
+
+  // ── Toggle size in array ───────────────────────────────────────────────
+  const toggleSize = (sz) => {
+    setProductForm(f => ({
+      ...f,
+      sizes: f.sizes.includes(sz) ? f.sizes.filter(s => s !== sz) : [...f.sizes, sz],
+    }));
+  };
+
+  // ── Get available sizes based on section + category ─────────────────
+  const getAvailableSizes = () => {
+    const isKids = productForm.section === "Kidswear";
+    if (productForm.cat === "Shoes") return isKids ? KIDS_SHOE_SIZES : SHOE_SIZES;
+    if (productForm.cat === "Clothing") return isKids ? KIDS_CLOTHING_SIZES : CLOTHING_SIZES;
+    return null; // Bags, Accessories, Watches → One Size
   };
 
   const deleteProduct = (id) => {
@@ -311,7 +426,7 @@ export default function AdminPanel({ mobile, user, setPage, orders, toast, L, pr
       <div style={{ borderBottom: `1px solid ${C.lgray}`, padding: "20px 0", background: C.cream }}>
         <div style={{ maxWidth: 1360, margin: "0 auto", padding: "0 40px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-            <Logo color={C.black} size={0.7} />
+            <Logo size={0.7} />
             <span style={{ width: 1, height: 18, background: C.lgray }} />
             <p style={{ ...T.label, color: C.black, fontSize: 10 }}>{L && L.adminPanelTitle || "Admin Panel"}</p>
           </div>
@@ -513,8 +628,8 @@ export default function AdminPanel({ mobile, user, setPage, orders, toast, L, pr
             {/* Header */}
             {sectionHeader(
               `${L && L.productCatalog || "Product Catalog"} (${productList.length} items)`,
-              <HoverBtn onClick={openAddProduct} variant="tan" style={{ padding: "8px 18px", fontSize: 9 }}>
-                + {L && L.addProduct || "Add Product"}
+              <HoverBtn onClick={openAddProduct} variant="tan" style={{ padding: "8px 18px", fontSize: 14, fontWeight: "bold" }}>
+                +
               </HoverBtn>
             )}
 
@@ -533,81 +648,233 @@ export default function AdminPanel({ mobile, user, setPage, orders, toast, L, pr
                 <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr" : "1fr 1fr 1fr", gap: 16 }}>
                   {/* Name */}
                   <div>
-                    <label style={{ ...T.labelSm, color: C.gray, fontSize: 8, display: "block", marginBottom: 6 }}>{L && L.nameField || "NAME"} *</label>
+                    <label style={{ ...T.labelSm, color: C.gray, fontSize: 8, display: "block", marginBottom: 6 }}>NAME *</label>
                     <input style={inputStyle} value={productForm.name} onChange={e => setProductForm(f => ({ ...f, name: e.target.value }))} placeholder="Product name" />
                   </div>
                   {/* Brand */}
-                  <div>
-                    <label style={{ ...T.labelSm, color: C.gray, fontSize: 8, display: "block", marginBottom: 6 }}>{L && L.brandField || "BRAND"}</label>
-                    <input style={inputStyle} value={productForm.brand} onChange={e => setProductForm(f => ({ ...f, brand: e.target.value }))} placeholder="Brand" />
+                  <div style={{ position: "relative" }}>
+                    <label style={{ ...T.labelSm, color: C.gray, fontSize: 8, display: "block", marginBottom: 6 }}>BRAND</label>
+                    <div style={{ display: "flex", gap: 4, flexWrap: "wrap", padding: "6px 10px", border: `1px solid ${C.lgray}`, background: C.white, minHeight: 38, alignItems: "center", cursor: "pointer" }}
+                      onClick={() => setBrandDropdownOpen(!brandDropdownOpen)}>
+                      {productForm.brand ? (
+                        <span style={{ ...T.labelSm, fontSize: 9, background: C.tan, color: C.white, padding: "4px 10px", display: "flex", alignItems: "center", gap: 6 }}>
+                          {productForm.brand}
+                          <span onClick={e => { e.stopPropagation(); setProductForm(f => ({ ...f, brand: "" })); }} style={{ cursor: "pointer", fontWeight: "bold" }}>&times;</span>
+                        </span>
+                      ) : (
+                        <span style={{ ...T.bodySm, color: C.lgray, fontSize: 11 }}>Select brand...</span>
+                      )}
+                    </div>
+                    {brandDropdownOpen && (
+                      <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50, background: C.white, border: `1px solid ${C.lgray}`, maxHeight: 220, overflow: "auto", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+                        <input
+                          autoFocus
+                          style={{ ...inputStyle, border: "none", borderBottom: `1px solid ${C.lgray}`, width: "100%", margin: 0 }}
+                          value={brandSearch}
+                          onChange={e => setBrandSearch(e.target.value)}
+                          placeholder="Type to search or add new brand..."
+                          onClick={e => e.stopPropagation()}
+                        />
+                        {brandSearch && !BRAND_LIST.some(b => b.toLowerCase() === brandSearch.toLowerCase()) && (
+                          <div onClick={e => { e.stopPropagation(); setProductForm(f => ({ ...f, brand: brandSearch.trim() })); setBrandDropdownOpen(false); setBrandSearch(""); }}
+                            style={{ padding: "8px 12px", cursor: "pointer", fontSize: 11, ...T.bodySm, color: C.white, background: C.tan, display: "flex", alignItems: "center", gap: 6, borderBottom: `1px solid ${C.lgray}` }}>
+                            + Add new brand: "{brandSearch.trim()}"
+                          </div>
+                        )}
+                        {BRAND_LIST.filter(b => b.toLowerCase().includes(brandSearch.toLowerCase())).map(b => (
+                          <div key={b} onClick={e => { e.stopPropagation(); setProductForm(f => ({ ...f, brand: b })); setBrandDropdownOpen(false); setBrandSearch(""); }}
+                            style={{ padding: "8px 12px", cursor: "pointer", fontSize: 11, ...T.bodySm, color: productForm.brand === b ? C.tan : C.black, background: productForm.brand === b ? C.offwhite : "transparent" }}
+                            onMouseEnter={e => e.currentTarget.style.background = C.offwhite}
+                            onMouseLeave={e => e.currentTarget.style.background = productForm.brand === b ? C.offwhite : "transparent"}>
+                            {b}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {/* Color */}
+                  <div style={{ position: "relative" }}>
+                    <label style={{ ...T.labelSm, color: C.gray, fontSize: 8, display: "block", marginBottom: 6 }}>COLOR</label>
+                    <div style={{ display: "flex", gap: 4, flexWrap: "wrap", padding: "6px 10px", border: `1px solid ${C.lgray}`, background: C.white, minHeight: 38, alignItems: "center", cursor: "pointer" }}
+                      onClick={() => setColorDropdownOpen(!colorDropdownOpen)}>
+                      {productForm.color ? (
+                        <span style={{ ...T.labelSm, fontSize: 9, background: C.tan, color: C.white, padding: "4px 10px", display: "flex", alignItems: "center", gap: 6 }}>
+                          {(() => { const c = COLOR_LIST.find(cl => cl.name === productForm.color); return c && c.hex ? <span style={{ width: 10, height: 10, borderRadius: "50%", background: c.hex, border: "1px solid rgba(0,0,0,0.15)", flexShrink: 0 }} /> : null; })()}
+                          {productForm.color}
+                          <span onClick={e => { e.stopPropagation(); setProductForm(f => ({ ...f, color: "" })); }} style={{ cursor: "pointer", fontWeight: "bold" }}>&times;</span>
+                        </span>
+                      ) : (
+                        <span style={{ ...T.bodySm, color: C.lgray, fontSize: 11 }}>Select color...</span>
+                      )}
+                    </div>
+                    {colorDropdownOpen && (
+                      <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50, background: C.white, border: `1px solid ${C.lgray}`, maxHeight: 200, overflow: "auto", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+                        <input
+                          autoFocus
+                          style={{ ...inputStyle, border: "none", borderBottom: `1px solid ${C.lgray}`, width: "100%", margin: 0 }}
+                          value={colorSearch}
+                          onChange={e => setColorSearch(e.target.value)}
+                          placeholder="Search colors..."
+                          onClick={e => e.stopPropagation()}
+                        />
+                        {COLOR_LIST.filter(c => c.name.toLowerCase().includes(colorSearch.toLowerCase())).map(c => (
+                          <div key={c.name} onClick={e => { e.stopPropagation(); setProductForm(f => ({ ...f, color: c.name })); setColorDropdownOpen(false); setColorSearch(""); }}
+                            style={{ padding: "8px 12px", cursor: "pointer", fontSize: 11, ...T.bodySm, color: productForm.color === c.name ? C.tan : C.black, background: productForm.color === c.name ? C.offwhite : "transparent", display: "flex", alignItems: "center", gap: 8 }}
+                            onMouseEnter={e => e.currentTarget.style.background = C.offwhite}
+                            onMouseLeave={e => e.currentTarget.style.background = productForm.color === c.name ? C.offwhite : "transparent"}>
+                            {c.hex ? <span style={{ width: 14, height: 14, borderRadius: "50%", background: c.hex, border: "1px solid rgba(0,0,0,0.15)", flexShrink: 0 }} /> : <span style={{ width: 14, height: 14, borderRadius: "50%", background: "conic-gradient(red,yellow,green,cyan,blue,magenta,red)", flexShrink: 0 }} />}
+                            {c.name}
+                          </div>
+                        ))}
+                        {colorSearch && !COLOR_LIST.some(c => c.name.toLowerCase() === colorSearch.toLowerCase()) && (
+                          <div onClick={e => { e.stopPropagation(); setProductForm(f => ({ ...f, color: colorSearch.trim() })); setColorDropdownOpen(false); setColorSearch(""); }}
+                            style={{ padding: "8px 12px", cursor: "pointer", fontSize: 11, ...T.bodySm, color: C.tan, borderTop: `1px solid ${C.lgray}` }}>
+                            + Add "{colorSearch.trim()}"
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                   {/* Section */}
                   <div>
-                    <label style={{ ...T.labelSm, color: C.gray, fontSize: 8, display: "block", marginBottom: 6 }}>{L && L.sectionField || "SECTION"}</label>
-                    <select style={selectStyle} value={productForm.section} onChange={e => setProductForm(f => ({ ...f, section: e.target.value }))}>
-                      {SECTIONS.map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
+                    <label style={{ ...T.labelSm, color: C.gray, fontSize: 8, display: "block", marginBottom: 6 }}>SECTION</label>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      {SECTIONS.map(s => (
+                        <button key={s} type="button" onClick={() => setProductForm(f => ({ ...f, section: s, sizes: [] }))}
+                          style={{ ...T.labelSm, fontSize: 9, padding: "8px 12px", flex: 1, border: `1px solid ${productForm.section === s ? C.tan : C.lgray}`, background: productForm.section === s ? C.tan : "transparent", color: productForm.section === s ? C.white : C.gray, cursor: "pointer", transition: "all 0.2s" }}>
+                          {s}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                   {/* Category */}
                   <div>
-                    <label style={{ ...T.labelSm, color: C.gray, fontSize: 8, display: "block", marginBottom: 6 }}>{L && L.categoryField || "CATEGORY"}</label>
-                    <select style={selectStyle} value={productForm.cat} onChange={e => setProductForm(f => ({ ...f, cat: e.target.value }))}>
-                      {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
+                    <label style={{ ...T.labelSm, color: C.gray, fontSize: 8, display: "block", marginBottom: 6 }}>CATEGORY</label>
+                    <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                      {CATEGORIES.map(c => (
+                        <button key={c} type="button" onClick={() => setProductForm(f => ({ ...f, cat: c, sizes: [], oneSize: (c !== "Clothing" && c !== "Shoes") }))}
+                          style={{ ...T.labelSm, fontSize: 9, padding: "8px 10px", border: `1px solid ${productForm.cat === c ? C.tan : C.lgray}`, background: productForm.cat === c ? C.tan : "transparent", color: productForm.cat === c ? C.white : C.gray, cursor: "pointer", transition: "all 0.2s" }}>
+                          {c}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  {/* Color */}
+                  {/* Tag */}
                   <div>
-                    <label style={{ ...T.labelSm, color: C.gray, fontSize: 8, display: "block", marginBottom: 6 }}>{L && L.colorField || "COLOR"}</label>
-                    <input style={inputStyle} value={productForm.color} onChange={e => setProductForm(f => ({ ...f, color: e.target.value }))} placeholder="e.g. Black" />
+                    <label style={{ ...T.labelSm, color: C.gray, fontSize: 8, display: "block", marginBottom: 6 }}>TAG</label>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      {TAGS.map(t => (
+                        <button key={t || "none"} type="button" onClick={() => setProductForm(f => ({ ...f, tag: t }))}
+                          style={{ ...T.labelSm, fontSize: 9, padding: "8px 10px", border: `1px solid ${productForm.tag === t ? (t === "Sale" ? C.red : C.tan) : C.lgray}`, background: productForm.tag === t ? (t === "Sale" ? C.red : C.tan) : "transparent", color: productForm.tag === t ? C.white : C.gray, cursor: "pointer", transition: "all 0.2s" }}>
+                          {t || "None"}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                   {/* Price */}
                   <div>
-                    <label style={{ ...T.labelSm, color: C.gray, fontSize: 8, display: "block", marginBottom: 6 }}>{L && L.priceField || "PRICE (GEL)"} *</label>
+                    <label style={{ ...T.labelSm, color: C.gray, fontSize: 8, display: "block", marginBottom: 6 }}>PRICE (GEL) *</label>
                     <input style={inputStyle} type="number" value={productForm.price} onChange={e => setProductForm(f => ({ ...f, price: e.target.value }))} placeholder="0" />
                   </div>
                   {/* Sale Price */}
                   <div>
-                    <label style={{ ...T.labelSm, color: C.gray, fontSize: 8, display: "block", marginBottom: 6 }}>{L && L.salePriceField || "SALE PRICE (GEL)"}</label>
+                    <label style={{ ...T.labelSm, color: C.gray, fontSize: 8, display: "block", marginBottom: 6 }}>SALE PRICE (GEL)</label>
                     <input style={inputStyle} type="number" value={productForm.sale} onChange={e => setProductForm(f => ({ ...f, sale: e.target.value }))} placeholder="Leave empty if no sale" />
-                  </div>
-                  {/* Sizes */}
-                  <div>
-                    <label style={{ ...T.labelSm, color: C.gray, fontSize: 8, display: "block", marginBottom: 6 }}>{L && L.sizesField || "SIZES (COMMA-SEPARATED)"}</label>
-                    <input style={inputStyle} value={productForm.sizes} onChange={e => setProductForm(f => ({ ...f, sizes: e.target.value }))} placeholder="S, M, L, XL" />
                   </div>
                   {/* Lead Time */}
                   <div>
-                    <label style={{ ...T.labelSm, color: C.gray, fontSize: 8, display: "block", marginBottom: 6 }}>{L && L.leadTimeField || "LEAD TIME"}</label>
-                    <input style={inputStyle} value={productForm.lead} onChange={e => setProductForm(f => ({ ...f, lead: e.target.value }))} placeholder="e.g. 10\u201314 days" />
+                    <label style={{ ...T.labelSm, color: C.gray, fontSize: 8, display: "block", marginBottom: 6 }}>LEAD TIME</label>
+                    <input style={inputStyle} value={productForm.lead} onChange={e => setProductForm(f => ({ ...f, lead: e.target.value }))} placeholder="e.g. 10–14 days" />
                   </div>
-                  {/* Tag */}
-                  <div>
-                    <label style={{ ...T.labelSm, color: C.gray, fontSize: 8, display: "block", marginBottom: 6 }}>{L && L.tagField || "TAG"}</label>
-                    <select style={selectStyle} value={productForm.tag} onChange={e => setProductForm(f => ({ ...f, tag: e.target.value }))}>
-                      {TAGS.map(t => <option key={t} value={t}>{t || "None"}</option>)}
-                    </select>
+                </div>
+
+                {/* ── SIZES ─────────────────────────────────────────────────── */}
+                <div style={{ marginTop: 16 }}>
+                  <label style={{ ...T.labelSm, color: C.gray, fontSize: 8, display: "block", marginBottom: 8 }}>
+                    {productForm.section === "Kidswear" && productForm.cat === "Clothing" ? "SIZES (CM)" : productForm.section === "Kidswear" && productForm.cat === "Shoes" ? "SHOE SIZES (EU KIDS)" : "SIZES"}
+                  </label>
+                  {getAvailableSizes() ? (
+                    <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                      {getAvailableSizes().map(sz => (
+                        <button key={sz} type="button" onClick={() => toggleSize(sz)}
+                          style={{ ...T.labelSm, fontSize: 10, padding: "8px 12px", minWidth: 40, border: `1px solid ${productForm.sizes.includes(sz) ? C.black : C.lgray}`, background: productForm.sizes.includes(sz) ? C.black : "transparent", color: productForm.sizes.includes(sz) ? C.white : C.gray, cursor: "pointer", transition: "all 0.15s" }}>
+                          {sz}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p style={{ ...T.bodySm, color: C.gray, fontSize: 12, padding: "8px 0" }}>One Size (automatic for {productForm.cat})</p>
+                  )}
+                </div>
+
+                {/* ── FIT ────────────────────────────────────────────────────── */}
+                {(productForm.cat === "Clothing" || productForm.cat === "Shoes") && (
+                  <div style={{ marginTop: 16 }}>
+                    <label style={{ ...T.labelSm, color: C.gray, fontSize: 8, display: "block", marginBottom: 8 }}>FIT</label>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      {FIT_OPTIONS.map(f => (
+                        <button key={f} type="button" onClick={() => setProductForm(prev => ({ ...prev, fit: f }))}
+                          style={{ ...T.labelSm, fontSize: 9, padding: "8px 14px", border: `1px solid ${productForm.fit === f ? C.tan : C.lgray}`, background: productForm.fit === f ? C.tan : "transparent", color: productForm.fit === f ? C.white : C.gray, cursor: "pointer", transition: "all 0.2s" }}>
+                          {f}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  {/* Image URL */}
-                  <div>
-                    <label style={{ ...T.labelSm, color: C.gray, fontSize: 8, display: "block", marginBottom: 6 }}>{L && L.imageUrlField || "IMAGE URL"}</label>
-                    <input style={inputStyle} value={productForm.img} onChange={e => setProductForm(f => ({ ...f, img: e.target.value }))} placeholder="https://..." />
-                  </div>
-                  {/* Image preview */}
-                  <div style={{ display: "flex", alignItems: "flex-end" }}>
-                    {productForm.img && (
-                      <img
-                        src={productForm.img}
-                        alt="Preview"
-                        style={{ width: 60, height: 60, objectFit: "cover", border: `1px solid ${C.lgray}` }}
-                        onError={e => { e.target.style.display = "none"; }}
-                      />
-                    )}
+                )}
+
+                {/* ── IMAGES (MULTIPLE) ──────────────────────────────────────── */}
+                <div style={{ marginTop: 16 }}>
+                  <label style={{ ...T.labelSm, color: C.gray, fontSize: 8, display: "block", marginBottom: 8 }}>
+                    PRODUCT IMAGES ({productForm.images.length} uploaded)
+                  </label>
+
+                  {/* Uploaded images grid */}
+                  {productForm.images.length > 0 && (
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
+                      {productForm.images.map((src, idx) => (
+                        <div key={idx} style={{ position: "relative", border: `2px solid ${idx === productForm.mainImgIndex ? C.tan : C.lgray}`, transition: "border-color 0.2s" }}>
+                          <img src={src} alt={`Photo ${idx + 1}`} style={{ width: 100, height: 100, objectFit: "contain", background: "#fff", display: "block" }} onError={e => { e.target.style.display = "none"; }} />
+                          {/* Main badge */}
+                          {idx === productForm.mainImgIndex && (
+                            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: C.tan, padding: "2px 0", textAlign: "center" }}>
+                              <span style={{ ...T.labelSm, color: C.white, fontSize: 7 }}>MAIN</span>
+                            </div>
+                          )}
+                          {/* Set as main button */}
+                          {idx !== productForm.mainImgIndex && (
+                            <button type="button" onClick={() => setMainImage(idx)}
+                              style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(0,0,0,0.55)", border: "none", padding: "3px 0", cursor: "pointer" }}>
+                              <span style={{ ...T.labelSm, color: C.white, fontSize: 7 }}>SET MAIN</span>
+                            </button>
+                          )}
+                          {/* Remove button */}
+                          <button type="button" onClick={() => removeImage(idx)}
+                            style={{ position: "absolute", top: -6, right: -6, width: 18, height: 18, borderRadius: "50%", background: C.red, border: "none", color: "#fff", fontSize: 11, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>×</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Upload + URL row */}
+                  <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", border: `1px dashed ${C.lgray}`, background: C.offwhite, cursor: "pointer", transition: "border-color 0.2s" }}
+                      onMouseEnter={e => e.currentTarget.style.borderColor = C.tan}
+                      onMouseLeave={e => e.currentTarget.style.borderColor = C.lgray}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.gray} strokeWidth="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                      <span style={{ ...T.labelSm, color: C.gray, fontSize: 9 }}>Upload Photos</span>
+                      <input type="file" accept="image/*" multiple onChange={handleImageUpload} style={{ display: "none" }} />
+                    </label>
+                    <div style={{ display: "flex", gap: 6, flex: 1, minWidth: 200 }}>
+                      <input id="urlInput" style={{ ...inputStyle, flex: 1 }} placeholder="or paste image URL and press Add" onKeyDown={e => { if (e.key === "Enter") { addImageUrl(e.target.value); e.target.value = ""; } }} />
+                      <button type="button" onClick={() => { const inp = document.getElementById("urlInput"); addImageUrl(inp.value); inp.value = ""; }}
+                        style={{ ...T.labelSm, fontSize: 9, padding: "8px 14px", background: C.tan, color: C.white, border: "none", cursor: "pointer" }}>Add</button>
+                    </div>
                   </div>
                 </div>
 
                 {/* Description */}
                 <div style={{ marginTop: 16 }}>
-                  <label style={{ ...T.labelSm, color: C.gray, fontSize: 8, display: "block", marginBottom: 6 }}>{L && L.descField || "DESCRIPTION"}</label>
+                  <label style={{ ...T.labelSm, color: C.gray, fontSize: 8, display: "block", marginBottom: 6 }}>DESCRIPTION</label>
                   <textarea
                     style={{ ...inputStyle, minHeight: 72, resize: "vertical" }}
                     value={productForm.desc}
@@ -633,8 +900,8 @@ export default function AdminPanel({ mobile, user, setPage, orders, toast, L, pr
             {productList.length === 0 ? (
               <div style={{ padding: "48px 20px", textAlign: "center" }}>
                 <p style={{ ...T.bodySm, color: C.gray, marginBottom: 16 }}>No products yet</p>
-                <HoverBtn onClick={openAddProduct} variant="tan" style={{ padding: "10px 24px", fontSize: 9 }}>
-                  + {L && L.addProduct || "Add Product"}
+                <HoverBtn onClick={openAddProduct} variant="tan" style={{ padding: "10px 24px", fontSize: 14, fontWeight: "bold" }}>
+                  +
                 </HoverBtn>
               </div>
             ) : (

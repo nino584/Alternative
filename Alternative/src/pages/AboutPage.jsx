@@ -2,13 +2,16 @@ import { C, T } from '../constants/theme.js';
 import { BI } from '../constants/images.js';
 import HoverBtn from '../components/ui/HoverBtn.jsx';
 import Footer from '../components/layout/Footer.jsx';
+import SEO from '../components/SEO.jsx';
+import { pageMeta, breadcrumbSchema } from '../utils/seo.js';
 
 // ── ABOUT PAGE ────────────────────────────────────────────────────────────────
 export default function AboutPage({setPage,L,mobile}) {
   return (
     <div style={{paddingTop:mobile?52:80,background:C.cream}}>
+      <SEO {...pageMeta("about")} schema={breadcrumbSchema([{name:"Home",url:"/"},{name:"About"}])} />
       <div style={{position:"relative",height:mobile?280:460,overflow:"hidden"}}>
-        <img src={BI.store_interior} alt="Alternative" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+        <img src={BI.store_interior} alt="Alternative concept store interior in Tbilisi" loading="lazy" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
         <div style={{position:"absolute",inset:0,background:"rgba(25,25,25,0.5)"}}/>
         <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",justifyContent:"flex-end",padding:mobile?"0 20px 28px":"0 80px 60px"}}>
           <p style={{...T.labelSm,color:C.tan,marginBottom:12}}>{L&&L.ourStory||'Our story'}</p>
@@ -23,7 +26,7 @@ export default function AboutPage({setPage,L,mobile}) {
       </div>
       <div style={{padding:"64px 0",background:C.offwhite}}>
         <div style={{maxWidth:1360,margin:"0 auto",padding:mobile?"0 16px":"0 40px",display:"grid",gridTemplateColumns:mobile?"1fr":"1fr 1fr",gap:mobile?28:64,alignItems:"center"}}>
-          <div style={{height:400,overflow:"hidden"}}><img src={BI.bag_stone} alt="Quality assurance" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
+          <div style={{height:400,overflow:"hidden"}}><img src={BI.bag_stone} alt="Quality assurance process at Alternative" loading="lazy" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
           <div>
             <p style={{...T.labelSm,color:C.tan,marginBottom:16}}>{L&&L.qualityAssurance||'Quality Assurance'}</p>
             <h2 style={{...T.displayMd,color:C.black,marginBottom:20}}>{L&&L.yourEyes||'Your eyes at the source.'}</h2>

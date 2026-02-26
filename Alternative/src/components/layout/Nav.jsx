@@ -6,7 +6,7 @@ import { IconCheck } from '../icons/Icons.jsx';
 import HoverBtn from '../ui/HoverBtn.jsx';
 
 // ── NAV ───────────────────────────────────────────────────────────────────────
-export default function Nav({page,setPage,cartCount,user,setUser,onSearch,onCart,wishlistCount,lang,setLang,L,mobile}) {
+export default function Nav({page,setPage,cartCount,user,setUser,onLogout,onSearch,onCart,wishlistCount,lang,setLang,L,mobile}) {
   const [scrolled,setScrolled]=useState(false);
   const [megaOpen,setMegaOpen]=useState(false);
   const [mobileMenuOpen,setMobileMenuOpen]=useState(false);
@@ -47,7 +47,7 @@ export default function Nav({page,setPage,cartCount,user,setUser,onSearch,onCart
               )}
             </button>
             <button onClick={()=>{setPage("home");setMobileMenuOpen(false);}} style={{background:"none",border:"none",padding:0,lineHeight:1,position:"absolute",left:"50%",transform:"translateX(-50%)",cursor:"pointer"}}>
-              <Logo color={C.black} size={0.82}/>
+              <Logo size={0.82}/>
             </button>
             <div style={{display:"flex",gap:4,alignItems:"center"}}>
               <button onClick={onSearch} style={{background:"none",border:"none",width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
@@ -68,7 +68,7 @@ export default function Nav({page,setPage,cartCount,user,setUser,onSearch,onCart
           <div style={{position:"fixed",top:56,left:0,right:0,bottom:0,zIndex:199,background:C.cream,overflow:"auto",WebkitOverflowScrolling:"touch"}}>
             {/* Top bar: Logo + Close */}
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 20px",borderBottom:`1px solid ${C.lgray}`}}>
-              <LogoMark color={C.black} size={1.1}/>
+              <LogoMark size={1.1}/>
               <button onClick={()=>setMobileMenuOpen(false)} style={{background:"none",border:"none",padding:4}}>
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.black} strokeWidth="1.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
               </button>
@@ -124,8 +124,8 @@ export default function Nav({page,setPage,cartCount,user,setUser,onSearch,onCart
                 <div style={{display:"flex",flexDirection:"column",gap:10}}>
                   <HoverBtn onClick={()=>{setPage("orders");setMobileMenuOpen(false);}} variant="primary" style={{width:"100%",padding:"14px"}}>{L.myOrders||"My Orders"}</HoverBtn>
                   <HoverBtn onClick={()=>{setPage("account");setMobileMenuOpen(false);}} variant="secondary" style={{width:"100%",padding:"14px"}}>{L.myAccount||"My Account"}</HoverBtn>
-                  {user.isAdmin&&<HoverBtn onClick={()=>{setPage("admin");setMobileMenuOpen(false);}} variant="tan" style={{width:"100%",padding:"14px"}}>{L.adminPanel||"Admin Panel"}</HoverBtn>}
-                  <button onClick={()=>{setUser(null);setPage("home");setMobileMenuOpen(false);}}
+                  {user.role==="admin"&&<HoverBtn onClick={()=>{const adminUrl=window.location.hostname==="localhost"?"http://localhost:5174":"/admin";window.open(adminUrl,"_blank");setMobileMenuOpen(false);}} variant="tan" style={{width:"100%",padding:"14px"}}>{L.adminPanel||"Admin Panel"}</HoverBtn>}
+                  <button onClick={()=>{onLogout?onLogout():setUser(null);setMobileMenuOpen(false);}}
                     style={{background:"none",border:"none",...T.bodySm,color:C.gray,padding:"8px 0",textAlign:"left"}}>{L.signOut||"Sign Out"}</button>
                 </div>
               ):(
@@ -158,15 +158,15 @@ export default function Nav({page,setPage,cartCount,user,setUser,onSearch,onCart
 
   return (
     <nav style={{position:"fixed",top:0,left:0,right:0,zIndex:200,background:scrolled||megaOpen?"rgba(231,232,225,0.98)":"transparent",backdropFilter:scrolled||megaOpen?"blur(16px)":"none",borderBottom:scrolled||megaOpen?`1px solid ${C.lgray}`:"none",boxShadow:scrolled||megaOpen?"0 1px 0 rgba(0,0,0,0.04)":"none",transition:"all 0.3s ease"}}>
-      <div style={{maxWidth:1360,margin:"0 auto",padding:scrolled?"16px 40px":"24px 40px",display:"flex",alignItems:"center",justifyContent:"space-between",minHeight:72,transition:"padding 0.3s ease"}}>
+      <div style={{maxWidth:1360,margin:"0 auto",padding:scrolled?"16px 40px":"24px 40px",display:"flex",alignItems:"center",justifyContent:"space-between",minHeight:72,transition:"padding 0.3s ease",position:"relative"}}>
 
         {/* LEFT — Logo */}
         <button onClick={()=>setPage("home")} style={{background:"none",border:"none",padding:0,lineHeight:1,flexShrink:0,cursor:"pointer"}}>
-          <Logo color={C.black} size={1}/>
+          <Logo size={1.6}/>
         </button>
 
         {/* CENTER — Nav links */}
-        <div style={{display:"flex",gap:44,alignItems:"center"}}>
+        <div style={{display:"flex",gap:44,alignItems:"center",position:"absolute",left:"50%",transform:"translateX(-50%)"}}>
           <button onClick={()=>setMegaOpen(!megaOpen)} style={{background:"none",border:"none",fontFamily:"'TT Interphases Pro',sans-serif",fontSize:12,fontWeight:500,letterSpacing:"0.1em",textTransform:"uppercase",color:page==="catalog"?C.tan:C.black,transition:"color 0.2s",display:"flex",alignItems:"center",gap:6,cursor:"pointer"}}>
             {L.collection} <span style={{fontSize:9,opacity:0.6,display:"inline-block",transform:megaOpen?"rotate(180deg)":"none",transition:"transform 0.2s"}}>▼</span>
           </button>
@@ -174,7 +174,7 @@ export default function Nav({page,setPage,cartCount,user,setUser,onSearch,onCart
           <button onClick={()=>setPage("about")} style={{background:"none",border:"none",fontFamily:"'TT Interphases Pro',sans-serif",fontSize:12,fontWeight:500,letterSpacing:"0.1em",textTransform:"uppercase",color:page==="about"?C.tan:C.black,transition:"color 0.2s",cursor:"pointer"}}>{L.about}</button>
         </div>
 
-        {/* RIGHT — Lang + 4 icons */}
+        {/* RIGHT — Icons */}
         <div style={{display:"flex",gap:4,alignItems:"center"}}>
 
           {/* Language switcher */}

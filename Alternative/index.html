@@ -3,13 +3,46 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="description" content="Alternative Concept Store — curated luxury pre-order fashion from Shanghai. Reserve with 50% deposit. Tbilisi, Georgia." />
-    <title>Alternative Concept Store</title>
-    <meta property="og:title" content="Alternative Concept Store" />
-    <meta property="og:description" content="Curated luxury pre-order fashion from Shanghai. Reserve with 50% deposit. Tbilisi, Georgia." />
+    <meta name="theme-color" content="#1a1a1a" />
+
+    <!-- Default SEO (overridden per page by react-helmet-async) -->
+    <title>Alternative — Curated Designer Fashion | Tbilisi Concept Store</title>
+    <meta name="description" content="Curated designer fashion sourced from verified European suppliers. Pre-order luxury bags, shoes, clothing and watches — shipped to Tbilisi, Georgia." />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://alternative.ge/" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Alternative — Curated Designer Fashion | Tbilisi Concept Store" />
+    <meta property="og:description" content="Curated designer fashion sourced from verified European suppliers. Pre-order luxury bags, shoes, clothing and watches — shipped to Tbilisi, Georgia." />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://alternative.ge/" />
+    <meta property="og:site_name" content="Alternative" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="ka_GE" />
+    <meta property="og:locale:alternate" content="ru_RU" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Alternative — Curated Designer Fashion" />
+    <meta name="twitter:description" content="Curated designer fashion sourced from verified European suppliers. Shipped to Tbilisi." />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/images/logo.png" />
+    <link rel="apple-touch-icon" href="/images/logo.png" />
+
+    <!-- Preload critical fonts -->
+    <link rel="preload" href="/fonts/Alido.otf" as="font" type="font/otf" crossorigin />
+    <link rel="preload" href="/fonts/TT-Interphases-Pro-Regular.ttf" as="font" type="font/ttf" crossorigin />
   </head>
   <body>
+    <!-- Noscript fallback for SEO crawlers that don't execute JS -->
+    <noscript>
+      <div style="padding:40px;text-align:center;font-family:sans-serif">
+        <h1>Alternative — Curated Designer Fashion</h1>
+        <p>Curated designer fashion sourced from verified European suppliers. Pre-order luxury bags, shoes, clothing and watches — shipped to Tbilisi, Georgia.</p>
+        <p>Please enable JavaScript to use this site.</p>
+      </div>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

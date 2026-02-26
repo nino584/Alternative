@@ -46,7 +46,7 @@ export default function Footer({setPage,L,mobile}) {
 
           {/* Brand column */}
           <div style={mobile?{gridColumn:"1 / -1"}:{}}>
-            <div style={{marginBottom:20}}><Logo color={C.white} size={mobile?0.7:0.85}/></div>
+            <div style={{marginBottom:20}}><Logo size={mobile?0.7:0.85} variant="white"/></div>
             <p style={{...T.bodySm,color:"rgba(168,162,150,0.55)",lineHeight:1.9,maxWidth:280,marginBottom:24,fontSize:mobile?12:13}}>{L.footerDesc}</p>
 
             {/* Social icons — inline, monochrome, minimal */}

@@ -3,35 +3,40 @@ import { useParams } from 'react-router-dom';
 import { C, T } from '../constants/theme.js';
 import { BI } from '../constants/images.js';
 import { PRODUCTS } from '../constants/data.js';
-import { VIDEO_VERIFICATION_GEL, WHATSAPP_NUMBER } from '../constants/config.js';
+import { VIDEO_VERIFICATION_GEL } from '../constants/config.js';
 import HoverBtn from '../components/ui/HoverBtn.jsx';
 import ProductCard from '../components/ui/ProductCard.jsx';
 import SizeFitWidget from '../components/ui/SizeFitWidget.jsx';
 import SizeGuideModal from '../components/ui/SizeGuideModal.jsx';
 import { IconCheck, IconLock, IconPackage, IconVideo } from '../components/icons/Icons.jsx';
-import PreorderModal from './PreorderModal.jsx';
 import Footer from '../components/layout/Footer.jsx';
+import SEO from '../components/SEO.jsx';
+import { pageMeta, productSchema, breadcrumbSchema, productAlt } from '../utils/seo.js';
 
 // ── PRODUCT PAGE ──────────────────────────────────────────────────────────────
-export default function ProductPage({mobile,product:productProp,setPage,setSelected,addToCart,toast,wishlist,onWishlist,L}) {
-  const { id: idParam } = useParams();
-  const p = productProp ?? (idParam ? PRODUCTS.find(x => x.id === parseInt(idParam, 10)) ?? null : null);
+export default function ProductPage({mobile,product:productProp,setPage,setSelected,addToCart,toast,wishlist,onWishlist,L,products:productsProp}) {
+  const { slug } = useParams();
+  const ALL_PRODUCTS = productsProp || PRODUCTS;
+  // Support both slug format "id-brand-name" and plain id
+  const idFromSlug = slug ? parseInt(slug.split("-")[0], 10) : NaN;
+  const p = productProp ?? (slug ? ALL_PRODUCTS.find(x => x.id === idFromSlug) ?? null : null);
   const [selectedSize,setSelectedSize]=useState(null);
-  const [showModal,setShowModal]=useState(false);
   const [sizeError,setSizeError]=useState(false);
   const [activeImg,setActiveImg]=useState(0);
   const [showGuide,setShowGuide]=useState(false);
+  const [addedFeedback,setAddedFeedback]=useState(false);
+  const [customerNotes,setCustomerNotes]=useState("");
 
   // All hooks must run before early return
-  const imgs=p?[p.img,BI.bag_stone,BI.packaging,BI.ribbon]:[];
+  const imgs=p?(p.images&&p.images.length>1?p.images:[p.img,BI.bag_stone,BI.packaging,BI.ribbon]):[];
   const effectivePrice=p?(p.sale||p.price):0;
   const totalPrice=effectivePrice;
-  const related=p?PRODUCTS.filter(x=>x.section===p.section&&x.cat===p.cat&&x.id!==p.id).slice(0,4):[];
+  const related=p?ALL_PRODUCTS.filter(x=>x.section===p.section&&x.cat===p.cat&&x.id!==p.id).slice(0,4):[];
 
   // ── COMPLETE THE LOOK — smart outfit builder ──
   const outfit=(()=>{
     if(!p)return[];
-    const pool=PRODUCTS.filter(x=>x.section===p.section&&x.id!==p.id);
+    const pool=ALL_PRODUCTS.filter(x=>x.section===p.section&&x.id!==p.id);
     const catOrder={Bags:["Shoes","Clothing","Accessories","Watches"],Shoes:["Bags","Clothing","Accessories","Watches"],Clothing:["Bags","Shoes","Accessories","Watches"],Accessories:["Bags","Shoes","Clothing","Watches"],Watches:["Bags","Clothing","Shoes","Accessories"]};
     const prio=catOrder[p.cat]||["Bags","Shoes","Clothing","Accessories","Watches"];
     const picks=[];const used=new Set();
@@ -46,28 +51,47 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
   useEffect(()=>{setSelectedSize(null);setSizeError(false);setActiveImg(0);},[p?.id]);
 
   if (!p) return (
-    <div style={{paddingTop:180,textAlign:"center",minHeight:"100vh",background:C.cream}}>
-      <p style={{...T.displaySm,color:C.gray,marginBottom:24}}>{L.productNotFound}</p>
-      <HoverBtn onClick={()=>setPage("catalog")} variant="primary">{L.backToCollection}</HoverBtn>
+    <div style={{paddingTop:80,background:C.cream}}>
+      <div style={{textAlign:"center",padding:"100px 20px",minHeight:"60vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+        <p style={{...T.displaySm,color:C.gray,marginBottom:24}}>{L.productNotFound}</p>
+        <HoverBtn onClick={()=>setPage("catalog")} variant="primary">{L.backToCollection}</HoverBtn>
+      </div>
+      <Footer setPage={setPage} L={L} mobile={mobile}/>
     </div>
   );
 
-  const handleReserve=()=>{
+  const handleAddToCart=()=>{
     if (p.sizes.length>1&&p.sizes[0]!=="One Size"&&!selectedSize){setSizeError(true);return;}
     setSizeError(false);
-    setShowModal(true);
+    addToCart(p, selectedSize||"One Size", customerNotes.trim());
+    setAddedFeedback(true);
+    setCustomerNotes("");
+    toast(L.addedToCart||"Added to bag","success");
+    setTimeout(()=>setAddedFeedback(false),2000);
   };
 
   const wished=wishlist?.includes(p.id);
   const guideCategory=p.sub==="Shoes"?"Shoes":p.sub==="Bags"?"Bags":"Clothing";
 
+  const seoMeta = pageMeta("product", { product: p });
+  const seoSchema = [
+    productSchema(p),
+    breadcrumbSchema([
+      { name: "Home", url: "/" },
+      { name: p.section, url: "/catalog" },
+      { name: p.cat, url: "/catalog" },
+      { name: `${p.brand} ${p.name}` },
+    ]),
+  ];
+
   return (
     <div style={{paddingTop:80,background:C.cream}}>
+      <SEO {...seoMeta} schema={seoSchema} />
       <div style={{maxWidth:1360,margin:"0 auto",padding:"20px 40px 0",display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
         {[[L.home,"home"],[p.section,"catalog"],[L&&L.localNames&&L.localNames[p.name]||p.name,null]].map(([l,pg],i,arr)=>(
           <span key={i} style={{display:"flex",alignItems:"center",gap:6}}>
             {pg?<button onClick={()=>setPage(pg)} style={{background:"none",border:"none",...T.labelSm,color:C.gray,fontSize:8}}>{l}</button>
-              :<span style={{...T.labelSm,color:C.black,fontSize:8,overflow:"hidden",textOverflow:"ellipsis",maxWidth:200,whiteSpace:"nowrap"}}>{l}</span>}
+              :<span style={{...T.labelSm,color:C.black,fontSize:8,overflow:"hidden",textOverflow:"ellipsis",maxWidth:320,whiteSpace:"nowrap"}}>{l}</span>}
             {i<arr.length-1&&<span style={{color:C.lgray,fontSize:8,flexShrink:0}}>→</span>}
           </span>
         ))}
@@ -75,11 +99,11 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
 
       <div style={{maxWidth:1360,margin:"0 auto",padding:mobile?"16px 16px 60px":"28px 40px 80px",display:"grid",gridTemplateColumns:mobile?"1fr":"1fr 1fr",gap:mobile?28:72,alignItems:"start"}}>
         <div style={{position:mobile?"relative":"sticky",top:mobile?"auto":96}}>
-          <div style={{height:mobile?380:520,overflow:"hidden",marginBottom:3,position:"relative"}}>
-            <img src={imgs[activeImg]} alt={p.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+          <div style={{aspectRatio:"1/1",overflow:"hidden",marginBottom:3,position:"relative",background:"#ffffff"}}>
+            <img src={imgs[activeImg]} alt={productAlt(p)} loading={activeImg===0?"eager":"lazy"} onError={e=>{e.target.style.opacity="0.3";}} style={{width:"100%",height:"100%",objectFit:"contain"}}/>
             {p.sale&&<div style={{position:"absolute",top:14,left:14,background:C.red,padding:"5px 12px"}}><span style={{...T.label,color:C.white,fontSize:9}}>Sale</span></div>}
             <button onClick={()=>onWishlist&&onWishlist(p.id)}
-              style={{position:"absolute",top:14,right:14,background:wished?"rgba(177,154,122,0.9)":"rgba(255,255,255,0.85)",border:"none",width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s"}}>
+              style={{position:"absolute",top:14,right:14,background:wished?"rgba(177,154,122,0.9)":"rgba(255,255,255,0.85)",border:"none",width:44,height:44,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",transition:"all 0.2s"}}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill={wished?C.white:"none"} stroke={wished?C.white:C.gray} strokeWidth="1.5">
                 <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
               </svg>
@@ -87,8 +111,8 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:3}}>
             {imgs.map((src,i)=>(
-              <div key={i} onClick={()=>setActiveImg(i)} style={{height:78,overflow:"hidden",cursor:"pointer",border:`2px solid ${i===activeImg?C.tan:"transparent"}`,transition:"border-color 0.2s"}}>
-                <img src={src} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+              <div key={i} onClick={()=>setActiveImg(i)} style={{aspectRatio:"1/1",overflow:"hidden",cursor:"pointer",border:`2px solid ${i===activeImg?C.tan:"transparent"}`,transition:"border-color 0.2s",background:"#ffffff"}}>
+                <img src={src} alt="" style={{width:"100%",height:"100%",objectFit:"contain"}}/>
               </div>
             ))}
           </div>
@@ -130,10 +154,19 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
             </div>
           )}
 
-          {/* ── ORDER BUTTON — visible without scrolling ── */}
+          {/* ── CUSTOMER NOTES ── */}
+          <div style={{marginBottom:14}}>
+            <label style={{...T.labelSm,color:C.gray,fontSize:9,display:"block",marginBottom:6}}>{L.customerNotes||"NOTES / QUESTIONS"}</label>
+            <textarea value={customerNotes} onChange={e=>setCustomerNotes(e.target.value)}
+              placeholder={L.notesPlaceholder||"Size questions, color preferences…"}
+              rows={2} maxLength={500}
+              style={{width:"100%",padding:"10px 14px",border:`1px solid ${C.lgray}`,background:C.white,fontSize:13,color:C.black,outline:"none",fontFamily:"'TT Interphases Pro',sans-serif",resize:"vertical",lineHeight:1.5}}/>
+          </div>
+
+          {/* ── ADD TO BAG BUTTON ── */}
           <div style={{marginBottom:10}}>
-            <HoverBtn onClick={handleReserve} variant="primary" style={{width:"100%",padding:"16px 20px",fontSize:11}}>
-              {L.orderNow} — GEL {totalPrice}
+            <HoverBtn onClick={handleAddToCart} variant="primary" style={{width:"100%",padding:"16px 20px",fontSize:11,background:addedFeedback?"#2d6b45":undefined,borderColor:addedFeedback?"#2d6b45":undefined}}>
+              {addedFeedback?(L.addedToBag||"Added to Bag ✓"):`${L.addToBag||"Add to Bag"} — GEL ${totalPrice}`}
             </HoverBtn>
           </div>
           <p style={{...T.labelSm,color:C.gray,fontSize:9,textAlign:"center",marginBottom:24}}>{L.freeCancellation}</p>
@@ -233,7 +266,7 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
                 <div key={item.id} onClick={()=>{setPage("product",item);window.scrollTo({top:0,behavior:"smooth"});}}
                   style={{cursor:"pointer",position:"relative",transition:"transform 0.3s"}}>
                   <div style={{position:"relative",overflow:"hidden",marginBottom:12,background:C.offwhite}}>
-                    <img src={item.img} alt={item.name} style={{width:"100%",height:mobile?200:280,objectFit:"cover",transition:"transform 0.4s"}}
+                    <img src={item.img} alt={item.name} style={{width:"100%",aspectRatio:"1/1",objectFit:"contain",transition:"transform 0.4s"}}
                       onMouseEnter={e=>e.currentTarget.style.transform="scale(1.03)"}
                       onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}/>
                     <div style={{position:"absolute",top:10,left:10,background:"rgba(0,0,0,0.75)",padding:"4px 10px"}}>
@@ -284,9 +317,6 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
 
       <Footer setPage={setPage} L={L} mobile={mobile}/>
 
-      {showModal&&<PreorderModal product={p} selectedSize={selectedSize||"One Size"} L={L} onClose={()=>setShowModal(false)}
-        setPage={setPage}
-        onComplete={data=>{addToCart(data);toast(L&&L.orderReserved||"Order reserved!","success");}}/>}
       {showGuide&&<SizeGuideModal onClose={()=>setShowGuide(false)} category={guideCategory} L={L}/>}
     </div>
   );

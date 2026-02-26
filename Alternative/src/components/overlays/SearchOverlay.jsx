@@ -3,11 +3,12 @@ import { C, T } from '../../constants/theme.js';
 import { PRODUCTS } from '../../constants/data.js';
 
 // ── SEARCH OVERLAY ────────────────────────────────────────────────────────────
-export default function SearchOverlay({onClose,setPage,setSelected,L,mobile}) {
+export default function SearchOverlay({onClose,setPage,setSelected,L,mobile,products:productsProp}) {
   const [q,setQ]=useState("");
   const ref=useRef(null);
   useEffect(()=>{ref.current?.focus();},[]);
-  const results=q.length>1?PRODUCTS.filter(p=>
+  const ALL_PRODUCTS = productsProp || PRODUCTS;
+  const results=q.length>1?ALL_PRODUCTS.filter(p=>
     p.name.toLowerCase().includes(q.toLowerCase())||
     p.cat.toLowerCase().includes(q.toLowerCase())||
     p.section.toLowerCase().includes(q.toLowerCase())||

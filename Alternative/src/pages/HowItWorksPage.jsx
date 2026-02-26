@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { C, T } from '../constants/theme.js';
 import { ORDER_STATUSES } from '../constants/data.js';
 import Footer from '../components/layout/Footer.jsx';
+import SEO from '../components/SEO.jsx';
+import { pageMeta, faqSchema, breadcrumbSchema } from '../utils/seo.js';
 
 // ── HOW IT WORKS ──────────────────────────────────────────────────────────────
 export default function HowItWorksPage({setPage,L,mobile}) {
@@ -21,8 +23,15 @@ export default function HowItWorksPage({setPage,L,mobile}) {
     [L.faqQ5,L.faqA5],
     [L.faqQ6,L.faqA6],
   ];
+  const howMeta = pageMeta("how");
+  const howSchema = [
+    faqSchema(faqs.map(([q, a]) => ({ question: q, answer: a }))),
+    breadcrumbSchema([{ name: "Home", url: "/" }, { name: "How It Works" }]),
+  ];
+
   return (
     <div style={{paddingTop:mobile?52:80,background:C.cream}}>
+      <SEO {...howMeta} schema={howSchema} />
       <div style={{background:C.black,padding:mobile?"48px 0":"72px 0"}}>
         <div style={{maxWidth:900,margin:"0 auto",padding:mobile?"0 16px":"0 40px",textAlign:"center"}}>
           <p style={{...T.labelSm,color:C.tan,marginBottom:18}}>{L.ourProcessLabel}</p>

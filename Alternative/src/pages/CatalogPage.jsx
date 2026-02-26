@@ -1,13 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { C, T } from '../constants/theme.js';
 import { BI } from '../constants/images.js';
 import { PRODUCTS } from '../constants/data.js';
 import HoverBtn from '../components/ui/HoverBtn.jsx';
 import ProductCard from '../components/ui/ProductCard.jsx';
 import Footer from '../components/layout/Footer.jsx';
+import SEO from '../components/SEO.jsx';
+import { pageMeta, collectionSchema } from '../utils/seo.js';
 
 // ── CATALOG PAGE ──────────────────────────────────────────────────────────────
-export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,initSection,initSub,L,toast,user,setUser,mobile}) {
+export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,initSection,initSub,L,toast,user,setUser,mobile,products:productsProp}) {
   const [section,setSection]=useState(initSection||"Womenswear");
   const [subCat,setSubCat]=useState("All");
   const [price,setPrice]=useState("all");
@@ -33,23 +35,31 @@ export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,ini
     Kidswear:[[L.newIn,"New In"],[L.clothing,"Clothing"],[L.shoes,"Shoes"],[L.accessories,"Accessories"]],
   };
 
-  let filtered=[...PRODUCTS];
-  if (section!=="All") filtered=filtered.filter(p=>p.section===section);
-  if (subCat==="New In") filtered=filtered.filter(p=>p.tag==="New");
-  else if (subCat==="Sale") filtered=filtered.filter(p=>p.sale||p.tag==="Sale");
-  else if (subCat==="Brands") { /* handled by navigation */ }
-  else if (subCat!=="All") filtered=filtered.filter(p=>p.sub===subCat||p.cat===subCat);
-  if (price==="under200") filtered=filtered.filter(p=>(p.sale||p.price)<200);
-  else if (price==="200-400") filtered=filtered.filter(p=>{const ep=p.sale||p.price;return ep>=200&&ep<=400;});
-  else if (price==="over400") filtered=filtered.filter(p=>(p.sale||p.price)>400);
-  if (sortBy==="new") filtered.sort((a,b)=>(b.tag==="New"?1:0)-(a.tag==="New"?1:0));
-  else if (sortBy==="low") filtered.sort((a,b)=>(a.sale||a.price)-(b.sale||b.price));
-  else if (sortBy==="high") filtered.sort((a,b)=>(b.sale||b.price)-(a.sale||a.price));
+  const ALL_PRODUCTS = productsProp || PRODUCTS;
+  const filtered = useMemo(() => {
+    let result=[...ALL_PRODUCTS];
+    if (section!=="All") result=result.filter(p=>p.section===section);
+    if (subCat==="New In") result=result.filter(p=>p.tag==="New");
+    else if (subCat==="Sale") result=result.filter(p=>p.sale||p.tag==="Sale");
+    else if (subCat==="Brands") { /* handled by navigation */ }
+    else if (subCat!=="All") result=result.filter(p=>p.sub===subCat||p.cat===subCat);
+    if (price==="under200") result=result.filter(p=>(p.sale||p.price)<200);
+    else if (price==="200-400") result=result.filter(p=>{const ep=p.sale||p.price;return ep>=200&&ep<=400;});
+    else if (price==="over400") result=result.filter(p=>(p.sale||p.price)>400);
+    if (sortBy==="new") result.sort((a,b)=>(b.tag==="New"?1:0)-(a.tag==="New"?1:0));
+    else if (sortBy==="low") result.sort((a,b)=>(a.sale||a.price)-(b.sale||b.price));
+    else if (sortBy==="high") result.sort((a,b)=>(b.sale||b.price)-(a.sale||a.price));
+    return result;
+  }, [ALL_PRODUCTS, section, subCat, price, sortBy]);
 
   const sectionBgs={Womenswear:BI.bag_stone,Menswear:BI.man_editorial,Kidswear:BI.packaging};
 
+  const catalogMeta = pageMeta("catalog", { section: section !== "All" ? section : null, cat: subCat !== "All" ? subCat : null });
+  const catalogSchema = collectionSchema(filtered, section !== "All" ? `${section} Collection` : "All Products", "/catalog");
+
   return (
     <div style={{paddingTop:mobile?52:80,minHeight:"100vh",background:C.cream}}>
+      <SEO {...catalogMeta} schema={catalogSchema} />
       <div style={{padding:mobile?"20px 0 0":"40px 0 0",borderBottom:`1px solid ${C.lgray}`}}>
         <div style={{maxWidth:1360,margin:"0 auto",padding:mobile?"0 16px":"0 40px"}}>
           <p style={{...T.labelSm,color:C.tan,marginBottom:10}}>{L.shop}</p>
@@ -211,7 +221,7 @@ export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,ini
 
       {section!=="All"&&sectionBgs[section]&&(
         <div style={{position:"relative",height:160,overflow:"hidden"}}>
-          <img src={sectionBgs[section]} alt={section} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"center 35%"}}/>
+          <img src={sectionBgs[section]} alt={`${section} collection at Alternative`} loading="lazy" style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"center 35%"}}/>
           <div style={{position:"absolute",inset:0,background:"rgba(25,25,25,0.48)"}}/>
           <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",padding:"0 56px"}}>
             <h2 style={{...T.displaySm,color:C.white}}>{section}</h2>

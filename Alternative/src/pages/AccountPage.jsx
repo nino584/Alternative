@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { C, T } from '../constants/theme.js';
-import { PRODUCTS } from '../constants/data.js';
+import { PRODUCTS as IMPORTED_PRODUCTS } from '../constants/data.js';
 import HoverBtn from '../components/ui/HoverBtn.jsx';
 import ProductCard from '../components/ui/ProductCard.jsx';
-import Footer from '../components/layout/Footer.jsx';
 
 const STORAGE = { addr: "alternative_addresses", pay: "alternative_payments" };
 function load(key, fb) { try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : fb; } catch { return fb; } }
@@ -161,7 +160,7 @@ function EmptyState({ icon, title, subtitle, action, actionLabel }) {
 }
 
 // ── ACCOUNT PAGE ─────────────────────────────────────────────────────────────
-export default function AccountPage({ mobile, user, setUser, setPage, orders, wishlist, onWishlist, toast, L }) {
+export default function AccountPage({ mobile, user, setUser, setPage, orders, wishlist, onWishlist, toast, L, products: productsProp, onLogout }) {
   const [tab, setTab] = useState("overview");
   const [addresses, setAddresses] = useState(() => load(STORAGE.addr, []));
   const [payments, setPayments] = useState(() => load(STORAGE.pay, []));
@@ -195,12 +194,15 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
   useEffect(() => { save(STORAGE.addr, addresses); }, [addresses]);
   useEffect(() => { save(STORAGE.pay, payments); }, [payments]);
 
+  if (!user) return null;
+
   const resetAddrForm = useCallback(() => { setAName(""); setALine1(""); setALine2(""); setACity(""); setAPostal(""); setACountry("Georgia"); setAPhone(""); }, []);
   const resetPayForm = useCallback(() => { setCNumber(""); setCHolder(""); setCExpiry(""); setCType("visa"); }, []);
 
   if (!user) return null;
 
-  const wishlistItems = (wishlist || []).map(id => PRODUCTS.find(p => p.id === id)).filter(Boolean);
+  const ALL_PRODUCTS = productsProp || IMPORTED_PRODUCTS;
+  const wishlistItems = (wishlist || []).map(id => ALL_PRODUCTS.find(p => p.id === id)).filter(Boolean);
 
   // ── Handlers ──
   const saveAddress = () => {
@@ -291,8 +293,8 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
             <h1 style={{ ...T.displayMd, color: C.black }}>{L.welcome || "Welcome,"} {user.name ? user.name.split(" ")[0] : ""}</h1>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
-            {user.isAdmin && <HoverBtn onClick={() => setPage("admin")} variant="tan" style={{ padding: "10px 20px", fontSize: 10 }}>{L.adminPanel || "Admin Panel"}</HoverBtn>}
-            <HoverBtn onClick={() => { setUser(null); toast(L.signedOut || "Signed out.", "success"); setPage("home"); }} variant="secondary" style={{ padding: "10px 20px", fontSize: 10 }}>{L.signOut || "Sign Out"}</HoverBtn>
+            {user.role==="admin" && <HoverBtn onClick={() => window.open("http://localhost:5174","_blank")} variant="tan" style={{ padding: "10px 20px", fontSize: 10 }}>{L.adminPanel || "Admin Panel"}</HoverBtn>}
+            <HoverBtn onClick={() => { if(onLogout)onLogout(); else{setUser(null);setPage("home");} toast(L.signedOut || "Signed out.", "success"); }} variant="secondary" style={{ padding: "10px 20px", fontSize: 10 }}>{L.signOut || "Sign Out"}</HoverBtn>
           </div>
         </div>
       </div>
@@ -397,22 +399,26 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
                     <p style={{ ...T.label, color: C.black, fontSize: 11 }}>{L.recentOrders || "Recent Orders"}</p>
                     <button onClick={() => setPage("orders")} style={{ background: "none", border: "none", ...T.labelSm, color: C.tan, fontSize: 9, textDecoration: "underline", textUnderlineOffset: 3, cursor: "pointer" }}>{L.viewAll || "View all →"}</button>
                   </div>
-                  {orders.slice(0, 3).map(o => (
+                  {orders.slice(0, 3).map(o => {
+                    const first = o.items ? o.items[0] : o;
+                    const itemCount = o.items ? o.items.length : 1;
+                    return (
                     <div key={o.orderId} style={{ display: "flex", gap: 14, padding: 16, background: C.white, marginBottom: 2, cursor: "pointer", transition: "background 0.15s" }}
                       onClick={() => setPage("orders")}
                       onMouseEnter={e => e.currentTarget.style.background = C.offwhite}
                       onMouseLeave={e => e.currentTarget.style.background = C.white}>
-                      <img src={o.img} alt={o.name} style={{ width: 56, height: 56, objectFit: "cover", flexShrink: 0 }} />
+                      <img src={first.img} alt={first.name} style={{ width: 56, height: 56, objectFit: "cover", flexShrink: 0 }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ ...T.heading, color: C.black, fontSize: 13, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{o.name}</p>
+                        <p style={{ ...T.heading, color: C.black, fontSize: 13, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{itemCount > 1 ? `${itemCount} items` : first.name}</p>
                         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                           <div style={{ width: 5, height: 5, borderRadius: "50%", background: C.tan }} />
                           <span style={{ ...T.labelSm, fontSize: 8, color: C.tan }}>{L.processing || "Processing"}</span>
                         </div>
                       </div>
-                      <p style={{ ...T.heading, color: C.black, fontSize: 14, flexShrink: 0 }}>GEL {o.sale || o.price}</p>
+                      <p style={{ ...T.heading, color: C.black, fontSize: 14, flexShrink: 0 }}>GEL {o.total || first.sale || first.price}</p>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 
@@ -448,29 +454,32 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
                 <EmptyState icon={icons.orders} title={L.noOrdersYet || "No orders yet"} subtitle={L.startBrowsing || "When you place an order, it will appear here."} action={() => setPage("catalog")} actionLabel={L.exploreCollection || "Explore Collection"} />
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  {orders.map(o => (
+                  {orders.map(o => {
+                    const first = o.items ? o.items[0] : o;
+                    const itemCount = o.items ? o.items.length : 1;
+                    return (
                     <div key={o.orderId} style={{ display: "flex", gap: 16, padding: 20, background: C.white, cursor: "pointer", transition: "background 0.15s" }}
                       onClick={() => setPage("orders")}
                       onMouseEnter={e => e.currentTarget.style.background = C.offwhite}
                       onMouseLeave={e => e.currentTarget.style.background = C.white}>
-                      <img src={o.img} alt={o.name} style={{ width: 72, height: 72, objectFit: "cover", flexShrink: 0 }} />
+                      <img src={first.img} alt={first.name} style={{ width: 72, height: 72, objectFit: "cover", flexShrink: 0 }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ ...T.heading, color: C.black, fontSize: 14, marginBottom: 4 }}>{o.name}</p>
+                        <p style={{ ...T.heading, color: C.black, fontSize: 14, marginBottom: 4 }}>{itemCount > 1 ? `${itemCount} items` : first.name}</p>
                         <p style={{ ...T.labelSm, color: C.gray, fontSize: 8, marginBottom: 8 }}>{o.orderId}</p>
                         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                           <div style={{ display: "flex", gap: 5, alignItems: "center", background: `${C.tan}15`, padding: "3px 10px" }}>
                             <div style={{ width: 5, height: 5, borderRadius: "50%", background: C.tan }} />
                             <span style={{ ...T.labelSm, fontSize: 8, color: C.tan }}>{L.processing || "Processing"}</span>
                           </div>
-                          {o.selectedSize && <span style={{ ...T.labelSm, fontSize: 8, color: C.gray }}>{L.size || "Size"}: {o.selectedSize}</span>}
                           {o.wantVideo && <span style={{ ...T.labelSm, fontSize: 8, color: C.green }}>VIDEO</span>}
                         </div>
                       </div>
                       <div style={{ textAlign: "right", flexShrink: 0 }}>
-                        <p style={{ ...T.heading, color: C.black, fontSize: 15 }}>GEL {o.sale || o.price}</p>
+                        <p style={{ ...T.heading, color: C.black, fontSize: 15 }}>GEL {o.total || 0}</p>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -720,7 +729,6 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
           )}
         </div>
       </div>
-      <Footer setPage={setPage} L={L} mobile={mobile}/>
     </div>
   );
 }
