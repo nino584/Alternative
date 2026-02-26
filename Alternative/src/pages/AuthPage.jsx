@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { C, T } from '../constants/theme.js';
 import { Logo } from '../components/layout/Logo.jsx';
 import HoverBtn from '../components/ui/HoverBtn.jsx';
+import Footer from '../components/layout/Footer.jsx';
 
 // ── AUTH PAGE ─────────────────────────────────────────────────────────────────
 export default function AuthPage({mobile,setPage,setUser,toast,L}) {
@@ -95,6 +96,7 @@ export default function AuthPage({mobile,setPage,setUser,toast,L}) {
           </p>
         )}
       </div>
+      <Footer setPage={setPage} L={L} mobile={mobile}/>
     </div>
   );
 }
