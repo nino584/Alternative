@@ -28,7 +28,7 @@ export default function AuthPage({mobile,setPage,setUser,toast,L}) {
       }
     } else {
       if (!form.name||!form.email||!form.password){setError(L?.allRequired||"All marked fields are required.");return;}
-      if (form.password.length<8||!/[A-Z]/.test(form.password)||!/[0-9]/.test(form.password)){setError(L?.passwordMin||"Password must be at least 8 characters with an uppercase letter and number.");return;}
+      if (form.password.length<8||!/[A-Z]/.test(form.password)||!/[a-z]/.test(form.password)||!/[0-9]/.test(form.password)||!/[!@#$%^&*(),.?":{}|<>]/.test(form.password)){setError(L?.passwordMin||"Min 8 chars with uppercase, lowercase, number, and special character (!@#$%...).");return;}
       if (!form.email.includes("@")){setError(L?.validEmail||"Enter a valid email address.");return;}
       setLoading(true);
       try {
@@ -89,7 +89,7 @@ export default function AuthPage({mobile,setPage,setUser,toast,L}) {
           <input type="password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} placeholder="••••••••"
             onKeyDown={e=>e.key==="Enter"&&handleSubmit()}
             style={{width:"100%",padding:"12px 14px",border:`1px solid ${C.lgray}`,fontSize:14,color:C.black,outline:"none"}}/>
-          {mode==="register"&&<p style={{...T.bodySm,color:C.gray,fontSize:9,marginTop:6}}>Min 8 characters, one uppercase letter, one number</p>}
+          {mode==="register"&&<p style={{...T.bodySm,color:C.gray,fontSize:9,marginTop:6}}>Min 8 chars: uppercase, lowercase, number, special character</p>}
         </div>
         <HoverBtn onClick={handleSubmit} variant="primary" style={{width:"100%",padding:"15px"}} disabled={loading}>
           {loading?<span style={{display:"inline-block",width:16,height:16,border:`2px solid rgba(255,255,255,0.3)`,borderTop:`2px solid ${C.white}`,borderRadius:"50%",animation:"spinAnim 0.7s linear infinite"}}/>:mode==="login"?(L?.signInBtn||"Sign In"):(L?.createAccount||"Create Account")}

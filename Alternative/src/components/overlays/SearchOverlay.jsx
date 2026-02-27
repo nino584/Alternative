@@ -7,6 +7,7 @@ export default function SearchOverlay({onClose,setPage,setSelected,L,mobile,prod
   const [q,setQ]=useState("");
   const ref=useRef(null);
   useEffect(()=>{ref.current?.focus();},[]);
+  useEffect(()=>{const fn=e=>{if(e.key==="Escape")onClose();};window.addEventListener("keydown",fn);return()=>window.removeEventListener("keydown",fn);},[onClose]);
   const ALL_PRODUCTS = productsProp || PRODUCTS;
   const results=q.length>1?ALL_PRODUCTS.filter(p=>
     p.name.toLowerCase().includes(q.toLowerCase())||
@@ -15,7 +16,7 @@ export default function SearchOverlay({onClose,setPage,setSelected,L,mobile,prod
     p.color.toLowerCase().includes(q.toLowerCase())
   ):[];
   return (
-    <div style={{position:"fixed",inset:0,zIndex:400,background:"rgba(25,25,25,0.85)",display:"flex",flexDirection:"column",alignItems:"center",paddingTop:mobile?70:120}}>
+    <div role="dialog" aria-label={L&&L.search||"Search"} aria-modal="true" style={{position:"fixed",inset:0,zIndex:400,background:"rgba(25,25,25,0.85)",display:"flex",flexDirection:"column",alignItems:"center",paddingTop:mobile?70:120}}>
       <div onClick={onClose} style={{position:"absolute",inset:0}}/>
       <div style={{position:"relative",width:"100%",maxWidth:680,padding:"0 24px"}}>
         <div style={{display:"flex",alignItems:"center",background:C.cream,padding:"16px 20px",gap:14}}>
@@ -25,7 +26,7 @@ export default function SearchOverlay({onClose,setPage,setSelected,L,mobile,prod
           <input ref={ref} value={q} onChange={e=>setQ(e.target.value)}
             placeholder={L&&L.searchPlaceholder||"Search…"}
             style={{flex:1,border:"none",background:"transparent",fontSize:18,color:C.black,outline:"none",...T.body}}/>
-          <button onClick={onClose} style={{background:"none",border:"none",color:C.gray,fontSize:22,lineHeight:1}}>×</button>
+          <button onClick={onClose} aria-label="Close search" style={{background:"none",border:"none",color:C.gray,fontSize:22,lineHeight:1,cursor:"pointer",width:44,height:44,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
         </div>
         {results.length>0&&(
           <div style={{background:C.cream,borderTop:`1px solid ${C.lgray}`,maxHeight:400,overflow:"auto"}}>
@@ -34,7 +35,7 @@ export default function SearchOverlay({onClose,setPage,setSelected,L,mobile,prod
                 style={{display:"flex",gap:14,padding:"14px 20px",cursor:"pointer",transition:"background 0.15s",borderBottom:`1px solid ${C.lgray}`}}
                 onMouseEnter={e=>e.currentTarget.style.background=C.offwhite}
                 onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                <img src={p.img} alt={p.name} style={{width:48,height:48,objectFit:"cover",flexShrink:0}}/>
+                <img src={p.img} alt={p.name} loading="lazy" width="48" height="48" style={{width:48,height:48,objectFit:"cover",flexShrink:0}}/>
                 <div>
                   <p style={{...T.heading,color:C.black,marginBottom:3,fontSize:13}}>{L&&L.localNames&&L.localNames[p.name]||p.name}</p>
                   <p style={{...T.labelSm,color:C.gray,fontSize:9}}>{p.section} · {p.cat} · GEL {p.sale||p.price}</p>

@@ -262,7 +262,7 @@ export default function StylistChat({ mobile, lang, setPage, L }) {
     } else if (action === "track") {
       addUser(t.trackOrder);
       setFlow("track");
-      const stored = JSON.parse(localStorage.getItem("alt_orders") || "[]");
+      const stored = JSON.parse(localStorage.getItem("alternative_orders") || "[]");
       if (stored.length === 0) {
         addBot(t.noOrders, [
           { label: t.browseCollection, action: "browse" },
@@ -270,7 +270,7 @@ export default function StylistChat({ mobile, lang, setPage, L }) {
         ]);
       } else {
         const lines = stored.map((o, i) =>
-          `${t.orderStatus} #${o.id || i + 1}: ${L?.localNames?.[o.name] || o.name} — ${o.status || "Processing"}`
+          `${t.orderStatus} #${o.orderId || i + 1}: ${L?.localNames?.[o.items?.[0]?.name] || o.items?.[0]?.name || "Item"} — ${o.status || "Processing"}`
         ).join("\n");
         addBot(t.trackAsk + "\n\n" + lines, [
           { label: t.backToMenu, action: "menu" },
@@ -425,7 +425,7 @@ export default function StylistChat({ mobile, lang, setPage, L }) {
             </div>
             <div style={{ flex: 1 }}>
               <p style={{ ...T.label, color: C.white, fontSize: 12, marginBottom: 1 }}>Alternative</p>
-              <p style={{ ...T.labelSm, color: C.tan, fontSize: 8, letterSpacing: "0.1em" }}>{t.poweredBy}</p>
+              <p style={{ ...T.labelSm, color: C.tan, fontSize: 10, letterSpacing: "0.1em" }}>{t.poweredBy}</p>
             </div>
             {mobile && (
               <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
@@ -465,9 +465,9 @@ export default function StylistChat({ mobile, lang, setPage, L }) {
                           boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
                           transition: "transform 0.2s",
                         }}>
-                        <img src={p.img} alt={p.name} style={{ width: "100%", height: 90, objectFit: "cover" }} />
+                        <img src={p.img} alt={p.name} loading="lazy" width="100" height="90" style={{ width: "100%", height: 90, objectFit: "cover" }} />
                         <div style={{ padding: "6px 8px" }}>
-                          <p style={{ ...T.labelSm, color: C.tan, fontSize: 6, letterSpacing: "0.08em" }}>{p.brand}</p>
+                          <p style={{ ...T.labelSm, color: C.tan, fontSize: 9, letterSpacing: "0.08em" }}>{p.brand}</p>
                           <p style={{ ...T.bodySm, color: C.black, fontSize: 9, lineHeight: 1.2, marginBottom: 2 }}>
                             {L?.localNames?.[p.name] || p.name}
                           </p>

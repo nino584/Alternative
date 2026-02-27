@@ -27,12 +27,13 @@ export default function AboutPage({setPage,L,mobile}) {
       <div style={{padding:"64px 0",background:C.offwhite}}>
         <div style={{maxWidth:1360,margin:"0 auto",padding:mobile?"0 16px":"0 40px",display:"grid",gridTemplateColumns:mobile?"1fr":"1fr 1fr",gap:mobile?28:64,alignItems:"center"}}>
           <div style={{height:400,overflow:"hidden"}}><img src={BI.bag_stone} alt="Quality assurance process at Alternative" loading="lazy" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
-          <div>
-            <p style={{...T.labelSm,color:C.tan,marginBottom:16}}>{L&&L.qualityAssurance||'Quality Assurance'}</p>
-            <h2 style={{...T.displayMd,color:C.black,marginBottom:20}}>{L&&L.yourEyes||'Your eyes at the source.'}</h2>
-            <p style={{...T.body,color:C.gray,lineHeight:1.9,marginBottom:16}}>{L&&L.qaDesc1||'We work with a dedicated verification team that physically inspects every item — checking stitching, hardware, and material quality.'}</p>
-            <p style={{...T.body,color:C.gray,lineHeight:1.9,marginBottom:32}}>{L&&L.qaDesc2||'This is the reason you can trust what arrives at your door.'}</p>
-            <HoverBtn onClick={()=>setPage("how")} variant="primary">Our Process →</HoverBtn>
+          <div style={{minWidth:0}}>
+            <p style={{...T.labelSm,color:C.tan,marginBottom:16,letterSpacing:"0.2em"}}>{L&&L.qualityAssurance||'WHY WE\'RE DIFFERENT'}</p>
+            <h2 style={{...T.displayMd,color:C.black,marginBottom:20,lineHeight:1.15}}>{L&&L.yourEyes||'You see the actual item before it arrives.'}</h2>
+            <p style={{...T.body,color:C.gray,lineHeight:1.9,marginBottom:16}}>{L&&L.qaDesc1||'Most stores show you a stock photo and hope for the best. We show you YOUR specific piece — on camera, in natural light, every stitch and detail visible.'}</p>
+            <p style={{...T.body,color:C.gray,lineHeight:1.9,marginBottom:20}}>{L&&L.qaDesc2||'Want proof? Add video verification to your order.'}</p>
+            <p style={{...T.labelSm,color:C.tan,marginBottom:28,letterSpacing:"0.18em",fontSize:9}}>HAND-PICKED · CAMERA-VERIFIED · ZERO SURPRISES</p>
+            <HoverBtn onClick={()=>setPage("video-verification")} variant="primary">{L&&L.learnMore2||'Learn More →'}</HoverBtn>
           </div>
         </div>
       </div>

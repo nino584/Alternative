@@ -11,10 +11,10 @@ export default memo(function ProductCard({product:p,onSelect,wishlist,onWishlist
       <div style={{aspectRatio:"1/1",overflow:"hidden",position:"relative",background:"#ffffff"}}>
         <img src={p.img} alt={`${p.brand} ${p.name} in ${p.color}`} loading="lazy" onError={e=>{e.target.style.opacity="0.3";}} style={{width:"100%",height:"100%",objectFit:"contain",transform:h?"scale(1.04)":"scale(1)",transition:"transform 0.6s ease"}}/>
         <div style={{position:"absolute",top:10,left:10,display:"flex",gap:5,flexWrap:"wrap"}}>
-          {p.tag==="Sale"&&<span style={{...T.labelSm,color:C.white,background:C.red,padding:"4px 10px",fontSize:8}}>SALE</span>}
-          {p.tag==="New"&&<span style={{...T.labelSm,color:C.white,background:C.black,padding:"4px 10px",fontSize:8}}>NEW</span>}
-          {p.tag==="Popular"&&<span style={{...T.labelSm,color:C.white,background:C.brown,padding:"4px 10px",fontSize:8}}>POPULAR</span>}
-          {p.tag==="Limited"&&<span style={{...T.labelSm,color:C.white,background:C.tan,padding:"4px 10px",fontSize:8}}>LIMITED</span>}
+          {p.tag==="Sale"&&<span style={{...T.labelSm,color:C.white,background:C.red,padding:"4px 10px",fontSize:10}}>SALE</span>}
+          {p.tag==="New"&&<span style={{...T.labelSm,color:C.white,background:C.black,padding:"4px 10px",fontSize:10}}>NEW</span>}
+          {p.tag==="Popular"&&<span style={{...T.labelSm,color:C.white,background:C.brown,padding:"4px 10px",fontSize:10}}>POPULAR</span>}
+          {p.tag==="Limited"&&<span style={{...T.labelSm,color:C.white,background:C.tan,padding:"4px 10px",fontSize:10}}>LIMITED</span>}
         </div>
         {onWishlist&&(
           <button onClick={e=>{e.stopPropagation();onWishlist(p.id);}}
@@ -39,7 +39,7 @@ export default memo(function ProductCard({product:p,onSelect,wishlist,onWishlist
               <span style={{fontFamily:"'Alido',serif",fontSize:19,color:C.black,lineHeight:1}}>GEL {p.price}</span>
             )}
           </div>
-          <span style={{...T.labelSm,color:C.lgray,fontSize:8}}>{p.lead}</span>
+          <span style={{...T.labelSm,color:C.lgray,fontSize:10}}>{p.lead}</span>
         </div>
       </div>
     </div>

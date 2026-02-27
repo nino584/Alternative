@@ -2,9 +2,9 @@ import { C, T } from '../../constants/theme.js';
 import { IconCheck, IconCross } from '../icons/Icons.jsx';
 
 // ── TOAST SYSTEM ──────────────────────────────────────────────────────────────
-export default function ToastContainer({toasts,mobile}) {
+export default function ToastContainer({toasts,mobile,...rest}) {
   return (
-    <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:1000,display:"flex",flexDirection:"column",gap:0,pointerEvents:"none"}}>
+    <div role="status" aria-live="polite" style={{position:"fixed",bottom:0,left:0,right:0,zIndex:1000,display:"flex",flexDirection:"column",gap:0,pointerEvents:"none"}}>
       {toasts.map(t=>(
         <div key={t.id} style={{
           background:t.type==="error"?C.red:t.type==="success"?C.green:C.black,

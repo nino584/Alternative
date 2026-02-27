@@ -108,7 +108,7 @@ export function pageMeta(page, data = {}) {
     case "video-verification":
       return {
         title: `Video Verification Service — See Before You Buy | ${SITE_NAME}`,
-        description: "Add video verification to any order for GEL 15. Our team films a complete walkthrough of your item and sends it to WhatsApp before shipping.",
+        description: "Add video verification to any order for GEL 28. Our team films a complete walkthrough of your item and sends it to WhatsApp before shipping.",
         canonical: SITE_URL + "/video-verification",
         og: { type: "website", image: OG_IMAGE },
       };

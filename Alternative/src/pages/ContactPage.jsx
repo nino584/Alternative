@@ -9,16 +9,27 @@ import { pageMeta, breadcrumbSchema } from '../utils/seo.js';
 // ── CONTACT PAGE ─────────────────────────────────────────────────────────────
 export default function ContactPage({setPage,L,mobile}) {
   const px=mobile?"16px":"40px";
-  const [form,setForm]=useState({name:"",email:"",message:""});
+  const [form,setForm]=useState({name:"",email:"",message:"",website:""});
   const [sent,setSent]=useState(false);
+  const [sending,setSending]=useState(false);
+  const [formError,setFormError]=useState("");
 
-  const handleSubmit=(e)=>{
+  const handleSubmit=async(e)=>{
     e.preventDefault();
-    if(form.name.trim()&&form.email.includes("@")&&form.message.trim()){
+    setFormError("");
+    if(!form.name.trim()||form.name.trim().length<2){setFormError(L?.contactNameRequired||"Please enter your name.");return;}
+    if(!form.email.includes("@")){setFormError(L?.validEmail||"Please enter a valid email.");return;}
+    if(!form.message.trim()||form.message.trim().length<5){setFormError(L?.contactMessageRequired||"Please enter a message (at least 5 characters).");return;}
+    setSending(true);
+    try {
+      const res=await fetch("/api/contact",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:form.name.trim(),email:form.email.trim(),message:form.message.trim(),website:form.website})});
+      if(!res.ok){const data=await res.json().catch(()=>({}));throw new Error(data.error||"Failed to send");}
       setSent(true);
       setTimeout(()=>setSent(false),5000);
-      setForm({name:"",email:"",message:""});
-    }
+      setForm({name:"",email:"",message:"",website:""});
+    } catch(err){
+      setFormError(err.message||"Failed to send message. Please try again.");
+    } finally{setSending(false);}
   };
 
   return (
@@ -83,6 +94,11 @@ export default function ContactPage({setPage,L,mobile}) {
           <div>
             <p style={{...T.labelSm,color:C.tan,marginBottom:16,fontSize:10}}>{L.contactSendMessage}</p>
             <form onSubmit={handleSubmit}>
+              {/* Honeypot — hidden from real users, bots fill it */}
+              <div style={{position:"absolute",left:"-9999px"}} aria-hidden="true">
+                <input type="text" name="website" tabIndex={-1} autoComplete="off" value={form.website} onChange={e=>setForm({...form,website:e.target.value})}/>
+              </div>
+              {formError&&<div style={{padding:"11px 14px",background:"#fff5f5",border:`1px solid ${C.red}`,marginBottom:18}}><p style={{...T.bodySm,color:C.red,fontSize:12}}>{formError}</p></div>}
               {[
                 {key:"name",label:L.contactFullName,type:"text",placeholder:L.contactFullNamePh},
                 {key:"email",label:L.contactEmailLabel,type:"email",placeholder:L.contactEmailPh},
@@ -98,8 +114,8 @@ export default function ContactPage({setPage,L,mobile}) {
                 <textarea placeholder={L.contactMessagePh} value={form.message} onChange={e=>setForm({...form,message:e.target.value})}
                   rows={5} maxLength={2000} style={{width:"100%",padding:"12px 14px",border:`1px solid ${C.lgray}`,background:C.white,fontSize:14,color:C.black,outline:"none",resize:"vertical",...T.body}}/>
               </div>
-              <HoverBtn type="submit" variant="primary" style={{width:"100%",padding:"15px 24px"}}>
-                {sent?L.contactSent:L.contactSend}
+              <HoverBtn type="submit" variant="primary" style={{width:"100%",padding:"15px 24px"}} disabled={sending}>
+                {sending?"...":sent?L.contactSent:L.contactSend}
               </HoverBtn>
               {sent&&<p style={{...T.bodySm,color:C.tan,marginTop:12,textAlign:"center"}}>{L.contactThankYou}</p>}
             </form>

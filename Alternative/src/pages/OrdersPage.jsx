@@ -45,7 +45,7 @@ export default function OrdersPage({mobile,orders,setPage,toast,L}) {
   }
 
   return (
-    <div style={{paddingTop:80,minHeight:"100vh",background:C.cream}}>
+    <div style={{paddingTop:mobile?52:80,minHeight:"100vh",background:C.cream}}>
       <div style={{padding:"32px 0 20px",borderBottom:`1px solid ${C.lgray}`}}>
         <div style={{maxWidth:1360,margin:"0 auto",padding:"0 40px",display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}>
           <div>
@@ -67,7 +67,7 @@ export default function OrdersPage({mobile,orders,setPage,toast,L}) {
             return (
               <div key={o.orderId} onClick={()=>setActiveIdx(idx)} style={{padding:16,marginBottom:2,cursor:"pointer",background:isA?C.offwhite:C.cream,border:isA?`1px solid ${C.tan}`:"1px solid transparent",transition:"all 0.2s"}}>
                 <div style={{display:"flex",gap:12,alignItems:"flex-start"}}>
-                  <img src={firstItem.img} alt="" style={{width:48,height:48,objectFit:"cover",flexShrink:0}}/>
+                  <img src={firstItem.img} alt={firstItem.name||"Order item"} loading="lazy" width="48" height="48" style={{width:48,height:48,objectFit:"cover",flexShrink:0}}/>
                   <div style={{flex:1,minWidth:0}}>
                     <p style={{...T.heading,color:C.black,fontSize:12,marginBottom:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                       {itemCount>1?`${itemCount} items`:firstItem.name}
@@ -105,7 +105,7 @@ export default function OrdersPage({mobile,orders,setPage,toast,L}) {
               <p style={{...T.labelSm,color:C.tan,fontSize:9,marginBottom:12}}>{current.orderId}</p>
               {(current.items||[current]).map((item,i)=>(
                 <div key={i} style={{display:"flex",gap:16,padding:"14px 0",borderBottom:`1px solid ${C.lgray}`}}>
-                  <img src={item.img} alt={item.name} style={{width:mobile?64:80,height:mobile?64:80,objectFit:"cover",flexShrink:0}}/>
+                  <img src={item.img} alt={item.name} loading="lazy" width="80" height="80" style={{width:mobile?64:80,height:mobile?64:80,objectFit:"cover",flexShrink:0}}/>
                   <div style={{flex:1}}>
                     {item.brand&&<p style={{...T.labelSm,color:C.tan,fontSize:8,letterSpacing:"0.12em",marginBottom:2}}>{item.brand}</p>}
                     <p style={{fontFamily:"'Alido',serif",fontSize:mobile?16:20,fontWeight:300,color:C.black,lineHeight:1.2,marginBottom:4}}>{item.name}</p>

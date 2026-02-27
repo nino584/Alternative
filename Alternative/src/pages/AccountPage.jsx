@@ -194,8 +194,6 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
   useEffect(() => { save(STORAGE.addr, addresses); }, [addresses]);
   useEffect(() => { save(STORAGE.pay, payments); }, [payments]);
 
-  if (!user) return null;
-
   const resetAddrForm = useCallback(() => { setAName(""); setALine1(""); setALine2(""); setACity(""); setAPostal(""); setACountry("Georgia"); setAPhone(""); }, []);
   const resetPayForm = useCallback(() => { setCNumber(""); setCHolder(""); setCExpiry(""); setCType("visa"); }, []);
 
@@ -293,7 +291,7 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
             <h1 style={{ ...T.displayMd, color: C.black }}>{L.welcome || "Welcome,"} {user.name ? user.name.split(" ")[0] : ""}</h1>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
-            {user.role==="admin" && <HoverBtn onClick={() => window.open("http://localhost:5174","_blank")} variant="tan" style={{ padding: "10px 20px", fontSize: 10 }}>{L.adminPanel || "Admin Panel"}</HoverBtn>}
+            {user.role==="admin" && <HoverBtn onClick={() => window.open(import.meta.env.VITE_ADMIN_URL||"/admin","_blank")} variant="tan" style={{ padding: "10px 20px", fontSize: 10 }}>{L.adminPanel || "Admin Panel"}</HoverBtn>}
             <HoverBtn onClick={() => { if(onLogout)onLogout(); else{setUser(null);setPage("home");} toast(L.signedOut || "Signed out.", "success"); }} variant="secondary" style={{ padding: "10px 20px", fontSize: 10 }}>{L.signOut || "Sign Out"}</HoverBtn>
           </div>
         </div>
@@ -407,7 +405,7 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
                       onClick={() => setPage("orders")}
                       onMouseEnter={e => e.currentTarget.style.background = C.offwhite}
                       onMouseLeave={e => e.currentTarget.style.background = C.white}>
-                      <img src={first.img} alt={first.name} style={{ width: 56, height: 56, objectFit: "cover", flexShrink: 0 }} />
+                      <img src={first.img} alt={first.name} loading="lazy" width="56" height="56" style={{ width: 56, height: 56, objectFit: "cover", flexShrink: 0 }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ ...T.heading, color: C.black, fontSize: 13, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{itemCount > 1 ? `${itemCount} items` : first.name}</p>
                         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -462,7 +460,7 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
                       onClick={() => setPage("orders")}
                       onMouseEnter={e => e.currentTarget.style.background = C.offwhite}
                       onMouseLeave={e => e.currentTarget.style.background = C.white}>
-                      <img src={first.img} alt={first.name} style={{ width: 72, height: 72, objectFit: "cover", flexShrink: 0 }} />
+                      <img src={first.img} alt={first.name} loading="lazy" width="72" height="72" style={{ width: 72, height: 72, objectFit: "cover", flexShrink: 0 }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ ...T.heading, color: C.black, fontSize: 14, marginBottom: 4 }}>{itemCount > 1 ? `${itemCount} items` : first.name}</p>
                         <p style={{ ...T.labelSm, color: C.gray, fontSize: 8, marginBottom: 8 }}>{o.orderId}</p>

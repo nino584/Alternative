@@ -81,7 +81,7 @@ export default function PreorderModal({product:p,selectedSize,onClose,onComplete
         <div style={{padding:"28px 32px"}}>
           {/* Product summary */}
           <div style={{display:"flex",gap:12,padding:14,background:C.offwhite,marginBottom:24}}>
-            <img src={p.img} alt={p.name} style={{width:56,height:56,objectFit:"cover",flexShrink:0}}/>
+            <img src={p.img} alt={p.name} loading="lazy" width="56" height="56" style={{width:56,height:56,objectFit:"cover",flexShrink:0}}/>
             <div>
               <p style={{...T.heading,color:C.black,fontSize:13,marginBottom:2}}>{L?.localNames?.[p.name]||p.name}</p>
               <p style={{...T.labelSm,color:C.gray,fontSize:9,marginBottom:5}}>{p.color}{selectedSize&&selectedSize!=="One Size"?" · "+selectedSize:""}</p>

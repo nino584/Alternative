@@ -37,9 +37,9 @@ export default function Nav({page,setPage,cartCount,user,setUser,onLogout,onSear
   if (mobile) {
     return (
       <>
-        <nav style={{position:"fixed",top:0,left:0,right:0,zIndex:200,background:"rgba(231,232,225,0.98)",backdropFilter:"blur(16px)",borderBottom:`1px solid ${C.lgray}`}}>
+        <nav role="navigation" aria-label="Main navigation" style={{position:"fixed",top:0,left:0,right:0,zIndex:200,background:"rgba(231,232,225,0.98)",backdropFilter:"blur(16px)",borderBottom:`1px solid ${C.lgray}`}}>
           <div style={{padding:"14px 18px",display:"flex",alignItems:"center",justifyContent:"space-between",minHeight:56}}>
-            <button onClick={()=>{setMobileMenuOpen(!mobileMenuOpen);setMegaOpen(false);}} style={{background:"none",border:"none",padding:6,lineHeight:1,cursor:"pointer"}}>
+            <button onClick={()=>{setMobileMenuOpen(!mobileMenuOpen);setMegaOpen(false);}} aria-label={mobileMenuOpen?"Close menu":"Open menu"} aria-expanded={mobileMenuOpen} style={{background:"none",border:"none",padding:6,lineHeight:1,cursor:"pointer"}}>
               {mobileMenuOpen?(
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={C.black} strokeWidth="1.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
               ):(
@@ -50,14 +50,14 @@ export default function Nav({page,setPage,cartCount,user,setUser,onLogout,onSear
               <Logo size={0.82}/>
             </button>
             <div style={{display:"flex",gap:4,alignItems:"center"}}>
-              <button onClick={onSearch} style={{background:"none",border:"none",width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+              <button onClick={onSearch} aria-label={L.search||"Search"} style={{background:"none",border:"none",width:44,height:44,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.black} strokeWidth="1.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
               </button>
-              <button onClick={()=>{window.__initAccountTab="wishlist";setPage("account");setMobileMenuOpen(false);}} style={{background:"none",border:"none",width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center",position:"relative",cursor:"pointer"}}>
+              <button onClick={()=>{window.__initAccountTab="wishlist";setPage("account");setMobileMenuOpen(false);}} aria-label={L.wishlist||"Wishlist"} style={{background:"none",border:"none",width:44,height:44,display:"flex",alignItems:"center",justifyContent:"center",position:"relative",cursor:"pointer"}}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.black} strokeWidth="1.5"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
                 {wishlistCount>0&&<span style={{position:"absolute",top:4,right:4,background:C.black,color:C.white,borderRadius:"50%",minWidth:18,height:18,padding:"0 4px",fontSize:10,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center"}}>{wishlistCount}</span>}
               </button>
-              <button onClick={onCart} style={{background:"none",border:"none",width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center",position:"relative",cursor:"pointer"}}>
+              <button onClick={onCart} aria-label={L.orders||"Cart"} style={{background:"none",border:"none",width:44,height:44,display:"flex",alignItems:"center",justifyContent:"center",position:"relative",cursor:"pointer"}}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.black} strokeWidth="1.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
                 {cartCount>0&&<span style={{position:"absolute",top:4,right:4,background:C.black,color:C.white,borderRadius:"50%",minWidth:18,height:18,padding:"0 4px",fontSize:10,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center"}}>{cartCount}</span>}
               </button>
@@ -124,7 +124,7 @@ export default function Nav({page,setPage,cartCount,user,setUser,onLogout,onSear
                 <div style={{display:"flex",flexDirection:"column",gap:10}}>
                   <HoverBtn onClick={()=>{setPage("orders");setMobileMenuOpen(false);}} variant="primary" style={{width:"100%",padding:"14px"}}>{L.myOrders||"My Orders"}</HoverBtn>
                   <HoverBtn onClick={()=>{setPage("account");setMobileMenuOpen(false);}} variant="secondary" style={{width:"100%",padding:"14px"}}>{L.myAccount||"My Account"}</HoverBtn>
-                  {user.role==="admin"&&<HoverBtn onClick={()=>{const adminUrl=window.location.hostname==="localhost"?"http://localhost:5174":"/admin";window.open(adminUrl,"_blank");setMobileMenuOpen(false);}} variant="tan" style={{width:"100%",padding:"14px"}}>{L.adminPanel||"Admin Panel"}</HoverBtn>}
+                  {user.role==="admin"&&<HoverBtn onClick={()=>{window.open(import.meta.env.VITE_ADMIN_URL||"/admin","_blank");setMobileMenuOpen(false);}} variant="tan" style={{width:"100%",padding:"14px"}}>{L.adminPanel||"Admin Panel"}</HoverBtn>}
                   <button onClick={()=>{onLogout?onLogout():setUser(null);setMobileMenuOpen(false);}}
                     style={{background:"none",border:"none",...T.bodySm,color:C.gray,padding:"8px 0",textAlign:"left"}}>{L.signOut||"Sign Out"}</button>
                 </div>
@@ -157,7 +157,7 @@ export default function Nav({page,setPage,cartCount,user,setUser,onLogout,onSear
   }
 
   return (
-    <nav style={{position:"fixed",top:0,left:0,right:0,zIndex:200,background:scrolled||megaOpen?"rgba(231,232,225,0.98)":"transparent",backdropFilter:scrolled||megaOpen?"blur(16px)":"none",borderBottom:scrolled||megaOpen?`1px solid ${C.lgray}`:"none",boxShadow:scrolled||megaOpen?"0 1px 0 rgba(0,0,0,0.04)":"none",transition:"all 0.3s ease"}}>
+    <nav role="navigation" aria-label="Main navigation" style={{position:"fixed",top:0,left:0,right:0,zIndex:200,background:scrolled||megaOpen?"rgba(231,232,225,0.98)":"transparent",backdropFilter:scrolled||megaOpen?"blur(16px)":"none",borderBottom:scrolled||megaOpen?`1px solid ${C.lgray}`:"none",boxShadow:scrolled||megaOpen?"0 1px 0 rgba(0,0,0,0.04)":"none",transition:"all 0.3s ease"}}>
       <div style={{maxWidth:1360,margin:"0 auto",padding:scrolled?"16px 40px":"24px 40px",display:"flex",alignItems:"center",justifyContent:"space-between",minHeight:72,transition:"padding 0.3s ease",position:"relative"}}>
 
         {/* LEFT — Logo */}

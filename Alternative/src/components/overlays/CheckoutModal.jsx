@@ -75,7 +75,7 @@ export default function CheckoutModal({cart,user,L,onClose,setPage,onComplete,to
   const labelStyle={...T.labelSm,color:C.gray,fontSize:9,display:"block",marginBottom:6};
 
   return (
-    <div style={{position:"fixed",inset:0,zIndex:400,display:"flex"}}>
+    <div role="dialog" aria-label={L?.checkout||"Checkout"} aria-modal="true" style={{position:"fixed",inset:0,zIndex:400,display:"flex"}}>
       <div onClick={onClose} style={{position:"absolute",inset:0,background:"rgba(25,25,25,0.75)"}}/>
       <div style={{position:"relative",marginLeft:"auto",width:"100%",maxWidth:520,background:C.cream,height:"100%",overflow:"auto",animation:"slideRight 0.3s ease",boxShadow:"-12px 0 50px rgba(0,0,0,0.2)"}}>
         {/* Header */}
@@ -84,7 +84,7 @@ export default function CheckoutModal({cart,user,L,onClose,setPage,onComplete,to
             <p style={{...T.labelSm,color:C.tan,fontSize:9,marginBottom:4}}>{L?.stepOf?`${String(L.stepOf).replace("{n}",step).replace("{t}","3")}`:`STEP ${step} OF 3`}</p>
             <p style={{...T.heading,color:C.black}}>{step===1?(L?.yourDetails||"Your Details"):step===2?(L?.reviewPay||"Review & Pay"):(L?.orderConfirmed||"Order Confirmed")}</p>
           </div>
-          {step<3&&<button onClick={onClose} aria-label="Close" style={{background:"none",border:"none",color:C.gray,fontSize:22,cursor:"pointer",width:40,height:40,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>}
+          {step<3&&<button onClick={onClose} aria-label="Close" style={{background:"none",border:"none",color:C.gray,fontSize:22,cursor:"pointer",width:44,height:44,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>}
         </div>
         {/* Progress bar */}
         <div style={{display:"flex"}}>
@@ -98,7 +98,7 @@ export default function CheckoutModal({cart,user,L,onClose,setPage,onComplete,to
             <p style={{...T.labelSm,color:C.gray,fontSize:9,marginBottom:12}}>{cart.length} {cart.length===1?(L?.itemInBag||"ITEM"):(L?.itemsInBag||"ITEMS")}</p>
             {cart.map((o,i)=>(
               <div key={o.addedAt||i} style={{display:"flex",gap:12,padding:"10px 0",borderBottom:i<cart.length-1?`1px solid ${C.lgray}`:"none"}}>
-                <img src={o.img} alt={o.name} style={{width:48,height:48,objectFit:"cover",flexShrink:0}}/>
+                <img src={o.img} alt={o.name} loading="lazy" width="48" height="48" style={{width:48,height:48,objectFit:"cover",flexShrink:0}}/>
                 <div style={{flex:1,minWidth:0}}>
                   <p style={{...T.heading,color:C.black,fontSize:12,marginBottom:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{L?.localNames?.[o.name]||o.name}</p>
                   <p style={{...T.labelSm,color:C.gray,fontSize:9}}>{o.color}{o.selectedSize&&o.selectedSize!=="One Size"?" · "+o.selectedSize:""}</p>

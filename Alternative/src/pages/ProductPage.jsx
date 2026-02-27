@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { C, T } from '../constants/theme.js';
+import { C, T, S } from '../constants/theme.js';
 import { BI } from '../constants/images.js';
 import { PRODUCTS } from '../constants/data.js';
 import { VIDEO_VERIFICATION_GEL } from '../constants/config.js';
@@ -25,7 +25,28 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
   const [activeImg,setActiveImg]=useState(0);
   const [showGuide,setShowGuide]=useState(false);
   const [addedFeedback,setAddedFeedback]=useState(false);
-  const [customerNotes,setCustomerNotes]=useState("");
+  const [openSections,setOpenSections]=useState({details:true,shipping:false});
+  const [showDemoVideo,setShowDemoVideo]=useState(false);
+
+  // Collapsible detail accordion
+  const DetailAccordion=({title,defaultOpen,children})=>{
+    const sKey=title.toLowerCase().replace(/\s/g,"");
+    const isOpen=openSections[sKey]!==undefined?openSections[sKey]:(defaultOpen||false);
+    const toggle=()=>setOpenSections(prev=>({...prev,[sKey]:!isOpen}));
+    return(
+      <div style={{borderBottom:`1px solid ${C.lgray}`,marginBottom:0}}>
+        <button onClick={toggle} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 0",background:"none",border:"none",cursor:"pointer",textAlign:"left"}}>
+          <span style={{fontFamily:"'TT Interphases Pro',sans-serif",fontSize:13,fontWeight:600,color:C.black,letterSpacing:"0.06em",textTransform:"uppercase"}}>{title}</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={C.black} strokeWidth="2"
+            style={{transition:"transform 0.25s ease",transform:isOpen?"rotate(180deg)":"rotate(0deg)",flexShrink:0}}>
+            <path d="M6 9l6 6 6-6"/>
+          </svg>
+        </button>
+        {isOpen&&<div style={{paddingBottom:16}}>{children}</div>}
+      </div>
+    );
+  };
+
 
   // All hooks must run before early return
   const imgs=p?(p.images&&p.images.length>1?p.images:[p.img,BI.bag_stone,BI.packaging,BI.ribbon]):[];
@@ -63,9 +84,8 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
   const handleAddToCart=()=>{
     if (p.sizes.length>1&&p.sizes[0]!=="One Size"&&!selectedSize){setSizeError(true);return;}
     setSizeError(false);
-    addToCart(p, selectedSize||"One Size", customerNotes.trim());
+    addToCart(p, selectedSize||"One Size");
     setAddedFeedback(true);
-    setCustomerNotes("");
     toast(L.addedToCart||"Added to bag","success");
     setTimeout(()=>setAddedFeedback(false),2000);
   };
@@ -90,9 +110,9 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
       <div style={{maxWidth:1360,margin:"0 auto",padding:"20px 40px 0",display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
         {[[L.home,"home"],[p.section,"catalog"],[L&&L.localNames&&L.localNames[p.name]||p.name,null]].map(([l,pg],i,arr)=>(
           <span key={i} style={{display:"flex",alignItems:"center",gap:6}}>
-            {pg?<button onClick={()=>setPage(pg)} style={{background:"none",border:"none",...T.labelSm,color:C.gray,fontSize:8}}>{l}</button>
-              :<span style={{...T.labelSm,color:C.black,fontSize:8,overflow:"hidden",textOverflow:"ellipsis",maxWidth:320,whiteSpace:"nowrap"}}>{l}</span>}
-            {i<arr.length-1&&<span style={{color:C.lgray,fontSize:8,flexShrink:0}}>→</span>}
+            {pg?<button onClick={()=>setPage(pg)} style={{background:"none",border:"none",...T.labelSm,color:C.gray}}>{l}</button>
+              :<span style={{...T.labelSm,color:C.black,overflow:"hidden",textOverflow:"ellipsis",maxWidth:320,whiteSpace:"nowrap"}}>{l}</span>}
+            {i<arr.length-1&&<span style={{color:C.lgray,flexShrink:0}}>→</span>}
           </span>
         ))}
       </div>
@@ -101,7 +121,7 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
         <div style={{position:mobile?"relative":"sticky",top:mobile?"auto":96}}>
           <div style={{aspectRatio:"1/1",overflow:"hidden",marginBottom:3,position:"relative",background:"#ffffff"}}>
             <img src={imgs[activeImg]} alt={productAlt(p)} loading={activeImg===0?"eager":"lazy"} onError={e=>{e.target.style.opacity="0.3";}} style={{width:"100%",height:"100%",objectFit:"contain"}}/>
-            {p.sale&&<div style={{position:"absolute",top:14,left:14,background:C.red,padding:"5px 12px"}}><span style={{...T.label,color:C.white,fontSize:9}}>Sale</span></div>}
+            {p.sale&&<div style={{position:"absolute",top:14,left:14,background:C.red,padding:"5px 12px"}}><span style={{...T.label,color:C.white}}>Sale</span></div>}
             <button onClick={()=>onWishlist&&onWishlist(p.id)}
               style={{position:"absolute",top:14,right:14,background:wished?"rgba(177,154,122,0.9)":"rgba(255,255,255,0.85)",border:"none",width:44,height:44,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",transition:"all 0.2s"}}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill={wished?C.white:"none"} stroke={wished?C.white:C.gray} strokeWidth="1.5">
@@ -112,16 +132,16 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
           <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:3}}>
             {imgs.map((src,i)=>(
               <div key={i} onClick={()=>setActiveImg(i)} style={{aspectRatio:"1/1",overflow:"hidden",cursor:"pointer",border:`2px solid ${i===activeImg?C.tan:"transparent"}`,transition:"border-color 0.2s",background:"#ffffff"}}>
-                <img src={src} alt="" style={{width:"100%",height:"100%",objectFit:"contain"}}/>
+                <img src={src} alt={`${p.name} view ${i+1}`} loading="lazy" style={{width:"100%",height:"100%",objectFit:"contain"}}/>
               </div>
             ))}
           </div>
         </div>
 
         <div>
-          <p style={{...T.labelSm,color:C.tan,marginBottom:6,fontSize:10,letterSpacing:"0.2em"}}>{p.brand}</p>
+          <p style={{...T.labelSm,color:C.tan,marginBottom:6,letterSpacing:"0.2em"}}>{p.brand}</p>
           <h1 style={{fontFamily:"'Alido',serif",fontSize:mobile?30:38,fontWeight:300,color:C.black,lineHeight:1.15,marginBottom:6}}>{L&&L.localNames&&L.localNames[p.name]||p.name}</h1>
-          <p style={{...T.bodySm,color:C.gray,marginBottom:20,fontSize:13}}>{p.color} · {p.section}</p>
+          <p style={{...T.bodySm,color:C.gray,marginBottom:20}}>{p.color} · {p.section}</p>
 
           <div style={{marginBottom:24,display:"flex",alignItems:"baseline",gap:12}}>
             <span style={{fontFamily:"'Alido',serif",fontSize:34,color:p.sale?C.red:C.black,lineHeight:1}}>GEL {effectivePrice}</span>
@@ -130,7 +150,7 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
 
           <div style={{padding:"16px 18px",background:C.offwhite,marginBottom:20,borderLeft:`3px solid ${C.tan}`}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <span style={{...T.labelSm,color:C.gray,fontSize:9}}>{L.totalPrice}</span>
+              <span style={{...T.labelSm,color:C.gray}}>{L.totalPrice}</span>
               <span style={{fontFamily:"'Alido',serif",fontSize:20,color:C.black}}>GEL {totalPrice}</span>
             </div>
           </div>
@@ -138,8 +158,8 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
           {p.sizes&&p.sizes.length>1&&p.sizes[0]!=="One Size"&&(
             <div style={{marginBottom:20}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                <p style={{...T.label,color:sizeError?C.red:C.black,fontSize:11}}>{sizeError?L.selectSizeWarn:L.selectSize}</p>
-                <button onClick={()=>setShowGuide(true)} style={{background:"none",border:"none",...T.labelSm,color:C.tan,fontSize:9,textDecoration:"underline"}}>{L.sizeGuide}</button>
+                <p style={{...T.label,color:sizeError?C.red:C.black}}>{sizeError?L.selectSizeWarn:L.selectSize}</p>
+                <button onClick={()=>setShowGuide(true)} style={{background:"none",border:"none",...T.labelSm,color:C.tan,textDecoration:"underline"}}>{L.sizeGuide}</button>
               </div>
               <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                 {p.sizes.map(sz=>(
@@ -147,46 +167,51 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
                     padding:"9px 14px",border:`1px solid ${selectedSize===sz?C.black:C.lgray}`,
                     background:selectedSize===sz?C.black:"transparent",
                     color:selectedSize===sz?C.white:C.black,
-                    ...T.labelSm,fontSize:10,transition:"all 0.15s",
+                    ...T.labelSm,transition:"all 0.15s",
                   }}>{sz}</button>
                 ))}
               </div>
             </div>
           )}
 
-          {/* ── CUSTOMER NOTES ── */}
-          <div style={{marginBottom:14}}>
-            <label style={{...T.labelSm,color:C.gray,fontSize:9,display:"block",marginBottom:6}}>{L.customerNotes||"NOTES / QUESTIONS"}</label>
-            <textarea value={customerNotes} onChange={e=>setCustomerNotes(e.target.value)}
-              placeholder={L.notesPlaceholder||"Size questions, color preferences…"}
-              rows={2} maxLength={500}
-              style={{width:"100%",padding:"10px 14px",border:`1px solid ${C.lgray}`,background:C.white,fontSize:13,color:C.black,outline:"none",fontFamily:"'TT Interphases Pro',sans-serif",resize:"vertical",lineHeight:1.5}}/>
-          </div>
-
           {/* ── ADD TO BAG BUTTON ── */}
           <div style={{marginBottom:10}}>
-            <HoverBtn onClick={handleAddToCart} variant="primary" style={{width:"100%",padding:"16px 20px",fontSize:11,background:addedFeedback?"#2d6b45":undefined,borderColor:addedFeedback?"#2d6b45":undefined}}>
+            <HoverBtn onClick={handleAddToCart} variant="primary" style={{width:"100%",padding:"16px 20px",background:addedFeedback?"#2d6b45":undefined,borderColor:addedFeedback?"#2d6b45":undefined}}>
               {addedFeedback?(L.addedToBag||"Added to Bag ✓"):`${L.addToBag||"Add to Bag"} — GEL ${totalPrice}`}
             </HoverBtn>
           </div>
-          <p style={{...T.labelSm,color:C.gray,fontSize:9,textAlign:"center",marginBottom:24}}>{L.freeCancellation}</p>
+          <p style={{...T.labelSm,color:C.gray,textAlign:"center",marginBottom:24}}>{L.freeCancellation}</p>
 
           <SizeFitWidget product={p} onGuide={()=>setShowGuide(true)} L={L}/>
 
           <div style={{marginBottom:20,padding:"18px",border:`1.5px solid ${C.tan}`,background:`rgba(177,154,122,0.05)`,position:"relative",overflow:"hidden"}}>
             <div style={{position:"absolute",top:0,right:0,background:C.tan,padding:"3px 10px"}}>
-              <span style={{...T.labelSm,color:C.white,fontSize:7}}>{L.recommendedLabel}</span>
+              <span style={{...T.labelSm,color:C.white}}>{L.recommendedLabel}</span>
             </div>
             <div style={{display:"flex",gap:12,alignItems:"flex-start"}}>
               <div style={{width:36,height:36,borderRadius:"50%",background:C.black,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                 <IconVideo size={16} color={C.white} stroke={1.8}/>
               </div>
               <div style={{flex:1}}>
-                <p style={{...T.label,color:C.black,fontSize:11,marginBottom:4}}>{L.seeBeforeShips}</p>
+                <p style={{...T.label,color:C.black,marginBottom:4}}>{L.seeBeforeShips}</p>
                 <p style={{...T.bodySm,color:C.gray,lineHeight:1.7,marginBottom:6}}>{L.videoCallDesc}</p>
-                <span style={{...T.label,color:C.tan,fontSize:10}}>+ GEL {VIDEO_VERIFICATION_GEL} at checkout</span>
+                <div style={{display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
+                  <span style={{...T.label,color:C.tan}}>+ GEL {VIDEO_VERIFICATION_GEL} at checkout</span>
+                  <button onClick={()=>setShowDemoVideo(!showDemoVideo)} style={{background:"none",border:"none",...T.labelSm,color:C.gray,textDecoration:"underline",cursor:"pointer",fontSize:10,padding:0}}>
+                    {showDemoVideo?"Hide sample":"Watch sample ▶"}
+                  </button>
+                </div>
               </div>
             </div>
+            {/* Inline demo video */}
+            {showDemoVideo&&(
+              <div style={{marginTop:14,borderTop:`1px solid rgba(177,154,122,0.2)`,paddingTop:14}}>
+                <div style={{aspectRatio:"9/16",maxHeight:280,maxWidth:160,margin:"0 auto",background:C.black,borderRadius:4,overflow:"hidden"}}>
+                  <video src="https://cdn.shopify.com/videos/c/o/v/87c0928e89c34bdfb4e4fefc45f14cb2.mp4" autoPlay playsInline controls muted style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                </div>
+                <p style={{...T.labelSm,color:C.gray,fontSize:9,textAlign:"center",marginTop:8}}>Sample verification — sent via WhatsApp</p>
+              </div>
+            )}
           </div>
 
           {/* HOW IT WORKS */}
@@ -231,22 +256,66 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
             </div>
           </div>
 
-          <div style={{marginBottom:24}}>
-            <p style={{...T.label,color:C.black,marginBottom:10,fontSize:11}}>{L.itemDetails}</p>
-            <p style={{...T.body,color:C.gray,lineHeight:1.85}}>{L&&L.localDescs&&L.localDescs[p.desc]||p.desc}</p>
-          </div>
-
-          <div style={{marginBottom:28}}>
-            {[[L.leadTime,p.lead],[L.delivery,L.deliveryVal],[L.verified,L.verifiedVal]].map(([k,v])=>(
-              <div key={k} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:`1px solid ${C.lgray}`}}>
-                <span style={{...T.labelSm,color:C.gray,fontSize:9}}>{k}</span>
-                <span style={{...T.bodySm,color:C.black,display:"flex",alignItems:"center",gap:6}}>
-                  {k==="Verified"&&<IconCheck size={12} color={C.tan} stroke={1.8}/>}
-                  {v}
-                </span>
+          {/* ── DETAILS (collapsible, LuisaViaRoma-style) ── */}
+          <DetailAccordion title={L.itemDetails||"Details"} defaultOpen>
+            {p.details&&(
+              <div style={{display:"flex",flexDirection:"column",gap:0}}>
+                {/* Item Code & Color */}
+                <div style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid rgba(200,200,190,0.3)`}}>
+                  <span style={{...T.bodySm,color:C.gray,fontSize:12}}>{L.itemCode||"Item Code"}</span>
+                  <span style={{...T.bodySm,color:C.black,fontSize:12,fontWeight:500}}>{p.details.code}</span>
+                </div>
+                <div style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid rgba(200,200,190,0.3)`}}>
+                  <span style={{...T.bodySm,color:C.gray,fontSize:12}}>{L.itemColor||"Item Color"}</span>
+                  <span style={{...T.bodySm,color:C.black,fontSize:12,fontWeight:500}}>{p.color}</span>
+                </div>
+                {/* Dimensions */}
+                {p.details.dimensions&&(
+                  <div style={{padding:"10px 0",borderBottom:`1px solid rgba(200,200,190,0.3)`}}>
+                    <span style={{...T.bodySm,color:C.black,fontSize:12,fontWeight:500}}>{p.details.dimensions}</span>
+                  </div>
+                )}
+                {/* Features */}
+                <div style={{padding:"10px 0",borderBottom:`1px solid rgba(200,200,190,0.3)`}}>
+                  {p.details.features.map((f,i)=>(
+                    <p key={i} style={{...T.bodySm,color:C.black,fontSize:12,lineHeight:1.9}}>{f}</p>
+                  ))}
+                </div>
+                {/* Made in */}
+                <div style={{padding:"10px 0",borderBottom:`1px solid rgba(200,200,190,0.3)`}}>
+                  <span style={{...T.bodySm,color:C.black,fontSize:12,fontWeight:500}}>{L.madeIn||"Made in"} {p.details.madeIn}</span>
+                </div>
+                {/* Composition */}
+                <div style={{padding:"10px 0"}}>
+                  <span style={{...T.bodySm,color:C.gray,fontSize:12}}>{L.composition||"Composition"}</span>
+                  <p style={{...T.bodySm,color:C.black,fontSize:12,fontWeight:500,marginTop:2}}>{p.details.composition}</p>
+                </div>
               </div>
-            ))}
-          </div>
+            )}
+            {!p.details&&(
+              <p style={{...T.body,color:C.gray,lineHeight:1.85}}>{L&&L.localDescs&&L.localDescs[p.desc]||p.desc}</p>
+            )}
+          </DetailAccordion>
+
+          {/* ── SHIPPING & DELIVERY (collapsible) ── */}
+          <DetailAccordion title={L.shippingInfo||"Shipping & Delivery"}>
+            <div style={{display:"flex",flexDirection:"column",gap:0}}>
+              <div style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid rgba(200,200,190,0.3)`}}>
+                <span style={{...T.bodySm,color:C.gray,fontSize:12}}>{L.leadTime||"Lead Time"}</span>
+                <span style={{...T.bodySm,color:C.black,fontSize:12,fontWeight:500}}>{p.lead}</span>
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid rgba(200,200,190,0.3)`}}>
+                <span style={{...T.bodySm,color:C.gray,fontSize:12}}>{L.delivery||"Delivery"}</span>
+                <span style={{...T.bodySm,color:C.black,fontSize:12,fontWeight:500}}>{L.deliveryVal||"Tbilisi, Georgia"}</span>
+              </div>
+              <div style={{padding:"10px 0",borderBottom:`1px solid rgba(200,200,190,0.3)`}}>
+                <p style={{...T.bodySm,color:C.black,fontSize:12,lineHeight:1.8}}>{L.shippingDesc||"Items are sourced from our verified supplier network and shipped directly to Tbilisi, Georgia. All duties and taxes are included in the price."}</p>
+              </div>
+              <div style={{padding:"10px 0"}}>
+                <p style={{...T.bodySm,color:C.gray,fontSize:11,lineHeight:1.6}}>{L.shippingNote||"Free cancellation before sourcing is confirmed. Contact us for any delivery questions."}</p>
+              </div>
+            </div>
+          </DetailAccordion>
         </div>
       </div>
 
@@ -262,31 +331,49 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
             <p style={{...T.body,color:C.gray,fontSize:13,marginBottom:mobile?24:36,maxWidth:480}}>{L.completeLookSub||"Pair this piece with these curated suggestions"}</p>
 
             <div style={{display:"grid",gridTemplateColumns:mobile?`repeat(${Math.min(outfit.length,2)},1fr)`:`repeat(${outfit.length},1fr)`,gap:mobile?12:20}}>
-              {outfit.map((item,i)=>(
-                <div key={item.id} onClick={()=>{setPage("product",item);window.scrollTo({top:0,behavior:"smooth"});}}
-                  style={{cursor:"pointer",position:"relative",transition:"transform 0.3s"}}>
-                  <div style={{position:"relative",overflow:"hidden",marginBottom:12,background:C.offwhite}}>
-                    <img src={item.img} alt={item.name} style={{width:"100%",aspectRatio:"1/1",objectFit:"contain",transition:"transform 0.4s"}}
+              {outfit.map((item,i)=>{
+                const itemWished=wishlist?.includes(item.id);
+                return(
+                <div key={item.id} style={{position:"relative",transition:"transform 0.3s"}}>
+                  <div style={{position:"relative",overflow:"hidden",marginBottom:12,background:"#ffffff",cursor:"pointer"}}
+                    onClick={()=>{setPage("product",item);window.scrollTo({top:0,behavior:"smooth"});}}>
+                    <img src={item.img} alt={item.name} loading="lazy" style={{width:"100%",aspectRatio:"1/1",objectFit:"contain",transition:"transform 0.4s"}}
                       onMouseEnter={e=>e.currentTarget.style.transform="scale(1.03)"}
                       onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}/>
                     <div style={{position:"absolute",top:10,left:10,background:"rgba(0,0,0,0.75)",padding:"4px 10px"}}>
                       <span style={{...T.labelSm,color:C.white,fontSize:7,letterSpacing:"0.1em"}}>{item.cat.toUpperCase()}</span>
                     </div>
-                    {/* "+" connector between items */}
+                    {/* Wishlist button */}
+                    <button onClick={e=>{e.stopPropagation();onWishlist&&onWishlist(item.id);}}
+                      onMouseEnter={e=>e.currentTarget.style.transform="scale(1.1)"}
+                      onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}
+                      style={{position:"absolute",top:10,right:10,background:itemWished?"rgba(177,154,122,0.9)":"rgba(255,255,255,0.9)",border:"none",width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",transition:"all 0.2s",backdropFilter:"blur(4px)"}}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill={itemWished?C.white:"none"} stroke={itemWished?C.white:C.gray} strokeWidth="1.5">
+                        <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+                      </svg>
+                    </button>
                     {i<outfit.length-1&&!mobile&&(
                       <div style={{position:"absolute",right:-14,top:"50%",transform:"translateY(-50%)",width:28,height:28,borderRadius:"50%",background:C.white,border:`1px solid ${C.lgray}`,display:"flex",alignItems:"center",justifyContent:"center",zIndex:2,boxShadow:"0 1px 4px rgba(0,0,0,0.08)"}}>
                         <span style={{color:C.tan,fontSize:16,fontWeight:300,lineHeight:1}}>+</span>
                       </div>
                     )}
                   </div>
-                  <p style={{...T.labelSm,color:C.tan,fontSize:8,letterSpacing:"0.15em",marginBottom:3}}>{item.brand}</p>
-                  <p style={{...T.bodySm,color:C.black,fontSize:mobile?12:13,marginBottom:4}}>{L&&L.localNames&&L.localNames[item.name]||item.name}</p>
-                  <p style={{fontFamily:"'Alido',serif",fontSize:15,color:item.sale?C.red:C.black}}>
-                    GEL {item.sale||item.price}
-                    {item.sale&&<span style={{fontSize:12,color:C.gray,textDecoration:"line-through",marginLeft:6}}>GEL {item.price}</span>}
-                  </p>
+                  <div style={{cursor:"pointer"}} onClick={()=>{setPage("product",item);window.scrollTo({top:0,behavior:"smooth"});}}>
+                    <p style={{...T.labelSm,color:C.tan,fontSize:8,letterSpacing:"0.15em",marginBottom:3}}>{item.brand}</p>
+                    <p style={{...T.bodySm,color:C.black,fontSize:mobile?12:13,marginBottom:4}}>{L&&L.localNames&&L.localNames[item.name]||item.name}</p>
+                    <p style={{fontFamily:"'Alido',serif",fontSize:15,color:item.sale?C.red:C.black,marginBottom:10}}>
+                      GEL {item.sale||item.price}
+                      {item.sale&&<span style={{fontSize:12,color:C.gray,textDecoration:"line-through",marginLeft:6}}>GEL {item.price}</span>}
+                    </p>
+                  </div>
+                  <button onClick={()=>{addToCart(item,item.sizes[0]==="One Size"||item.sizes.length===1?item.sizes[0]:null);toast(L.addedToCart||"Added to bag","success");}}
+                    onMouseEnter={e=>{e.currentTarget.style.background=C.black;e.currentTarget.style.color=C.white;}}
+                    onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color=C.black;}}
+                    style={{width:"100%",padding:"10px",border:`1px solid ${C.black}`,background:"transparent",color:C.black,...T.labelSm,fontSize:9,letterSpacing:"0.1em",cursor:"pointer",transition:"all 0.25s ease"}}>
+                    {L.addToBag||"Add to Bag"}
+                  </button>
                 </div>
-              ))}
+              );})}
             </div>
 
             {/* Total outfit price */}
