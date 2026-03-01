@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { C, T, S } from '../constants/theme.js';
-import { BI } from '../constants/images.js';
+import { C, T } from '../constants/theme.js';
 import { PRODUCTS } from '../constants/data.js';
 import { VIDEO_VERIFICATION_GEL } from '../constants/config.js';
 import HoverBtn from '../components/ui/HoverBtn.jsx';
@@ -9,8 +8,10 @@ import ProductCard from '../components/ui/ProductCard.jsx';
 import SizeFitWidget from '../components/ui/SizeFitWidget.jsx';
 import SizeGuideModal from '../components/ui/SizeGuideModal.jsx';
 import { IconCheck, IconLock, IconPackage, IconVideo } from '../components/icons/Icons.jsx';
+import { api } from '../api.js';
 import Footer from '../components/layout/Footer.jsx';
 import SEO from '../components/SEO.jsx';
+
 import { pageMeta, productSchema, breadcrumbSchema, productAlt } from '../utils/seo.js';
 
 // ── PRODUCT PAGE ──────────────────────────────────────────────────────────────
@@ -27,6 +28,11 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
   const [addedFeedback,setAddedFeedback]=useState(false);
   const [openSections,setOpenSections]=useState({details:true,shipping:false});
   const [showDemoVideo,setShowDemoVideo]=useState(false);
+  const [notifyEmail,setNotifyEmail]=useState("");
+  const [notifyLoading,setNotifyLoading]=useState(false);
+  const [notifyDone,setNotifyDone]=useState(false);
+  const [notifyError,setNotifyError]=useState("");
+  const [zoomPos,setZoomPos]=useState(null); // {x,y} for hover zoom
 
   // Collapsible detail accordion
   const DetailAccordion=({title,defaultOpen,children})=>{
@@ -49,7 +55,7 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
 
 
   // All hooks must run before early return
-  const imgs=p?(p.images&&p.images.length>1?p.images:[p.img,BI.bag_stone,BI.packaging,BI.ribbon]):[];
+  const imgs=p?(p.images&&p.images.length>0?p.images:(p.img?[p.img]:[])):[];
   const effectivePrice=p?(p.sale||p.price):0;
   const totalPrice=effectivePrice;
   const related=p?ALL_PRODUCTS.filter(x=>x.section===p.section&&x.cat===p.cat&&x.id!==p.id).slice(0,4):[];
@@ -69,7 +75,19 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
     return picks;
   })();
 
-  useEffect(()=>{setSelectedSize(null);setSizeError(false);setActiveImg(0);},[p?.id]);
+  useEffect(()=>{setSelectedSize(null);setSizeError(false);setActiveImg(0);setNotifyDone(false);setNotifyEmail("");setNotifyError("");},[p?.id]);
+
+  // Recently viewed
+  useEffect(() => {
+    if (!p) return;
+    try {
+      const key = "alternative_recently_viewed";
+      const viewed = JSON.parse(localStorage.getItem(key) || "[]");
+      const filtered = viewed.filter(id => id !== p.id);
+      filtered.unshift(p.id);
+      localStorage.setItem(key, JSON.stringify(filtered.slice(0, 20)));
+    } catch {}
+  }, [p?.id]);
 
   if (!p) return (
     <div style={{paddingTop:80,background:C.cream}}>
@@ -82,7 +100,7 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
   );
 
   const handleAddToCart=()=>{
-    if (p.sizes.length>1&&p.sizes[0]!=="One Size"&&!selectedSize){setSizeError(true);return;}
+    if (p.sizes?.length>1&&p.sizes[0]!=="One Size"&&!selectedSize){setSizeError(true);return;}
     setSizeError(false);
     addToCart(p, selectedSize||"One Size");
     setAddedFeedback(true);
@@ -107,23 +125,16 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
   return (
     <div style={{paddingTop:80,background:C.cream}}>
       <SEO {...seoMeta} schema={seoSchema} />
-      <div style={{maxWidth:1360,margin:"0 auto",padding:"20px 40px 0",display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
-        {[[L.home,"home"],[p.section,"catalog"],[L&&L.localNames&&L.localNames[p.name]||p.name,null]].map(([l,pg],i,arr)=>(
-          <span key={i} style={{display:"flex",alignItems:"center",gap:6}}>
-            {pg?<button onClick={()=>setPage(pg)} style={{background:"none",border:"none",...T.labelSm,color:C.gray}}>{l}</button>
-              :<span style={{...T.labelSm,color:C.black,overflow:"hidden",textOverflow:"ellipsis",maxWidth:320,whiteSpace:"nowrap"}}>{l}</span>}
-            {i<arr.length-1&&<span style={{color:C.lgray,flexShrink:0}}>→</span>}
-          </span>
-        ))}
-      </div>
-
       <div style={{maxWidth:1360,margin:"0 auto",padding:mobile?"16px 16px 60px":"28px 40px 80px",display:"grid",gridTemplateColumns:mobile?"1fr":"1fr 1fr",gap:mobile?28:72,alignItems:"start"}}>
         <div style={{position:mobile?"relative":"sticky",top:mobile?"auto":96}}>
-          <div style={{aspectRatio:"1/1",overflow:"hidden",marginBottom:3,position:"relative",background:"#ffffff"}}>
-            <img src={imgs[activeImg]} alt={productAlt(p)} loading={activeImg===0?"eager":"lazy"} onError={e=>{e.target.style.opacity="0.3";}} style={{width:"100%",height:"100%",objectFit:"contain"}}/>
-            {p.sale&&<div style={{position:"absolute",top:14,left:14,background:C.red,padding:"5px 12px"}}><span style={{...T.label,color:C.white}}>Sale</span></div>}
+          <div style={{aspectRatio:"1/1",overflow:"hidden",marginBottom:3,position:"relative",background:"#ffffff",cursor:mobile?"default":"crosshair"}}
+            onMouseMove={e=>{if(mobile)return;const r=e.currentTarget.getBoundingClientRect();setZoomPos({x:((e.clientX-r.left)/r.width)*100,y:((e.clientY-r.top)/r.height)*100});}}
+            onMouseLeave={()=>setZoomPos(null)}>
+            <img src={imgs[activeImg]} alt={productAlt(p)} loading={activeImg===0?"eager":"lazy"} onError={e=>{e.target.style.opacity="0.3";}}
+              style={{width:"100%",height:"100%",objectFit:"contain",transition:zoomPos?"none":"transform 0.3s",transformOrigin:zoomPos?`${zoomPos.x}% ${zoomPos.y}%`:"center center",transform:zoomPos?"scale(2)":"scale(1)"}}/>
+            {p.sale&&<div style={{position:"absolute",top:14,left:14,background:C.red,padding:"5px 12px",zIndex:2}}><span style={{...T.label,color:C.white}}>Sale</span></div>}
             <button onClick={()=>onWishlist&&onWishlist(p.id)}
-              style={{position:"absolute",top:14,right:14,background:wished?"rgba(177,154,122,0.9)":"rgba(255,255,255,0.85)",border:"none",width:44,height:44,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",transition:"all 0.2s"}}>
+              style={{position:"absolute",top:14,right:14,background:wished?"rgba(177,154,122,0.9)":"rgba(255,255,255,0.85)",border:"none",width:44,height:44,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",transition:"all 0.2s",zIndex:2}}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill={wished?C.white:"none"} stroke={wished?C.white:C.gray} strokeWidth="1.5">
                 <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
               </svg>
@@ -174,13 +185,50 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
             </div>
           )}
 
-          {/* ── ADD TO BAG BUTTON ── */}
-          <div style={{marginBottom:10}}>
-            <HoverBtn onClick={handleAddToCart} variant="primary" style={{width:"100%",padding:"16px 20px",background:addedFeedback?"#2d6b45":undefined,borderColor:addedFeedback?"#2d6b45":undefined}}>
-              {addedFeedback?(L.addedToBag||"Added to Bag ✓"):`${L.addToBag||"Add to Bag"} — GEL ${totalPrice}`}
-            </HoverBtn>
-          </div>
-          <p style={{...T.labelSm,color:C.gray,textAlign:"center",marginBottom:24}}>{L.freeCancellation}</p>
+          {/* ── ADD TO BAG / NOTIFY ME ── */}
+          {p.inStock===false?(
+            <div style={{marginBottom:24}}>
+              <div style={{padding:"16px 18px",background:"rgba(88,70,56,0.06)",border:`1px solid rgba(88,70,56,0.15)`,marginBottom:12}}>
+                <p style={{...T.label,color:C.red,fontSize:12,marginBottom:4}}>{L?.outOfStock||"Out of Stock"}</p>
+                <p style={{...T.bodySm,color:C.gray,fontSize:12}}>{L?.notifyMeDesc||"Enter your email to be notified when this item is back in stock."}</p>
+              </div>
+              {notifyDone?(
+                <div style={{padding:"14px 18px",background:"rgba(177,154,122,0.08)",border:`1px solid ${C.tan}`,textAlign:"center"}}>
+                  <p style={{...T.label,color:C.tan,fontSize:12}}>{L?.notifySuccess||"We'll notify you when it's back!"}</p>
+                </div>
+              ):(
+                <div style={{display:"flex",gap:8}}>
+                  <input type="email" value={notifyEmail} onChange={e=>{setNotifyEmail(e.target.value);setNotifyError("");}}
+                    placeholder={L?.notifyEmailPlaceholder||"your@email.com"}
+                    style={{...T.bodySm,flex:1,padding:"12px 14px",border:`1px solid ${notifyError?C.red:C.lgray}`,background:C.offwhite,color:C.black,outline:"none",fontSize:13}}/>
+                  <HoverBtn variant="primary" style={{padding:"12px 20px",whiteSpace:"nowrap"}}
+                    onClick={()=>{
+                      if(!notifyEmail||!notifyEmail.includes("@")){setNotifyError(L?.invalidEmail||"Enter a valid email");return;}
+                      setNotifyLoading(true);
+                      api.notifyStock(p.id,notifyEmail)
+                        .then(()=>{setNotifyDone(true);toast(L?.notifySuccess||"We'll notify you!","success");})
+                        .catch(err=>{
+                          if(err?.status===409){setNotifyDone(true);toast(L?.alreadySubscribed||"Already subscribed","info");}
+                          else setNotifyError(err?.message||"Failed");
+                        })
+                        .finally(()=>setNotifyLoading(false));
+                    }}>
+                    {notifyLoading?"...":(L?.notifyMe||"Notify Me")}
+                  </HoverBtn>
+                </div>
+              )}
+              {notifyError&&<p style={{...T.bodySm,color:C.red,fontSize:11,marginTop:6}}>{notifyError}</p>}
+            </div>
+          ):(
+            <>
+              <div style={{marginBottom:10}}>
+                <HoverBtn onClick={handleAddToCart} variant="primary" style={{width:"100%",padding:"16px 20px",background:addedFeedback?"#2d6b45":undefined,borderColor:addedFeedback?"#2d6b45":undefined}}>
+                  {addedFeedback?(L.addedToBag||"Added to Bag ✓"):`${L.addToBag||"Add to Bag"} — GEL ${totalPrice}`}
+                </HoverBtn>
+              </div>
+              <p style={{...T.labelSm,color:C.gray,textAlign:"center",marginBottom:24}}>{L.freeCancellation}</p>
+            </>
+          )}
 
           <SizeFitWidget product={p} onGuide={()=>setShowGuide(true)} L={L}/>
 
@@ -241,30 +289,17 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
             ))}
           </div>
 
-          {/* DELIVERY TIMELINE */}
-          <div style={{marginBottom:24,padding:"16px",background:C.offwhite}}>
-            <p style={{...T.labelSm,color:C.tan,fontSize:8,marginBottom:14}}>{L.deliveryTimeline}</p>
-            <div style={{display:"flex",alignItems:"flex-start",gap:0}}>
-              {[{l:L.stepReserve,d:L.stepToday},{l:L.stepSource,d:"2–3d"},{l:L.stepVerify,d:"1–2d"},{l:L.stepShip,d:"5–10d"},{l:L.stepReceive,d:p.lead}].map((step,i,arr)=>(
-                <div key={i} style={{flex:1,textAlign:"center",position:"relative"}}>
-                  <div style={{width:10,height:10,borderRadius:"50%",background:i===0?C.tan:C.lgray,margin:"0 auto 6px",position:"relative",zIndex:1}}/>
-                  {i<arr.length-1&&<div style={{position:"absolute",top:4,left:"55%",width:"90%",height:1,background:C.lgray}}/>}
-                  <p style={{...T.labelSm,fontSize:7,color:i===0?C.black:C.gray,lineHeight:1.2}}>{step.l}</p>
-                  <p style={{...T.labelSm,fontSize:6,color:C.lgray,marginTop:2}}>{step.d}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* ── DETAILS (collapsible, LuisaViaRoma-style) ── */}
           <DetailAccordion title={L.itemDetails||"Details"} defaultOpen>
             {p.details&&(
               <div style={{display:"flex",flexDirection:"column",gap:0}}>
                 {/* Item Code & Color */}
-                <div style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid rgba(200,200,190,0.3)`}}>
-                  <span style={{...T.bodySm,color:C.gray,fontSize:12}}>{L.itemCode||"Item Code"}</span>
-                  <span style={{...T.bodySm,color:C.black,fontSize:12,fontWeight:500}}>{p.details.code}</span>
-                </div>
+                {(p.details.code||p.details.itemCode)&&(
+                  <div style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid rgba(200,200,190,0.3)`}}>
+                    <span style={{...T.bodySm,color:C.gray,fontSize:12}}>{L.itemCode||"Item Code"}</span>
+                    <span style={{...T.bodySm,color:C.black,fontSize:12,fontWeight:500}}>{p.details.code||p.details.itemCode}</span>
+                  </div>
+                )}
                 <div style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid rgba(200,200,190,0.3)`}}>
                   <span style={{...T.bodySm,color:C.gray,fontSize:12}}>{L.itemColor||"Item Color"}</span>
                   <span style={{...T.bodySm,color:C.black,fontSize:12,fontWeight:500}}>{p.color}</span>
@@ -275,21 +310,40 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
                     <span style={{...T.bodySm,color:C.black,fontSize:12,fontWeight:500}}>{p.details.dimensions}</span>
                   </div>
                 )}
-                {/* Features */}
-                <div style={{padding:"10px 0",borderBottom:`1px solid rgba(200,200,190,0.3)`}}>
-                  {p.details.features.map((f,i)=>(
-                    <p key={i} style={{...T.bodySm,color:C.black,fontSize:12,lineHeight:1.9}}>{f}</p>
-                  ))}
-                </div>
+                {/* Features (old format) */}
+                {p.details.features&&p.details.features.length>0&&(
+                  <div style={{padding:"10px 0",borderBottom:`1px solid rgba(200,200,190,0.3)`}}>
+                    {p.details.features.map((f,i)=>(
+                      <p key={i} style={{...T.bodySm,color:C.black,fontSize:12,lineHeight:1.9}}>{f}</p>
+                    ))}
+                  </div>
+                )}
+                {/* Material (new admin format) */}
+                {p.details.material&&(
+                  <div style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid rgba(200,200,190,0.3)`}}>
+                    <span style={{...T.bodySm,color:C.gray,fontSize:12}}>{L.material||"Material"}</span>
+                    <span style={{...T.bodySm,color:C.black,fontSize:12,fontWeight:500}}>{p.details.material}</span>
+                  </div>
+                )}
                 {/* Made in */}
-                <div style={{padding:"10px 0",borderBottom:`1px solid rgba(200,200,190,0.3)`}}>
-                  <span style={{...T.bodySm,color:C.black,fontSize:12,fontWeight:500}}>{L.madeIn||"Made in"} {p.details.madeIn}</span>
-                </div>
+                {p.details.madeIn&&(
+                  <div style={{padding:"10px 0",borderBottom:`1px solid rgba(200,200,190,0.3)`}}>
+                    <span style={{...T.bodySm,color:C.black,fontSize:12,fontWeight:500}}>{L.madeIn||"Made in"} {p.details.madeIn}</span>
+                  </div>
+                )}
                 {/* Composition */}
-                <div style={{padding:"10px 0"}}>
-                  <span style={{...T.bodySm,color:C.gray,fontSize:12}}>{L.composition||"Composition"}</span>
-                  <p style={{...T.bodySm,color:C.black,fontSize:12,fontWeight:500,marginTop:2}}>{p.details.composition}</p>
-                </div>
+                {p.details.composition&&(
+                  <div style={{padding:"10px 0",borderBottom:p.details.additionalNotes?`1px solid rgba(200,200,190,0.3)`:"none"}}>
+                    <span style={{...T.bodySm,color:C.gray,fontSize:12}}>{L.composition||"Composition"}</span>
+                    <p style={{...T.bodySm,color:C.black,fontSize:12,fontWeight:500,marginTop:2}}>{p.details.composition}</p>
+                  </div>
+                )}
+                {/* Additional Notes (new admin format) */}
+                {p.details.additionalNotes&&(
+                  <div style={{padding:"10px 0"}}>
+                    <p style={{...T.bodySm,color:C.black,fontSize:12,lineHeight:1.8}}>{p.details.additionalNotes}</p>
+                  </div>
+                )}
               </div>
             )}
             {!p.details&&(
@@ -316,6 +370,24 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
               </div>
             </div>
           </DetailAccordion>
+
+          {/* Share buttons */}
+          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+            <button onClick={() => { const url = window.location.href; window.open(`https://wa.me/?text=${encodeURIComponent(p.name + " - " + url)}`, "_blank"); }}
+              style={{ flex: 1, padding: "10px 0", border: `1px solid ${C.lgray}`, background: "none", ...T.labelSm, fontSize: 9, color: C.gray, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, transition: "all 0.2s" }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "#25D366"; e.currentTarget.style.color = "#25D366"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = C.lgray; e.currentTarget.style.color = C.gray; }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492l4.574-1.466A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.813c-2.188 0-4.214-.7-5.869-1.891l-.421-.313-2.714.87.887-2.636-.344-.449A9.786 9.786 0 012.188 12 9.813 9.813 0 0112 2.188 9.813 9.813 0 0121.813 12 9.813 9.813 0 0112 21.813z"/></svg>
+              {L.shareWhatsApp||"WhatsApp"}
+            </button>
+            <button onClick={() => { navigator.clipboard.writeText(window.location.href).then(() => toast(L.linkCopied||"Link copied!", "success")); }}
+              style={{ flex: 1, padding: "10px 0", border: `1px solid ${C.lgray}`, background: "none", ...T.labelSm, fontSize: 9, color: C.gray, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, transition: "all 0.2s" }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = C.tan; e.currentTarget.style.color = C.tan; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = C.lgray; e.currentTarget.style.color = C.gray; }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+              {L.copyLink||"Copy Link"}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -341,7 +413,7 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
                       onMouseEnter={e=>e.currentTarget.style.transform="scale(1.03)"}
                       onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}/>
                     <div style={{position:"absolute",top:10,left:10,background:"rgba(0,0,0,0.75)",padding:"4px 10px"}}>
-                      <span style={{...T.labelSm,color:C.white,fontSize:7,letterSpacing:"0.1em"}}>{item.cat.toUpperCase()}</span>
+                      <span style={{...T.labelSm,color:C.white,fontSize:7,letterSpacing:"0.1em"}}>{(item.cat||"").toUpperCase()}</span>
                     </div>
                     {/* Wishlist button */}
                     <button onClick={e=>{e.stopPropagation();onWishlist&&onWishlist(item.id);}}
@@ -366,7 +438,7 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
                       {item.sale&&<span style={{fontSize:12,color:C.gray,textDecoration:"line-through",marginLeft:6}}>GEL {item.price}</span>}
                     </p>
                   </div>
-                  <button onClick={()=>{addToCart(item,item.sizes[0]==="One Size"||item.sizes.length===1?item.sizes[0]:null);toast(L.addedToCart||"Added to bag","success");}}
+                  <button onClick={()=>{const sz=item.sizes?.length?((item.sizes[0]==="One Size"||item.sizes.length===1)?item.sizes[0]:null):null;addToCart(item,sz);toast(L.addedToCart||"Added to bag","success");}}
                     onMouseEnter={e=>{e.currentTarget.style.background=C.black;e.currentTarget.style.color=C.white;}}
                     onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color=C.black;}}
                     style={{width:"100%",padding:"10px",border:`1px solid ${C.black}`,background:"transparent",color:C.black,...T.labelSm,fontSize:9,letterSpacing:"0.1em",cursor:"pointer",transition:"all 0.25s ease"}}>
@@ -389,6 +461,26 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
           </div>
         </div>
       )}
+
+      {/* Recently Viewed */}
+      {(() => {
+        try {
+          const viewedIds = JSON.parse(localStorage.getItem("alternative_recently_viewed") || "[]");
+          const recentProducts = viewedIds.filter(id => id !== p?.id).slice(0, 4).map(id => ALL_PRODUCTS.find(pr => pr.id === id)).filter(Boolean);
+          if (recentProducts.length === 0) return null;
+          return (
+            <div style={{ maxWidth: 1360, margin: "0 auto", padding: mobile ? "40px 20px 0" : "56px 40px 0" }}>
+              <p style={{ ...T.labelSm, color: C.tan, fontSize: 9, letterSpacing: "0.15em", marginBottom: 8 }}>{L.recentlyViewedLabel||"RECENTLY VIEWED"}</p>
+              <h3 style={{ ...T.displaySm, color: C.black, fontSize: "clamp(18px,2vw,22px)", marginBottom: 28 }}>{L.recentlyViewed||"Recently Viewed"}</h3>
+              <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 3 }}>
+                {recentProducts.map(rp => (
+                  <ProductCard key={rp.id} product={rp} wishlist={wishlist} onWishlist={onWishlist} L={L} onSelect={() => setPage("product", rp)} mobile={mobile} />
+                ))}
+              </div>
+            </div>
+          );
+        } catch { return null; }
+      })()}
 
       {related.length>0&&(
         <div style={{borderTop:`1px solid ${C.lgray}`,padding:"64px 0",background:C.offwhite}}>

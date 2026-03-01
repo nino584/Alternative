@@ -11,9 +11,13 @@ import AdminDashboard from './pages/AdminDashboard.jsx';
 export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [lang, setLang] = useState(() => {
+  const [lang, setLangState] = useState(() => {
     try { const v = localStorage.getItem("alternative_lang"); return ["en","ka","ru"].includes(v) ? v : "en"; } catch { return "en"; }
   });
+  const setLang = (code) => {
+    setLangState(code);
+    try { localStorage.setItem("alternative_lang", code); } catch {}
+  };
   const mobile = useIsMobile();
   const L = LANG_DATA[lang] || LANG_DATA.en;
 
@@ -78,7 +82,7 @@ function AdminLogin({ setUser, L, lang, setLang, mobile }) {
     setBusy(true);
     try {
       const data = await api.login(email, password);
-      if (data.user.role !== 'admin') {
+      if (!data?.user || data.user.role !== 'admin') {
         await api.logout();
         setError('Access denied. Admin account required.');
         setBusy(false);
@@ -103,7 +107,7 @@ function AdminLogin({ setUser, L, lang, setLang, mobile }) {
         </div>
 
         {error && (
-          <div style={{padding:"11px 14px",background:"#fff5f5",border:`1px solid ${C.red}`,marginBottom:18}}>
+          <div style={{padding:"11px 14px",background:"rgba(88,70,56,0.06)",border:`1px solid ${C.red}`,marginBottom:18}}>
             <p style={{...T.bodySm,color:C.red,fontSize:12}}>{error}</p>
           </div>
         )}

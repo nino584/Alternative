@@ -98,7 +98,7 @@ export default function ContactPage({setPage,L,mobile}) {
               <div style={{position:"absolute",left:"-9999px"}} aria-hidden="true">
                 <input type="text" name="website" tabIndex={-1} autoComplete="off" value={form.website} onChange={e=>setForm({...form,website:e.target.value})}/>
               </div>
-              {formError&&<div style={{padding:"11px 14px",background:"#fff5f5",border:`1px solid ${C.red}`,marginBottom:18}}><p style={{...T.bodySm,color:C.red,fontSize:12}}>{formError}</p></div>}
+              {formError&&<div style={{padding:"11px 14px",background:"rgba(88,70,56,0.06)",border:`1px solid ${C.red}`,marginBottom:18}}><p style={{...T.bodySm,color:C.red,fontSize:12}}>{formError}</p></div>}
               {[
                 {key:"name",label:L.contactFullName,type:"text",placeholder:L.contactFullNamePh},
                 {key:"email",label:L.contactEmailLabel,type:"email",placeholder:L.contactEmailPh},

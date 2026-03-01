@@ -1,15 +1,16 @@
 import { useState, useEffect, useMemo } from 'react';
 import { C, T } from '../constants/theme.js';
-import { BI } from '../constants/images.js';
 import { PRODUCTS } from '../constants/data.js';
 import HoverBtn from '../components/ui/HoverBtn.jsx';
 import ProductCard from '../components/ui/ProductCard.jsx';
 import Footer from '../components/layout/Footer.jsx';
 import SEO from '../components/SEO.jsx';
+
+import { SkeletonProductGrid } from '../components/ui/SkeletonLoader.jsx';
 import { pageMeta, collectionSchema } from '../utils/seo.js';
 
 // ── CATALOG PAGE ── LuisaViaRoma-style sidebar layout ──────────────────────────
-export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,initSection,initSub,L,toast,user,setUser,mobile,products:productsProp}) {
+export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,initSection,initSub,L,toast,user,setUser,mobile,products:productsProp,topOffset=0}) {
   const [section,setSection]=useState(initSection||"Womenswear");
   const [subCat,setSubCat]=useState("All");
   const [price,setPrice]=useState("all");
@@ -28,10 +29,13 @@ export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,ini
     if (typeof window==="undefined") return;
     const s=window.__initSection;
     const sub=window.__initSub;
+    const brand=window.__initBrand;
     if (s) setSection(s);
     if (sub) setSubCat(sub);
+    if (brand) { setBrandFilter(brand); setExpanded(prev=>({...prev,brand:true})); }
     delete window.__initSection;
     delete window.__initSub;
+    delete window.__initBrand;
   },[]);
 
   const subCats={
@@ -158,11 +162,11 @@ export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,ini
   );
 
   return (
-    <div style={{paddingTop:mobile?52:80,minHeight:"100vh",background:C.cream}}>
+    <div style={{paddingTop:(mobile?52:80)+topOffset,minHeight:"100vh",background:C.cream}}>
       <SEO {...catalogMeta} schema={catalogSchema} />
 
       {/* ── SECTION TABS (sticky) ── */}
-      <div style={{position:"sticky",top:mobile?52:80,background:C.cream,zIndex:50,borderBottom:`1px solid ${C.lgray}`}}>
+      <div style={{position:"sticky",top:(mobile?52:80)+topOffset,background:C.cream,zIndex:50,borderBottom:`1px solid ${C.lgray}`}}>
         <div style={{maxWidth:1360,margin:"0 auto",padding:mobile?"0 16px":"0 40px"}}>
           {!mobile?(
             <div style={{display:"flex",gap:0}}>
@@ -190,7 +194,7 @@ export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,ini
 
       {/* ── MOBILE: STICKY REFINE + SORT ── */}
       {mobile&&(
-        <div style={{position:"sticky",top:96,background:`rgba(231,232,225,0.97)`,backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",zIndex:49,borderBottom:`1px solid ${C.lgray}`}}>
+        <div style={{position:"sticky",top:(mobile?96:130)+topOffset,background:`rgba(231,232,225,0.97)`,backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",zIndex:49,borderBottom:`1px solid ${C.lgray}`}}>
           <div style={{display:"flex",alignItems:"center"}}>
             <button onClick={()=>setRefineOpen(true)}
               style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"14px 16px",background:"none",border:"none",borderRight:`1px solid ${C.lgray}`,...T.labelSm,fontSize:10,color:C.black,cursor:"pointer",letterSpacing:"0.1em",position:"relative"}}>
@@ -376,14 +380,16 @@ export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,ini
 
         {/* ── PRODUCT GRID ── */}
         <div style={{flex:1,padding:mobile?"20px 16px 60px":"24px 0 80px 32px",minWidth:0}}>
-          {filtered.length===0?(
+          {filtered.length===0 && activeFilters===0 ? (
+            <SkeletonProductGrid count={8} mobile={mobile} />
+          ) : filtered.length===0 ? (
             <div style={{padding:"80px 0",textAlign:"center"}}>
               <p style={{...T.displaySm,color:C.lgray,marginBottom:16}}>{L.noItems}</p>
               <p style={{...T.bodySm,color:C.gray,marginBottom:28}}>{L.adjustFilters}</p>
-              <HoverBtn onClick={()=>{setSection("All");clearAll();}} variant="secondary">{L.clearFilters}</HoverBtn>
+              <HoverBtn onClick={()=>{setSection("Womenswear");clearAll();}} variant="secondary">{L.clearFilters}</HoverBtn>
             </div>
-          ):(
-            <div style={{display:"grid",gridTemplateColumns:mobile?"1fr 1fr":"repeat(4,1fr)",gap:mobile?2:3}}>
+          ) : (
+            <div style={{display:"grid",gridTemplateColumns:mobile?"1fr 1fr":"repeat(4,1fr)",gap:mobile?10:3}}>
               {filtered.map(p=><ProductCard key={p.id} product={p} wishlist={wishlist} onWishlist={onWishlist} L={L} mobile={mobile}
                 onSelect={()=>{setPage("product",p);}}/>)}
             </div>

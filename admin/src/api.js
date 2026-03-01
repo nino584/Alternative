@@ -81,4 +81,50 @@ export const api = {
 
   updateOrderStatus: (orderId, status) =>
     request(`/orders/${orderId}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+
+  // Admin: Customers
+  getCustomers: () =>
+    request('/admin/customers'),
+
+  // Admin: Subscribers
+  getSubscribers: () =>
+    request('/admin/subscribers'),
+
+  // Admin: Promo Codes
+  getPromos: () =>
+    request('/admin/promos'),
+
+  createPromo: (data) =>
+    request('/admin/promos', { method: 'POST', body: JSON.stringify(data) }),
+
+  updatePromo: (code, data) =>
+    request(`/admin/promos/${encodeURIComponent(code)}`, { method: 'PATCH', body: JSON.stringify(data) }),
+
+  deletePromo: (code) =>
+    request(`/admin/promos/${encodeURIComponent(code)}`, { method: 'DELETE' }),
+
+  // Admin: Return Requests
+  getReturns: () =>
+    request('/admin/returns'),
+
+  updateReturn: (id, data) =>
+    request(`/admin/returns/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+
+  // Admin: Stock Notifications
+  getStockNotifications: () =>
+    request('/admin/stock-notifications'),
+
+  // Admin: Settings (placeholder — store in localStorage for now)
+  getSettings: () => {
+    try {
+      const s = localStorage.getItem('alt_admin_settings');
+      return Promise.resolve(s ? JSON.parse(s) : null);
+    } catch { return Promise.resolve(null); }
+  },
+  saveSettings: (data) => {
+    try {
+      localStorage.setItem('alt_admin_settings', JSON.stringify(data));
+      return Promise.resolve({ ok: true });
+    } catch { return Promise.reject({ message: 'Failed to save' }); }
+  },
 };

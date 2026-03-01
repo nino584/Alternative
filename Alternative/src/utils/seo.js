@@ -247,7 +247,7 @@ export function breadcrumbSchema(items) {
       "@type": "ListItem",
       position: i + 1,
       name: item.name,
-      ...(item.url ? { item: SITE_URL + item.url } : {}),
+      ...(item.url ? { item: SITE_URL + item.url, url: SITE_URL + item.url } : {}),
     })),
   };
 }

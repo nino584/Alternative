@@ -17,4 +17,17 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    sourcemap: false,
+    cssMinify: true,
+    minify: 'esbuild',
+    target: 'es2020',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+        },
+      },
+    },
+  },
 });

@@ -26,7 +26,7 @@ export default function AboutPage({setPage,L,mobile}) {
       </div>
       <div style={{padding:"64px 0",background:C.offwhite}}>
         <div style={{maxWidth:1360,margin:"0 auto",padding:mobile?"0 16px":"0 40px",display:"grid",gridTemplateColumns:mobile?"1fr":"1fr 1fr",gap:mobile?28:64,alignItems:"center"}}>
-          <div style={{height:400,overflow:"hidden"}}><img src={BI.bag_stone} alt="Quality assurance process at Alternative" loading="lazy" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>
+          <div style={{height:400,display:"flex",alignItems:"center",justifyContent:"center",background:C.offwhite}}><img src={BI.bag_stone} alt="Quality assurance process at Alternative" loading="lazy" style={{maxWidth:"100%",maxHeight:"100%",objectFit:"contain"}}/></div>
           <div style={{minWidth:0}}>
             <p style={{...T.labelSm,color:C.tan,marginBottom:16,letterSpacing:"0.2em"}}>{L&&L.qualityAssurance||'WHY WE\'RE DIFFERENT'}</p>
             <h2 style={{...T.displayMd,color:C.black,marginBottom:20,lineHeight:1.15}}>{L&&L.yourEyes||'You see the actual item before it arrives.'}</h2>

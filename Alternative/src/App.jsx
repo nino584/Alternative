@@ -8,6 +8,8 @@ import useIsMobile from './hooks/useIsMobile.js';
 import { productUrl, organizationSchema, websiteSchema } from './utils/seo.js';
 import SEO from './components/SEO.jsx';
 
+import LoadingScreen from './components/ui/LoadingScreen.jsx';
+import AppBanner from './components/ui/AppBanner.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import Nav from './components/layout/Nav.jsx';
 import ToastContainer from './components/ui/ToastContainer.jsx';
@@ -15,7 +17,7 @@ import CookieConsent, { initAnalyticsIfConsented } from './components/ui/CookieC
 import SearchOverlay from './components/overlays/SearchOverlay.jsx';
 import CartDrawer from './components/overlays/CartDrawer.jsx';
 import StylistChat from './components/ui/StylistChat.jsx';
-import CheckoutModal from './components/overlays/CheckoutModal.jsx';
+const CheckoutPage = lazy(() => import('./pages/CheckoutPage.jsx'));
 
 import HomePage from './pages/HomePage.jsx';
 import CatalogPage from './pages/CatalogPage.jsx';
@@ -52,6 +54,7 @@ export default function App() {
   const pathname = location.pathname || "/";
   const pageFromRoute = pathname === "/" ? "home" : pathname.slice(1).split("/")[0];
 
+  const [siteLoaded, setSiteLoaded] = useState(false);
   const [selected,setSelected]=useState(null);
   const [cart,setCart]=useState(()=>readStorage(STORAGE_KEYS.cart,[]));
   const [orders,setOrders]=useState(()=>readStorage(STORAGE_KEYS.orders,[]));
@@ -59,8 +62,8 @@ export default function App() {
   const [wishlist,setWishlist]=useState(()=>readStorage(STORAGE_KEYS.wishlist,[]));
   const [products,setProducts]=useState(FALLBACK_PRODUCTS);
   const [showSearch,setShowSearch]=useState(false);
+  const [bannerH,setBannerH]=useState(0);
   const [showCart,setShowCart]=useState(false);
-  const [showCheckout,setShowCheckout]=useState(false);
   const [toasts,setToasts]=useState([]);
   const [lang,setLang]=useState(()=>readStorage(STORAGE_KEYS.lang,"en"));
   const mobile = useIsMobile();
@@ -85,7 +88,17 @@ export default function App() {
   useEffect(() => {
     // Try to restore user session from cookie
     api.me().then(data => {
-      if (data?.user) setUser(data.user);
+      if (data?.user) {
+        setUser(data.user);
+        // Fetch user's orders from server
+        api.getOrders().then(oData => {
+          if (oData?.orders?.length) setOrders(oData.orders);
+        }).catch(() => {});
+        // Sync wishlist from server
+        api.getWishlist().then(wData => {
+          if (Array.isArray(wData?.items) && wData.items.length > 0) setWishlist(wData.items);
+        }).catch(() => {});
+      }
     }).catch(() => { /* not logged in */ });
 
     // Load products from API (fall back to hardcoded)
@@ -118,6 +131,8 @@ export default function App() {
         window.localStorage.setItem(STORAGE_KEYS.wishlist,JSON.stringify(wishlist));
       }
     } catch (_) {}
+    // Sync to server if logged in
+    if (user) api.saveWishlist(wishlist).catch(() => {});
   },[wishlist]);
   useEffect(()=>{
     try {
@@ -143,10 +158,17 @@ export default function App() {
     toast(L.removedCart,"");
   },[L]);
 
-  const placeOrder=useCallback((orderData)=>{
-    setOrders(p=>[orderData,...p]);
+  const updateCartQty=useCallback((i,delta)=>{
+    setCart(p=>p.map((item,idx)=>{
+      if(idx!==i)return item;
+      const newQty=Math.max(1,(item.qty||1)+delta);
+      return{...item,qty:newQty};
+    }));
+  },[]);
+
+  const placeOrder=useCallback(()=>{
     setCart([]);
-    setShowCheckout(false);
+    // Don't close checkout — step 3 "Thank You" page still shows
   },[]);
 
   const onWishlist=useCallback((id)=>{
@@ -167,9 +189,13 @@ export default function App() {
     setPage("home");
   }, [setPage]);
 
+  const onLoadComplete = useCallback(() => { setSiteLoaded(true); try { sessionStorage.setItem('alt_loaded', '1'); } catch {} }, []);
+
   const commonProps={setPage,toast,user,setUser,L,onLogout:handleLogout};
 
   return (
+    <>
+    {!siteLoaded && <LoadingScreen onComplete={onLoadComplete} />}
     <ErrorBoundary>
       <SEO schema={[organizationSchema(), websiteSchema()]} lang={lang} />
       <style>{STYLES}{`
@@ -178,20 +204,21 @@ export default function App() {
         *:focus-visible{outline:2px solid #b19a7a;outline-offset:2px}
       `}</style>
       <a href="#main-content" className="skip-link">Skip to content</a>
-      <Nav page={page} setPage={setPage} cartCount={cart.length}
+      {siteLoaded&&<AppBanner mobile={mobile} onHeightChange={setBannerH}/>}
+      {page!=="checkout"&&<Nav page={page} setPage={setPage} cartCount={cart.length}
         user={user} setUser={setUser} onLogout={handleLogout}
         onSearch={()=>setShowSearch(true)} onCart={()=>setShowCart(true)}
         wishlistCount={wishlist.length}
-        lang={lang} setLang={setLang} L={L} mobile={mobile}/>
+        lang={lang} setLang={setLang} L={L} mobile={mobile} topOffset={bannerH}/>}
       <main id="main-content" role="main">
       <Suspense fallback={<div style={{minHeight:"100vh"}} role="status" aria-label="Loading page"/>}>
         <Routes>
-          <Route path="/" element={<HomePage setPage={setPage} setSelected={setSelected} products={products} wishlist={wishlist} onWishlist={onWishlist} L={L} mobile={mobile}/>}/>
-          <Route path="/catalog" element={<CatalogPage {...commonProps} setSelected={setSelected} products={products} wishlist={wishlist} onWishlist={onWishlist} mobile={mobile}/>}/>
+          <Route path="/" element={<HomePage setPage={setPage} setSelected={setSelected} products={products} wishlist={wishlist} onWishlist={onWishlist} L={L} lang={lang} mobile={mobile}/>}/>
+          <Route path="/catalog" element={<CatalogPage {...commonProps} setSelected={setSelected} products={products} wishlist={wishlist} onWishlist={onWishlist} mobile={mobile} topOffset={bannerH}/>}/>
           <Route path="/product/:slug" element={<ProductPage {...commonProps} setSelected={setSelected} products={products} addToCart={addToCart} wishlist={wishlist} onWishlist={onWishlist} mobile={mobile}/>}/>
           <Route path="/how" element={<HowItWorksPage setPage={setPage} L={L} mobile={mobile}/>}/>
           <Route path="/about" element={<AboutPage setPage={setPage} L={L} mobile={mobile}/>}/>
-          <Route path="/orders" element={<OrdersPage orders={orders} setPage={setPage} toast={toast} L={L} mobile={mobile}/>}/>
+          <Route path="/orders" element={<OrdersPage orders={orders} products={products} setPage={setPage} toast={toast} L={L} mobile={mobile}/>}/>
           <Route path="/auth" element={<AuthPage setPage={setPage} setUser={setUser} toast={toast} L={L} mobile={mobile}/>}/>
           <Route path="/account" element={<AccountPage {...commonProps} orders={orders} products={products} wishlist={wishlist} onWishlist={onWishlist} mobile={mobile}/>}/>
           <Route path="/brands" element={<BrandsPage setPage={setPage} setSelected={setSelected} products={products} L={L} mobile={mobile}/>}/>
@@ -203,16 +230,17 @@ export default function App() {
           <Route path="/shipping" element={<LegalPage type="shipping" setPage={setPage} L={L} mobile={mobile}/>}/>
           <Route path="/accessibility" element={<LegalPage type="accessibility" setPage={setPage} L={L} mobile={mobile}/>}/>
           <Route path="/contact" element={<ContactPage setPage={setPage} L={L} mobile={mobile}/>}/>
+          <Route path="/checkout" element={<CheckoutPage cart={cart} user={user} L={L} setPage={setPage} onComplete={placeOrder} toast={toast} mobile={mobile}/>}/>
           <Route path="*" element={<NotFoundPage setPage={setPage} L={L} mobile={mobile}/>}/>
         </Routes>
       </Suspense>
       </main>
       {showSearch&&<SearchOverlay onClose={()=>setShowSearch(false)} setPage={setPage} setSelected={setSelected} products={products} L={L} mobile={mobile}/>}
-      {showCart&&<CartDrawer cart={cart} onClose={()=>setShowCart(false)} setPage={setPage} removeFromCart={removeFromCart} onCheckout={()=>{setShowCart(false);setShowCheckout(true);}} L={L} mobile={mobile}/>}
-      {showCheckout&&<CheckoutModal cart={cart} user={user} L={L} onClose={()=>setShowCheckout(false)} setPage={setPage} onComplete={placeOrder} toast={toast}/>}
+      {showCart&&<CartDrawer cart={cart} onClose={()=>setShowCart(false)} setPage={setPage} removeFromCart={removeFromCart} updateCartQty={updateCartQty} onCheckout={()=>{setShowCart(false);setPage("checkout");}} L={L} mobile={mobile}/>}
       <StylistChat mobile={mobile} lang={lang} setPage={setPage} L={L}/>
       <ToastContainer toasts={toasts} mobile={mobile} role="status" aria-live="polite"/>
       <CookieConsent L={L} mobile={mobile} setPage={setPage}/>
     </ErrorBoundary>
+    </>
   );
 }

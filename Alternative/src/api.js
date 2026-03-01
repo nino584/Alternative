@@ -81,4 +81,58 @@ export const api = {
 
   updateOrderStatus: (orderId, status) =>
     request(`/orders/${orderId}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+
+  // Social login
+  socialLogin: (provider, token) =>
+    request('/auth/social', { method: 'POST', body: JSON.stringify({ provider, token }) }),
+
+  // Newsletter
+  subscribe: (email) =>
+    request('/subscribe', { method: 'POST', body: JSON.stringify({ email }) }),
+
+  // Promo codes
+  validatePromo: (code, subtotal) =>
+    request('/promo/validate', { method: 'POST', body: JSON.stringify({ code, subtotal }) }),
+
+  // Stock notifications
+  notifyStock: (productId, email) =>
+    request('/notify-stock', { method: 'POST', body: JSON.stringify({ productId, email }) }),
+
+  // Password reset
+  forgotPassword: (email) =>
+    request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
+  resetPassword: (token, password) =>
+    request('/auth/reset-password', { method: 'POST', body: JSON.stringify({ token, password }) }),
+
+  // Password change & profile
+  changePassword: (currentPassword, newPassword) =>
+    request('/auth/change-password', { method: 'POST', body: JSON.stringify({ currentPassword, newPassword }) }),
+  updateProfile: (data) =>
+    request('/auth/profile', { method: 'PUT', body: JSON.stringify(data) }),
+
+  // Wishlist (server sync)
+  getWishlist: () => request('/wishlist'),
+  saveWishlist: (items) =>
+    request('/wishlist', { method: 'PUT', body: JSON.stringify({ items }) }),
+
+  // Return requests
+  createReturn: (data) =>
+    request('/returns', { method: 'POST', body: JSON.stringify(data) }),
+  getReturns: () => request('/returns'),
+
+  // Account deletion
+  deleteAccount: (password) =>
+    request('/auth/account', { method: 'DELETE', body: JSON.stringify({ password }) }),
+
+  // Order cancellation
+  cancelOrder: (orderId) =>
+    request(`/orders/${orderId}/cancel`, { method: 'POST' }),
+
+  // Invoice
+  getInvoice: (orderId) =>
+    fetch(`/api/orders/${orderId}/invoice`, { credentials: 'include' }).then(r => r.text()),
+
+  // Newsletter unsubscribe
+  unsubscribe: (email) =>
+    request('/unsubscribe', { method: 'POST', body: JSON.stringify({ email }) }),
 };

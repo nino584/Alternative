@@ -1,18 +1,10 @@
 // ── COLORS ────────────────────────────────────────────────────────────────────
 export const C = {
-  black:"#191919", cream:"#e7e8e1", tan:"#b19a7a", brown:"#584638",
-  gray:"#a8a296", lgray:"#d4d0c8", offwhite:"#f4f2ed", white:"#ffffff",
+  black:"#191919", cream:"#f0f0ec", tan:"#b19a7a", brown:"#584638",
+  gray:"#5c564f", lgray:"#d4d0c8", offwhite:"#f7f6f3", white:"#ffffff",
   green:"#1a6b3a", red:"#8b2020",
-  // Hero (reference-matched)
-  heroBg:"#F2EDE7",
-  heroHeadline:"#33302D",
-  heroTan:"#B19A76",
-  heroSub:"#7A7570",
-  heroBody:"#5B5651",
-  heroBtnDark:"#2B2B2B",
-  heroScroll:"#C4BDB5",
-  heroOutline:"#33302D",
-  heroRightBg:"#E5E0DA",
+  muted:"#8a8479",
+  border:"#e0ddd7",
 };
 
 // ── TYPOGRAPHY ────────────────────────────────────────────────────────────────
@@ -21,11 +13,11 @@ export const T = {
   displayLg:{fontFamily:"'Alido',serif",fontSize:"clamp(36px,5.5vw,68px)",fontWeight:400,lineHeight:1.0},
   displayMd:{fontFamily:"'Alido',serif",fontSize:"clamp(26px,3.5vw,44px)",fontWeight:400,lineHeight:1.1},
   displaySm:{fontFamily:"'Alido',serif",fontSize:"clamp(20px,2.5vw,32px)",fontWeight:400,lineHeight:1.2},
-  heading:{fontFamily:"'TT Interphases Pro',sans-serif",fontSize:"15px",fontWeight:500,letterSpacing:"0.04em"},
-  label:{fontFamily:"'TT Interphases Pro',sans-serif",fontSize:"11px",fontWeight:500,letterSpacing:"0.14em",textTransform:"uppercase"},
-  labelSm:{fontFamily:"'TT Interphases Pro',sans-serif",fontSize:"9px",fontWeight:500,letterSpacing:"0.18em",textTransform:"uppercase"},
-  body:{fontFamily:"'TT Interphases Pro',sans-serif",fontSize:"15px",fontWeight:300,lineHeight:1.75},
-  bodySm:{fontFamily:"'TT Interphases Pro',sans-serif",fontSize:"13px",fontWeight:300,lineHeight:1.65},
+  heading:{fontFamily:"'TT Interphases Pro',sans-serif",fontSize:"16px",fontWeight:500,letterSpacing:"0.03em"},
+  label:{fontFamily:"'TT Interphases Pro',sans-serif",fontSize:"12px",fontWeight:600,letterSpacing:"0.1em",textTransform:"uppercase"},
+  labelSm:{fontFamily:"'TT Interphases Pro',sans-serif",fontSize:"10px",fontWeight:600,letterSpacing:"0.12em",textTransform:"uppercase"},
+  body:{fontFamily:"'TT Interphases Pro',sans-serif",fontSize:"15px",fontWeight:400,lineHeight:1.7},
+  bodySm:{fontFamily:"'TT Interphases Pro',sans-serif",fontSize:"14px",fontWeight:400,lineHeight:1.6},
 };
 
 // ── GLOBAL CSS ────────────────────────────────────────────────────────────────

@@ -78,6 +78,6 @@ export function getRefreshCookieOptions() {
     secure: isProd,
     sameSite: isProd ? 'strict' : 'lax',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    path: '/api/auth',
+    path: '/',
   };
 }

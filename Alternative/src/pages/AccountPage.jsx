@@ -3,6 +3,7 @@ import { C, T } from '../constants/theme.js';
 import { PRODUCTS as IMPORTED_PRODUCTS } from '../constants/data.js';
 import HoverBtn from '../components/ui/HoverBtn.jsx';
 import ProductCard from '../components/ui/ProductCard.jsx';
+import { api } from '../api.js';
 
 const STORAGE = { addr: "alternative_addresses", pay: "alternative_payments" };
 function load(key, fb) { try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : fb; } catch { return fb; } }
@@ -162,6 +163,19 @@ function EmptyState({ icon, title, subtitle, action, actionLabel }) {
 // ── ACCOUNT PAGE ─────────────────────────────────────────────────────────────
 export default function AccountPage({ mobile, user, setUser, setPage, orders, wishlist, onWishlist, toast, L, products: productsProp, onLogout }) {
   const [tab, setTab] = useState("overview");
+  const getImg=(o)=>{
+    if(o.img) return o.img;
+    const p=(productsProp||[]).find(pr=>String(pr.id)===String(o.productId));
+    return p?.img||"";
+  };
+
+  // Support external tab navigation (e.g. Nav wishlist button)
+  useEffect(() => {
+    if (window.__initAccountTab) {
+      setTab(window.__initAccountTab);
+      delete window.__initAccountTab;
+    }
+  }, []);
   const [addresses, setAddresses] = useState(() => load(STORAGE.addr, []));
   const [payments, setPayments] = useState(() => load(STORAGE.pay, []));
   const [addrModal, setAddrModal] = useState(null); // null | "new" | index
@@ -189,7 +203,34 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
   const [cExpiry, setCExpiry] = useState("");
   const [cType, setCType] = useState("visa");
 
-  useEffect(() => { if (window.__initAccountTab) { setTab(window.__initAccountTab); delete window.__initAccountTab; } }, []);
+  // Change password
+  const [pwModal, setPwModal] = useState(false);
+  const [pwCurrent, setPwCurrent] = useState("");
+  const [pwNew, setPwNew] = useState("");
+  const [pwConfirm, setPwConfirm] = useState("");
+  const [pwLoading, setPwLoading] = useState(false);
+
+  // Return request
+  const [returnModal, setReturnModal] = useState(false);
+  const [retOrderId, setRetOrderId] = useState("");
+  const [retReason, setRetReason] = useState("");
+  const [retLoading, setRetLoading] = useState(false);
+  const [myReturns, setMyReturns] = useState([]);
+
+  // Account deletion
+  const [deleteModal, setDeleteModal] = useState(false);
+  const [delPassword, setDelPassword] = useState("");
+  const [delLoading, setDelLoading] = useState(false);
+
+  // Order cancellation
+  const [cancelOrderId, setCancelOrderId] = useState(null);
+  const [cancelLoading, setCancelLoading] = useState(false);
+
+  // Local orders (for cancellation support without setOrders prop)
+  const [localOrders, setLocalOrders] = useState(orders);
+  useEffect(() => { setLocalOrders(orders); }, [orders]);
+
+  // Note: __initAccountTab is handled by the useEffect above (no deps) which runs on every render
   useEffect(() => { if (!user) setPage("auth"); }, [user]);
   useEffect(() => { save(STORAGE.addr, addresses); }, [addresses]);
   useEffect(() => { save(STORAGE.pay, payments); }, [payments]);
@@ -260,9 +301,62 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
 
   const saveProfile = () => {
     if (!pName || !pEmail) { toast(L.allRequired || "Please fill all required fields.", ""); return; }
-    setUser({ ...user, name: pName, email: pEmail, phone: pPhone, dob: pDob });
-    setProfileEdit(false);
-    toast(L.settingsSaved || "Profile updated.", "success");
+    api.updateProfile({ name: pName, email: pEmail, phone: pPhone }).then(data => {
+      if (data?.user) setUser(data.user);
+      else setUser({ ...user, name: pName, email: pEmail, phone: pPhone });
+      setProfileEdit(false);
+      toast(L.settingsSaved || "Profile updated.", "success");
+    }).catch(err => toast(err?.message || "Failed to update profile", "error"));
+  };
+
+  // Change password handler
+  const handleChangePassword = () => {
+    if (!pwCurrent || !pwNew || !pwConfirm) { toast(L.allRequired || "Please fill all fields.", ""); return; }
+    if (pwNew.length < 8) { toast(L.passwordMinLength || "Password must be at least 8 characters.", ""); return; }
+    if (pwNew !== pwConfirm) { toast(L.passwordsDoNotMatch || "Passwords do not match.", ""); return; }
+    setPwLoading(true);
+    api.changePassword(pwCurrent, pwNew)
+      .then(() => { toast(L.passwordChanged || "Password changed successfully.", "success"); setPwModal(false); setPwCurrent(""); setPwNew(""); setPwConfirm(""); })
+      .catch(err => toast(err?.message || "Failed to change password", "error"))
+      .finally(() => setPwLoading(false));
+  };
+
+  // Load user returns
+  useEffect(() => {
+    if (user) api.getReturns().then(data => setMyReturns(Array.isArray(data) ? data : [])).catch(() => {});
+  }, [user]);
+
+  // Submit return request
+  const handleReturnRequest = () => {
+    if (!retOrderId || !retReason) { toast(L.allRequired || "Please fill all fields.", ""); return; }
+    setRetLoading(true);
+    api.createReturn({ orderId: retOrderId, reason: retReason })
+      .then(ret => { setMyReturns(prev => [ret, ...prev]); setReturnModal(false); setRetOrderId(""); setRetReason(""); toast(L.returnSubmitted || "Return request submitted.", "success"); })
+      .catch(err => toast(err?.message || "Failed to submit return request", "error"))
+      .finally(() => setRetLoading(false));
+  };
+
+  // Delete account handler
+  const handleDeleteAccount = () => {
+    if (!delPassword) { toast(L.allRequired || "Please enter your password.", ""); return; }
+    setDelLoading(true);
+    api.deleteAccount(delPassword)
+      .then(() => { toast(L.accountDeleted || "Account deleted.", "success"); if(onLogout)onLogout(); else{setUser(null);setPage("home");} })
+      .catch(err => toast(err?.message || "Failed to delete account", "error"))
+      .finally(() => setDelLoading(false));
+  };
+
+  const handleCancelOrder = () => {
+    if (!cancelOrderId) return;
+    setCancelLoading(true);
+    api.cancelOrder(cancelOrderId)
+      .then(() => {
+        setLocalOrders(prev => prev.map(o => o.orderId === cancelOrderId ? { ...o, status: "cancelled" } : o));
+        toast(L.cancelSuccess || "Order cancelled. Refund will be processed.", "success");
+        setCancelOrderId(null);
+      })
+      .catch(err => toast(err?.message || "Failed to cancel order", "error"))
+      .finally(() => setCancelLoading(false));
   };
 
   // ── Sidebar sections ──
@@ -339,7 +433,7 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
 
           {/* Sign out (mobile) */}
           {mobile && (
-            <button onClick={() => { setUser(null); toast(L.signedOut || "Signed out.", "success"); setPage("home"); }}
+            <button onClick={() => { if(onLogout)onLogout(); else{setUser(null);setPage("home");} toast(L.signedOut || "Signed out.", "success"); }}
               style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", padding: "11px 14px", background: "none", border: "none", ...T.bodySm, color: C.red, fontWeight: 300, marginTop: 8, cursor: "pointer" }}>
               <Icon d={icons.signout} size={16} color={C.red} />
               {L.signOut || "Sign Out"}
@@ -354,6 +448,44 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
           {tab === "overview" && (
             <div>
               <SectionHeader title={L.overview || "Overview"} subtitle={L.overviewSub || "Your account at a glance"} mobile={mobile} />
+
+              {/* ── Reward Tier Card ── */}
+              {(() => {
+                const totalSpent = localOrders.reduce((s, o) => s + (o.depositPaid || o.price || 0), 0);
+                const tiers = [
+                  { name: L?.tierNewcomer || "Newcomer", min: 0, next: 500, color: C.lgray, icon: "★" },
+                  { name: L?.tierBronze || "Bronze", min: 500, next: 2000, color: "#b08d57", icon: "★★" },
+                  { name: L?.tierSilver || "Silver", min: 2000, next: 5000, color: "#8a8a8a", icon: "★★★" },
+                  { name: L?.tierGold || "Gold", min: 5000, next: 15000, color: C.tan, icon: "★★★★" },
+                  { name: L?.tierPlatinum || "Platinum", min: 15000, next: null, color: C.black, icon: "★★★★★" },
+                ];
+                const current = [...tiers].reverse().find(t => totalSpent >= t.min) || tiers[0];
+                const nextTier = tiers[tiers.indexOf(current) + 1];
+                const progress = nextTier ? Math.min(100, ((totalSpent - current.min) / (nextTier.min - current.min)) * 100) : 100;
+                return (
+                  <div style={{ background: C.white, padding: mobile ? "20px 18px" : "24px 28px", marginBottom: 2 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                      <div>
+                        <p style={{ ...T.labelSm, color: current.color, fontSize: 10, letterSpacing: "0.15em", marginBottom: 4 }}>{L?.yourTier || "YOUR TIER"}</p>
+                        <p style={{ fontFamily: "'Alido',serif", fontSize: mobile ? 22 : 26, fontWeight: 300, color: C.black }}>{current.name}</p>
+                      </div>
+                      <span style={{ fontSize: mobile ? 20 : 26, color: current.color, letterSpacing: "0.05em" }}>{current.icon}</span>
+                    </div>
+                    {nextTier ? (
+                      <>
+                        <div style={{ height: 4, background: C.lgray, borderRadius: 2, overflow: "hidden", marginBottom: 8 }}>
+                          <div style={{ height: "100%", background: current.color, width: `${progress}%`, borderRadius: 2, transition: "width 0.6s ease" }} />
+                        </div>
+                        <p style={{ ...T.bodySm, color: C.gray, fontSize: 11 }}>
+                          GEL {totalSpent.toLocaleString()} / {nextTier.min.toLocaleString()} — <span style={{ color: C.tan }}>{L?.tierNext || "Next"}: {nextTier.name}</span>
+                        </p>
+                      </>
+                    ) : (
+                      <p style={{ ...T.bodySm, color: C.tan, fontSize: 12 }}>{L?.tierMax || "You've reached the highest tier!"}</p>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Wishlist & My Orders — main navigation cards */}
               <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr" : "1fr 1fr", gap: 2, marginBottom: 24 }}>
@@ -380,7 +512,7 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
                   onMouseLeave={e => e.currentTarget.style.background = C.white}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
                     <Icon d={icons.orders} size={26} color={C.tan} />
-                    <div style={{ ...T.displaySm, color: C.black, fontSize: 32 }}>{orders.length}</div>
+                    <div style={{ ...T.displaySm, color: C.black, fontSize: 32 }}>{localOrders.length}</div>
                   </div>
                   <p style={{ ...T.heading, color: C.black, fontSize: 15, marginBottom: 4 }}>{L.myOrders || "My Orders"}</p>
                   <p style={{ ...T.bodySm, color: C.gray, fontSize: 12 }}>{L.viewYourOrders || "Track and manage your orders"}</p>
@@ -391,13 +523,13 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
               </div>
 
               {/* Recent orders */}
-              {orders.length > 0 && (
+              {localOrders.length > 0 && (
                 <div style={{ marginBottom: 24 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
                     <p style={{ ...T.label, color: C.black, fontSize: 11 }}>{L.recentOrders || "Recent Orders"}</p>
                     <button onClick={() => setPage("orders")} style={{ background: "none", border: "none", ...T.labelSm, color: C.tan, fontSize: 9, textDecoration: "underline", textUnderlineOffset: 3, cursor: "pointer" }}>{L.viewAll || "View all →"}</button>
                   </div>
-                  {orders.slice(0, 3).map(o => {
+                  {localOrders.slice(0, 3).map(o => {
                     const first = o.items ? o.items[0] : o;
                     const itemCount = o.items ? o.items.length : 1;
                     return (
@@ -405,13 +537,12 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
                       onClick={() => setPage("orders")}
                       onMouseEnter={e => e.currentTarget.style.background = C.offwhite}
                       onMouseLeave={e => e.currentTarget.style.background = C.white}>
-                      <img src={first.img} alt={first.name} loading="lazy" width="56" height="56" style={{ width: 56, height: 56, objectFit: "cover", flexShrink: 0 }} />
+                      {getImg(first)?<img src={getImg(first)} alt={first.name} loading="lazy" width="56" height="56" style={{ width: 56, height: 56, objectFit: "cover", flexShrink: 0 }} />:<div style={{width:56,height:56,background:C.lgray,flexShrink:0}}/>}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ ...T.heading, color: C.black, fontSize: 13, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{itemCount > 1 ? `${itemCount} items` : first.name}</p>
-                        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                          <div style={{ width: 5, height: 5, borderRadius: "50%", background: C.tan }} />
-                          <span style={{ ...T.labelSm, fontSize: 8, color: C.tan }}>{L.processing || "Processing"}</span>
-                        </div>
+                        <span style={{ ...T.labelSm, fontSize: 8, padding: "3px 10px", background: o.status === "cancelled" ? C.red : `${C.tan}15`, color: o.status === "cancelled" ? C.white : C.tan }}>
+                          {o.status === "cancelled" ? (L.statusCancelled||"Cancelled") : (L.statusLabels?.[o.status] || o.status || L.processing || "Processing")}
+                        </span>
                       </div>
                       <p style={{ ...T.heading, color: C.black, fontSize: 14, flexShrink: 0 }}>GEL {o.total || first.sale || first.price}</p>
                     </div>
@@ -447,12 +578,12 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
           {/* ════════ ORDERS ════════ */}
           {tab === "orders" && (
             <div>
-              <SectionHeader title={L.myOrders || "My Orders"} subtitle={`${orders.length} ${orders.length === 1 ? L.piece || "order" : L.pieces || "orders"}`} mobile={mobile} />
-              {orders.length === 0 ? (
+              <SectionHeader title={L.myOrders || "My Orders"} subtitle={`${localOrders.length} ${localOrders.length === 1 ? L.piece || "order" : L.pieces || "orders"}`} mobile={mobile} />
+              {localOrders.length === 0 ? (
                 <EmptyState icon={icons.orders} title={L.noOrdersYet || "No orders yet"} subtitle={L.startBrowsing || "When you place an order, it will appear here."} action={() => setPage("catalog")} actionLabel={L.exploreCollection || "Explore Collection"} />
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  {orders.map(o => {
+                  {localOrders.map(o => {
                     const first = o.items ? o.items[0] : o;
                     const itemCount = o.items ? o.items.length : 1;
                     return (
@@ -460,16 +591,37 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
                       onClick={() => setPage("orders")}
                       onMouseEnter={e => e.currentTarget.style.background = C.offwhite}
                       onMouseLeave={e => e.currentTarget.style.background = C.white}>
-                      <img src={first.img} alt={first.name} loading="lazy" width="72" height="72" style={{ width: 72, height: 72, objectFit: "cover", flexShrink: 0 }} />
+                      {getImg(first)?<img src={getImg(first)} alt={first.name} loading="lazy" width="72" height="72" style={{ width: 72, height: 72, objectFit: "cover", flexShrink: 0 }} />:<div style={{width:72,height:72,background:C.lgray,flexShrink:0}}/>}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ ...T.heading, color: C.black, fontSize: 14, marginBottom: 4 }}>{itemCount > 1 ? `${itemCount} items` : first.name}</p>
                         <p style={{ ...T.labelSm, color: C.gray, fontSize: 8, marginBottom: 8 }}>{o.orderId}</p>
                         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                          <div style={{ display: "flex", gap: 5, alignItems: "center", background: `${C.tan}15`, padding: "3px 10px" }}>
-                            <div style={{ width: 5, height: 5, borderRadius: "50%", background: C.tan }} />
-                            <span style={{ ...T.labelSm, fontSize: 8, color: C.tan }}>{L.processing || "Processing"}</span>
-                          </div>
+                          {(() => {
+                            const statuses = ["reserved","sourcing","confirmed","shipped","delivered"];
+                            const statusLabels = { reserved: L.statusReserved||"Reserved", sourcing: L.statusSourcing||"Sourcing", confirmed: L.statusConfirmed||"Confirmed", shipped: L.statusShipped||"Shipped", delivered: L.statusDelivered||"Delivered" };
+                            const current = statuses.indexOf(o.status || "reserved");
+                            const cancelled = o.status === "cancelled";
+                            return (
+                              <div style={{ display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap" }}>
+                                {cancelled ? (
+                                  <span style={{ ...T.labelSm, fontSize: 8, padding: "3px 10px", background: C.red, color: C.white }}>{L.statusCancelled||"CANCELLED"}</span>
+                                ) : statuses.map((s, si) => (
+                                  <div key={s} style={{ display: "flex", alignItems: "center", gap: 2 }}>
+                                    <div style={{ width: 6, height: 6, borderRadius: "50%", background: si <= current ? C.tan : C.lgray, transition: "background 0.3s" }} />
+                                    {si < statuses.length - 1 && <div style={{ width: 12, height: 1, background: si < current ? C.tan : C.lgray }} />}
+                                  </div>
+                                ))}
+                                {!cancelled && <span style={{ ...T.labelSm, fontSize: 8, color: C.tan, marginLeft: 4 }}>{statusLabels[o.status] || o.status}</span>}
+                              </div>
+                            );
+                          })()}
                           {o.wantVideo && <span style={{ ...T.labelSm, fontSize: 8, color: C.green }}>VIDEO</span>}
+                          {!["shipped","delivered","cancelled"].includes(o.status) && (
+                            <button onClick={(e) => { e.stopPropagation(); setCancelOrderId(o.orderId); }}
+                              style={{ ...T.labelSm, fontSize: 8, color: C.red, background: "none", border: `1px solid ${C.red}`, padding: "3px 10px", cursor: "pointer", marginLeft: 4 }}>
+                              {L.cancelOrder || "Cancel"}
+                            </button>
+                          )}
                         </div>
                       </div>
                       <div style={{ textAlign: "right", flexShrink: 0 }}>
@@ -550,7 +702,18 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
                           <p style={{ ...T.bodySm, color: C.gray, fontSize: 13 }}>••••••••</p>
                           <p style={{ ...T.labelSm, color: C.gray, fontSize: 8, marginTop: 4 }}>{L.lastChanged || "Set during registration"}</p>
                         </div>
-                        <HoverBtn onClick={() => toast(L.passwordResetSent || "Password reset link sent to your email.", "success")} variant="ghost" style={{ padding: "8px 18px", fontSize: 9 }}>{L.changeBtn || "Change"}</HoverBtn>
+                        <HoverBtn onClick={() => setPwModal(true)} variant="ghost" style={{ padding: "8px 18px", fontSize: 9 }}>{L.changeBtn || "Change"}</HoverBtn>
+                      </div>
+                    </div>
+
+                    <div style={{ marginTop: 28 }}>
+                      <p style={{ ...T.label, color: C.red, fontSize: 10, marginBottom: 14 }}>{L.dangerZone || "Danger Zone"}</p>
+                      <div style={{ padding: 20, background: C.offwhite, display: "flex", justifyContent: "space-between", alignItems: "center", border: `1px solid ${C.red}20` }}>
+                        <div>
+                          <p style={{ ...T.bodySm, color: C.black, fontSize: 13 }}>{L.deleteAccount || "Delete Account"}</p>
+                          <p style={{ ...T.labelSm, color: C.gray, fontSize: 8, marginTop: 4 }}>{L.deleteAccountDesc || "Permanently delete your account and all data"}</p>
+                        </div>
+                        <HoverBtn onClick={() => setDeleteModal(true)} variant="ghost" style={{ padding: "8px 18px", fontSize: 9, color: C.red, borderColor: C.red }}>{L.deleteAccount || "Delete"}</HoverBtn>
                       </div>
                     </div>
                   </div>
@@ -709,11 +872,28 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
                 </div>
               </div>
 
-              {/* Active returns - always empty in demo */}
-              <div style={{ marginBottom: 24 }}>
-                <p style={{ ...T.label, color: C.black, fontSize: 10, marginBottom: 14 }}>{L.activeReturns || "Active Returns"}</p>
-                <EmptyState icon={icons.returns} title={L.noReturns || "No active returns"} subtitle={L.noReturnsSub || "You haven't initiated any returns yet."} />
+              {/* Submit return request */}
+              <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <p style={{ ...T.label, color: C.black, fontSize: 10 }}>{L.activeReturns || "Active Returns"}</p>
+                <HoverBtn onClick={() => setReturnModal(true)} variant="tan" style={{ padding: "8px 18px", fontSize: 9 }}>+ {L.requestReturn || "Request Return"}</HoverBtn>
               </div>
+
+              {myReturns.length === 0 ? (
+                <EmptyState icon={icons.returns} title={L.noReturns || "No active returns"} subtitle={L.noReturnsSub || "You haven't initiated any returns yet."} />
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 24 }}>
+                  {myReturns.map(r => (
+                    <div key={r.id} style={{ background: C.white, padding: 20, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div>
+                        <p style={{ ...T.heading, color: C.black, fontSize: 13, marginBottom: 4 }}>{L.order || "Order"}: {r.orderId}</p>
+                        <p style={{ ...T.bodySm, color: C.gray, fontSize: 12, marginBottom: 6 }}>{r.reason}</p>
+                        <p style={{ ...T.labelSm, color: C.gray, fontSize: 9 }}>{r.createdAt ? new Date(r.createdAt).toLocaleDateString() : ""}</p>
+                      </div>
+                      <span style={{ ...T.labelSm, fontSize: 9, padding: "4px 12px", background: r.status === "approved" ? "#1a6b3a" : r.status === "rejected" ? C.red : C.tan, color: C.white }}>{(r.status || "pending").toUpperCase()}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Need help */}
               <div style={{ background: C.white, padding: 24, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
@@ -727,6 +907,51 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
           )}
         </div>
       </div>
+
+      {/* ── Change Password Modal ── */}
+      <Modal open={pwModal} onClose={() => { setPwModal(false); setPwCurrent(""); setPwNew(""); setPwConfirm(""); }} title={L.changePassword || "Change Password"} mobile={mobile}>
+        <FormInput label={L.currentPassword || "Current Password"} value={pwCurrent} onChange={setPwCurrent} type="password" required />
+        <FormInput label={L.newPassword || "New Password"} value={pwNew} onChange={setPwNew} type="password" required />
+        <FormInput label={L.confirmPassword || "Confirm New Password"} value={pwConfirm} onChange={setPwConfirm} type="password" required />
+        <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+          <HoverBtn onClick={handleChangePassword} variant="primary" style={{ padding: "13px 36px", opacity: pwLoading ? 0.6 : 1 }}>{pwLoading ? "..." : (L.changePassword || "Change Password")}</HoverBtn>
+          <HoverBtn onClick={() => { setPwModal(false); setPwCurrent(""); setPwNew(""); setPwConfirm(""); }} variant="ghost">{L.cancel || "Cancel"}</HoverBtn>
+        </div>
+      </Modal>
+
+      {/* ── Return Request Modal ── */}
+      <Modal open={returnModal} onClose={() => { setReturnModal(false); setRetOrderId(""); setRetReason(""); }} title={L.requestReturn || "Request Return"} mobile={mobile}>
+        <FormInput label={L.orderId || "Order ID"} value={retOrderId} onChange={setRetOrderId} placeholder="e.g. ORD-12345" required />
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ ...T.labelSm, color: C.black, fontSize: 9, display: "block", marginBottom: 6 }}>{L.returnReason || "Reason for return"} *</label>
+          <textarea value={retReason} onChange={e => setRetReason(e.target.value)} rows={4} placeholder={L.returnReasonPlaceholder || "Please describe why you want to return this item..."}
+            style={{ width: "100%", padding: 12, border: `1px solid ${C.lgray}`, background: C.offwhite, ...T.bodySm, fontSize: 13, color: C.black, resize: "vertical", outline: "none", boxSizing: "border-box" }} />
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <HoverBtn onClick={handleReturnRequest} variant="primary" style={{ padding: "13px 36px", opacity: retLoading ? 0.6 : 1 }}>{retLoading ? "..." : (L.submitReturn || "Submit Request")}</HoverBtn>
+          <HoverBtn onClick={() => { setReturnModal(false); setRetOrderId(""); setRetReason(""); }} variant="ghost">{L.cancel || "Cancel"}</HoverBtn>
+        </div>
+      </Modal>
+
+      {/* ── Delete Account Modal ── */}
+      <Modal open={deleteModal} onClose={() => { setDeleteModal(false); setDelPassword(""); }} title={L.deleteAccount || "Delete Account"} mobile={mobile}>
+        <p style={{ ...T.bodySm, color: C.gray, marginBottom: 20 }}>{L.deleteAccountWarn || "This action is permanent and cannot be undone. All your data, orders, and wishlist will be deleted."}</p>
+        <FormInput label={L.passwordLabel || "Password"} value={delPassword} onChange={setDelPassword} type="password" required />
+        <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+          <HoverBtn onClick={handleDeleteAccount} variant="primary" style={{ padding: "13px 36px", background: C.red, opacity: delLoading ? 0.6 : 1 }}>{delLoading ? "..." : (L.confirmDelete || "Delete My Account")}</HoverBtn>
+          <HoverBtn onClick={() => { setDeleteModal(false); setDelPassword(""); }} variant="ghost">{L.cancel || "Cancel"}</HoverBtn>
+        </div>
+      </Modal>
+
+      {/* ── Cancel Order Confirmation ── */}
+      <Modal open={!!cancelOrderId} onClose={() => setCancelOrderId(null)} title={L.cancelOrderTitle || "Cancel Order"} mobile={mobile}>
+        <p style={{ ...T.bodySm, color: C.gray, marginBottom: 20 }}>{L.cancelConfirm || "Cancel this order? Your payment will be fully refunded."}</p>
+        <p style={{ ...T.labelSm, color: C.black, marginBottom: 20 }}>{L.orderId || "Order ID"}: {cancelOrderId}</p>
+        <div style={{ display: "flex", gap: 10 }}>
+          <HoverBtn onClick={handleCancelOrder} variant="primary" style={{ padding: "13px 36px", background: C.red, opacity: cancelLoading ? 0.6 : 1 }}>{cancelLoading ? "..." : (L.confirmCancel || "Yes, Cancel Order")}</HoverBtn>
+          <HoverBtn onClick={() => setCancelOrderId(null)} variant="ghost">{L.cancel || "Cancel"}</HoverBtn>
+        </div>
+      </Modal>
     </div>
   );
 }

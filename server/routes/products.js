@@ -15,17 +15,25 @@ const productSchema = z.object({
   color: z.string().max(50).optional().default(''),
   price: z.number().positive(),
   sale: z.number().positive().nullable().optional(),
-  lead: z.string().max(50).optional().default(''),
+  lead: z.string().max(100).optional().default(''),
   tag: z.string().max(20).optional().default(''),
-  img: z.string().optional().default(''),
-  images: z.array(z.string()).optional().default([]),
+  img: z.string().max(500000).optional().default(''),
+  images: z.array(z.string().max(500000)).max(20).optional().default([]),
   sizes: z.array(z.string()).min(1),
   fit: z.object({
     fit: z.string(),
     notes: z.string(),
   }).optional(),
   brand: z.string().max(100).optional().default(''),
-  desc: z.string().max(2000).optional().default(''),
+  desc: z.string().max(5000).optional().default(''),
+  inStock: z.boolean().optional().default(true),
+  details: z.object({
+    itemCode: z.string().max(100).optional().default(''),
+    material: z.string().max(500).optional().default(''),
+    composition: z.string().max(500).optional().default(''),
+    dimensions: z.string().max(200).optional().default(''),
+    additionalNotes: z.string().max(2000).optional().default(''),
+  }).optional(),
 });
 
 // ── GET /api/products — public ────────────────────────────────────────────

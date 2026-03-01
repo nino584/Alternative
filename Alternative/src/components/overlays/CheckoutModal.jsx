@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { C, T } from '../../constants/theme.js';
 import { VIDEO_VERIFICATION_GEL } from '../../constants/config.js';
 import { IconCheck, IconVideo } from '../icons/Icons.jsx';
 import HoverBtn from '../ui/HoverBtn.jsx';
+import { api } from '../../api.js';
 
 const ADDR_KEY = "alternative_addresses";
 function loadAddresses() {
@@ -15,8 +16,12 @@ export default function CheckoutModal({cart,user,L,onClose,setPage,onComplete,to
   const [wantVideo,setWantVideo]=useState(false);
   const [payMethod,setPayMethod]=useState("BOG");
   const [formError,setFormError]=useState("");
+  const [submitting,setSubmitting]=useState(false);
+  const [confirmedOrderId,setConfirmedOrderId]=useState("");
 
-  const subtotal=(cart||[]).reduce((s,o)=>s+(Number(o.sale)||Number(o.price)||0),0);
+  useEffect(()=>{const fn=e=>{if(e.key==="Escape"&&step<3)onClose();};window.addEventListener("keydown",fn);return()=>window.removeEventListener("keydown",fn);},[onClose,step]);
+
+  const subtotal=(cart||[]).reduce((s,o)=>s+((Number(o.sale)||Number(o.price)||0)*(o.qty||1)),0);
   const grandTotal=subtotal+(wantVideo?VIDEO_VERIFICATION_GEL:0);
 
   // Guest form
@@ -31,12 +36,12 @@ export default function CheckoutModal({cart,user,L,onClose,setPage,onComplete,to
   const loggedName=user?.name||"";
   const isGuest=!user;
 
-  const handleNext=()=>{
+  const handleNext=async()=>{
     if (step===1){
       if (isGuest) {
         if (!guestForm.firstName.trim()||!guestForm.lastName.trim()){setFormError(L?.fillRequired||"Please fill in all required fields.");return;}
-        if (!guestForm.email.includes("@")){setFormError(L?.validEmail||"Please enter a valid email address.");return;}
-        if (!guestForm.phone.trim()){setFormError(L?.enterPhone||"Please enter your phone number.");return;}
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestForm.email)){setFormError(L?.validEmail||"Please enter a valid email address.");return;}
+        if (!guestForm.phone.trim()||guestForm.phone.trim().length<5){setFormError(L?.enterPhone||"Please enter a valid phone number.");return;}
         if (!guestForm.address.trim()||!guestForm.city.trim()){setFormError(L?.enterAddress||"Please enter your shipping address.");return;}
       } else {
         if (!selectedAddr){setFormError(L?.selectAddress||"Please select or add a shipping address.");return;}
@@ -44,30 +49,42 @@ export default function CheckoutModal({cart,user,L,onClose,setPage,onComplete,to
       setFormError("");
       setStep(2);
     } else if (step===2){
-      const orderId="ALT-"+Date.now().toString(36).toUpperCase();
+      if (submitting) return;
+      setSubmitting(true);
       const customerName=isGuest?`${guestForm.firstName} ${guestForm.lastName}`.trim():loggedName;
       const phone=isGuest?guestForm.phone:loggedPhone;
       const notes=isGuest?guestForm.notes:loggedNotes;
+      const email=isGuest?guestForm.email:(user?.email||"");
       const shippingAddress=isGuest
-        ?{address:guestForm.address,city:guestForm.city,country:guestForm.country,postal:guestForm.postal}
-        :{address:selectedAddr?.line1,city:selectedAddr?.city,country:selectedAddr?.country,postal:selectedAddr?.postal};
+        ?{address:guestForm.address,city:guestForm.city,country:guestForm.country,postal:guestForm.postal||""}
+        :{address:selectedAddr?.line1||"",city:selectedAddr?.city||"",country:selectedAddr?.country||"Georgia",postal:selectedAddr?.postal||""};
 
-      const orderData={
-        orderId,
-        items:cart.map(c=>({...c})),
-        status:"reserved",
-        total:grandTotal,
-        wantVideo,
-        customerName,
-        phone,
-        email:isGuest?guestForm.email:(user?.email||""),
-        notes,
-        shippingAddress,
-        createdAt:new Date().toISOString(),
-      };
-      onComplete(orderData);
-      toast(L?.orderPlaced||"Order placed successfully!","success");
-      setStep(3);
+      try {
+        const orderIds=[];
+        for (const item of cart) {
+          const res = await api.createOrder({
+            productId: item.id,
+            productName: item.name,
+            selectedSize: item.selectedSize||"One Size",
+            wantVideo,
+            customerName,
+            phone,
+            email,
+            notes: wantVideo?notes:"",
+            shippingAddress,
+            price: Number(item.sale)||Number(item.price),
+            depositPaid: Number(item.sale)||Number(item.price),
+          });
+          if(res.order?.orderId) orderIds.push(res.order.orderId);
+        }
+        setConfirmedOrderId(orderIds.join(", "));
+        onComplete({ items: cart, total: grandTotal });
+        setStep(3);
+      } catch (err) {
+        toast(L?.orderFailed||"Failed to place order. Please try again.","error");
+      } finally {
+        setSubmitting(false);
+      }
     }
   };
 
@@ -159,10 +176,6 @@ export default function CheckoutModal({cart,user,L,onClose,setPage,onComplete,to
                     </div>
                   )}
 
-                  <div style={{marginBottom:16}}>
-                    <label style={labelStyle}>{L?.notes||"NOTES"}</label>
-                    <input type="text" placeholder={L?.notesPlaceholder||"Size questions, color preferences..."} value={loggedNotes} onChange={e=>setLoggedNotes(e.target.value)} style={inputStyle(false)}/>
-                  </div>
                 </>
               )}
 
@@ -223,10 +236,6 @@ export default function CheckoutModal({cart,user,L,onClose,setPage,onComplete,to
                     </select>
                   </div>
 
-                  <div style={{marginBottom:16}}>
-                    <label style={labelStyle}>{L?.notes||"NOTES"}</label>
-                    <input type="text" placeholder={L?.notesPlaceholder||"Size questions, color preferences..."} value={guestForm.notes} onChange={e=>setGuestForm({...guestForm,notes:e.target.value})} style={inputStyle(false)}/>
-                  </div>
                 </>
               )}
 
@@ -248,6 +257,15 @@ export default function CheckoutModal({cart,user,L,onClose,setPage,onComplete,to
                   <p style={{fontFamily:"'Alido',serif",fontSize:16,color:wantVideo?C.white:C.black}}>GEL {subtotal+VIDEO_VERIFICATION_GEL}</p>
                 </button>
               </div>
+
+              {/* Notes — only when video verification is selected */}
+              {wantVideo&&(
+                <div style={{marginTop:16}}>
+                  <label style={labelStyle}>{L?.videoNotes||"WHAT WOULD YOU LIKE TO SEE IN THE VIDEO?"}</label>
+                  <input type="text" placeholder={L?.videoNotesPlaceholder||"e.g. Show stitching details, check hardware color, try on wrist..."} value={isGuest?guestForm.notes:loggedNotes} onChange={e=>isGuest?setGuestForm({...guestForm,notes:e.target.value}):setLoggedNotes(e.target.value)} style={inputStyle(false)} maxLength={300}/>
+                  <p style={{...T.labelSm,color:C.gray,fontSize:8,marginTop:4}}>{L?.videoNotesHint||"Our team will cover these points in your personalized video"}</p>
+                </div>
+              )}
             </>
           )}
 
@@ -303,31 +321,52 @@ export default function CheckoutModal({cart,user,L,onClose,setPage,onComplete,to
             </>
           )}
 
-          {/* ── STEP 3: CONFIRMATION ── */}
+          {/* ── STEP 3: THANK YOU ── */}
           {step===3&&(
-            <div style={{textAlign:"center",padding:"16px 0"}}>
-              <div style={{width:56,height:56,borderRadius:"50%",border:`2px solid ${C.tan}`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
-                <IconCheck size={28} color={C.tan} stroke={2}/>
+            <div style={{textAlign:"center",padding:"24px 0"}}>
+              <div style={{width:72,height:72,borderRadius:"50%",background:"rgba(177,154,122,0.1)",border:`2px solid ${C.tan}`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px",animation:"fadeUp 0.4s ease"}}>
+                <IconCheck size={32} color={C.tan} stroke={2}/>
               </div>
-              <h3 style={{fontFamily:"'Alido',serif",fontSize:28,fontWeight:300,color:C.black,marginBottom:12}}>{L?.orderConfirmed||"Order Confirmed"}</h3>
-              <p style={{...T.body,color:C.gray,marginBottom:24,lineHeight:1.8}}>
-                {L?.contactNote||"We will contact you on WhatsApp at"} <strong>{isGuest?guestForm.phone:loggedPhone}</strong> {L?.within2h||"within 2 hours."}
-                {wantVideo&&(L?.videoShipping||" Video will be sent before shipping.")}
+              <p style={{...T.labelSm,color:C.tan,fontSize:9,letterSpacing:"0.2em",marginBottom:8}}>{L?.thankYou||"THANK YOU FOR YOUR ORDER"}</p>
+              <h3 style={{fontFamily:"'Alido',serif",fontSize:32,fontWeight:300,color:C.black,marginBottom:8}}>{L?.orderConfirmed||"Order Confirmed"}</h3>
+              {confirmedOrderId&&<p style={{...T.labelSm,color:C.gray,fontSize:10,marginBottom:16}}>{confirmedOrderId}</p>}
+              <p style={{...T.body,color:C.gray,marginBottom:28,lineHeight:1.8,maxWidth:340,margin:"0 auto 28px"}}>
+                {L?.contactNote||"We will contact you on WhatsApp at"} <strong style={{color:C.black}}>{isGuest?guestForm.phone:loggedPhone}</strong> {L?.within2h||"within 2 hours to confirm your order."}
               </p>
-              <div style={{background:C.offwhite,padding:16,textAlign:"left",marginBottom:24}}>
-                {[[L?.itemCount||"Items",`${cart.length}`],[L?.total||"Total",`GEL ${grandTotal}`],[L?.status||"Status",L?.processing||"Processing"]].map(([k,v])=>(
-                  <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:`1px solid ${C.lgray}`}}>
-                    <span style={{...T.labelSm,color:C.gray,fontSize:9}}>{k}</span>
-                    <span style={{...T.bodySm,color:C.black}}>{v}</span>
+
+              <div style={{background:C.offwhite,padding:"20px 24px",textAlign:"left",marginBottom:20}}>
+                {[[L?.itemCount||"Items",`${cart.length} ${cart.length===1?"item":"items"}`],[L?.total||"Total",`GEL ${grandTotal}`],[L?.paymentMethod||"Payment",payMethod==="BOG"?"Bank Transfer":"Card"],[L?.status||"Status",L?.processing||"Processing"]].map(([k,v],i)=>(
+                  <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"10px 0",borderBottom:i<3?`1px solid ${C.lgray}`:"none"}}>
+                    <span style={{...T.labelSm,color:C.gray,fontSize:10}}>{k}</span>
+                    <span style={{...T.bodySm,color:C.black,fontWeight:500}}>{v}</span>
                   </div>
                 ))}
+              </div>
+
+              {wantVideo&&(
+                <div style={{padding:"14px 18px",background:"rgba(177,154,122,0.06)",border:`1px solid rgba(177,154,122,0.15)`,marginBottom:20,textAlign:"left"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                    <IconVideo size={14} color={C.tan} stroke={1.6}/>
+                    <span style={{...T.label,color:C.tan,fontSize:10}}>{L?.videoIncluded||"Video Verification Included"}</span>
+                  </div>
+                  <p style={{...T.bodySm,color:C.gray,fontSize:11,lineHeight:1.6}}>{L?.videoConfirmNote||"You'll receive a personalized video on WhatsApp before we ship."}</p>
+                </div>
+              )}
+
+              <div style={{padding:"14px 18px",background:C.offwhite,textAlign:"left"}}>
+                <p style={{...T.bodySm,color:C.gray,fontSize:11,lineHeight:1.7}}>
+                  {L?.whatsNext||"What happens next: Our team will verify availability, confirm pricing, and reach out to you on WhatsApp to finalize your order."}
+                </p>
               </div>
             </div>
           )}
 
           {/* Action button */}
-          <HoverBtn onClick={step===3?()=>{onClose();setPage("orders");}:handleNext} variant="primary" style={{width:"100%",padding:"15px 24px"}}>
-            {step===1?(L?.reviewOrder||"Review Order"):step===2?`${L?.confirmPay||"Confirm & Pay"} — GEL ${grandTotal}`:(L?.viewMyOrders||"View My Orders")}
+          <HoverBtn onClick={step===3?()=>{onClose();setPage("orders");}:handleNext} variant="primary" style={{width:"100%",padding:"15px 24px",opacity:submitting?0.7:1,pointerEvents:submitting?"none":"auto"}} disabled={submitting}>
+            {submitting?(L?.placingOrder||"Placing Order...")
+              :step===1?(L?.reviewOrder||"Review Order")
+              :step===2?`${L?.confirmPay||"Confirm & Pay"} — GEL ${grandTotal}`
+              :(L?.viewMyOrders||"View My Orders")}
           </HoverBtn>
 
           {step===2&&(
