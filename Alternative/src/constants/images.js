@@ -5,7 +5,7 @@ export const IMAGES_DIR = BASE + "images";
 export const HERO_IMAGE = `${IMAGES_DIR}/hero.jpg`;
 
 export const BI = {
-  bag_stone:       `${IMAGES_DIR}/womenswear.jpg`,
+  bag_stone:       `${IMAGES_DIR}/quality-section.jpg`,
   man_editorial:   `${IMAGES_DIR}/menswear.jpg`,
   packaging:       `${IMAGES_DIR}/kidswear.jpg`,
   store_interior:  `${IMAGES_DIR}/store-interior.jpg`,

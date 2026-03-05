@@ -120,7 +120,7 @@ export default function HomePage({setPage,setSelected,L,lang,mobile,products:pro
           <p style={{...T.labelSm,color:C.tan,marginBottom:10,letterSpacing:"0.14em"}}>{L.shopBy}</p>
           <h2 style={{...T.displayMd,color:C.black,marginBottom:mobile?28:48,fontSize:mobile?"clamp(22px,6vw,32px)":undefined}}>{L.collections}</h2>
           <div style={{display:"grid",gridTemplateColumns:mobile?"1fr":"1fr 1fr 1fr",gap:mobile?10:3}}>
-            {[{name:L.womenswear,section:"Womenswear",src:BI.bag_stone,sub:L.womensSub},{name:L.menswear,section:"Menswear",src:BI.man_editorial,sub:L.mensSub},{name:L.kidswear,section:"Kidswear",src:BI.packaging,sub:L.kidsSub}].map((cat,i)=>(
+            {[{name:L.womenswear,section:"Womenswear",src:BI.cover,sub:L.womensSub},{name:L.menswear,section:"Menswear",src:BI.man_editorial,sub:L.mensSub},{name:L.kidswear,section:"Kidswear",src:BI.packaging,sub:L.kidsSub}].map((cat,i)=>(
               <div key={i} onClick={()=>{window.__initSection=cat.section;setPage("catalog");}}
                 style={{position:"relative",height:mobile?260:420,cursor:"pointer",overflow:"hidden"}}
                 onMouseEnter={e=>{const img=e.currentTarget.querySelector('img');if(img)img.style.transform="scale(1.05)";}}
