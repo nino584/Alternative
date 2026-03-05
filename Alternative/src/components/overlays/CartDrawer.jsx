@@ -9,10 +9,10 @@ export default function CartDrawer({cart,onClose,setPage,removeFromCart,updateCa
   return (
     <div role="dialog" aria-label={L&&L.shoppingBag||"Shopping Bag"} aria-modal="true" style={{position:"fixed",inset:0,zIndex:350,display:"flex"}}>
       <div onClick={onClose} style={{position:"absolute",inset:0,background:"rgba(25,25,25,0.55)",backdropFilter:"blur(4px)",WebkitBackdropFilter:"blur(4px)",animation:"fadeIn 0.2s ease"}}/>
-      <div style={{position:"relative",marginLeft:"auto",width:"100%",maxWidth:440,background:C.cream,height:"100%",overflow:"auto",animation:"slideRight 0.3s cubic-bezier(0.25,0.46,0.45,0.94)",boxShadow:"-16px 0 60px rgba(0,0,0,0.12)"}}>
+      <div style={{position:"relative",marginLeft:"auto",width:"100%",maxWidth:440,background:C.cream,height:"100%",display:"flex",flexDirection:"column",animation:"slideRight 0.3s cubic-bezier(0.25,0.46,0.45,0.94)",boxShadow:"-16px 0 60px rgba(0,0,0,0.12)"}}>
 
         {/* Header */}
-        <div style={{padding:"24px 28px",borderBottom:`1px solid ${C.lgray}`,display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,background:C.cream,zIndex:2}}>
+        <div style={{padding:"24px 28px",borderBottom:`1px solid ${C.lgray}`,display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0}}>
           <div>
             <p style={{fontFamily:"'TT Interphases Pro',sans-serif",fontSize:9,fontWeight:500,letterSpacing:"0.14em",textTransform:"uppercase",color:C.tan,marginBottom:6}}>{L&&L.yourBag||"YOUR BAG"}</p>
             <p style={{fontFamily:"'TT Interphases Pro',sans-serif",fontSize:16,fontWeight:500,color:C.black,letterSpacing:"0.02em"}}>{L&&L.shoppingBag||"Shopping Bag"} ({cart.length})</p>
@@ -22,8 +22,8 @@ export default function CartDrawer({cart,onClose,setPage,removeFromCart,updateCa
           </button>
         </div>
 
-        {/* Cart items */}
-        <div style={{padding:"20px 28px",flex:1}}>
+        {/* Cart items — scrollable */}
+        <div style={{padding:"20px 28px",flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
           {cart.length===0?(
             <div style={{textAlign:"center",padding:"60px 0"}}>
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke={C.lgray} strokeWidth="0.8" strokeLinecap="round" style={{marginBottom:20}}>
@@ -35,9 +35,10 @@ export default function CartDrawer({cart,onClose,setPage,removeFromCart,updateCa
             </div>
           ):cart.map((o,i)=>(
             <div key={o.addedAt||i} style={{display:"flex",gap:16,padding:"18px 0",borderBottom:"1px solid rgba(0,0,0,0.06)",transition:"opacity 0.3s"}}>
-              <img src={o.img} alt={o.name} loading="lazy" width="80" height="80"
+              <img src={o.img||(o.images&&o.images[0])||""} alt={o.name} loading="lazy" width="80" height="80"
                 style={{width:80,height:80,objectFit:"cover",flexShrink:0,cursor:"pointer",transition:"opacity 0.3s"}}
                 onClick={()=>{setPage("product",o);onClose();}}
+                onError={e=>{e.target.style.display="none";}}
                 onMouseEnter={e=>e.currentTarget.style.opacity="0.85"}
                 onMouseLeave={e=>e.currentTarget.style.opacity="1"}/>
               <div style={{flex:1,minWidth:0}}>
@@ -70,7 +71,7 @@ export default function CartDrawer({cart,onClose,setPage,removeFromCart,updateCa
 
         {/* Footer / checkout */}
         {cart.length>0&&(
-          <div style={{position:"sticky",bottom:0,background:C.cream,borderTop:`1px solid ${C.lgray}`,padding:"22px 28px"}}>
+          <div style={{flexShrink:0,background:C.cream,borderTop:`1px solid ${C.lgray}`,padding:"22px 28px"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:6}}>
               <span style={{fontFamily:"'TT Interphases Pro',sans-serif",fontSize:10,fontWeight:500,letterSpacing:"0.14em",textTransform:"uppercase",color:C.gray}}>{L&&L.subtotal||"SUBTOTAL"}</span>
               <span style={{fontFamily:"'Alido',serif",fontSize:24,color:C.black}}>GEL {total}</span>

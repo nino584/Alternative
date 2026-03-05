@@ -73,6 +73,34 @@ const LEGAL_CONTENT = {
       {heading:"Feedback",body:"We welcome your feedback on the accessibility of our website. If you encounter any barriers or have suggestions for improvement, please contact us at info@alternative.ge. We aim to respond to accessibility feedback within 2 business days."},
     ],
   },
+  'seller-agreement': {
+    label: "Legal",
+    title: "Seller Agreement",
+    updated: "March 2026",
+    sections: [
+      {heading:"მუხლი 1 — პლატფორმის სტატუსი / Article 1 — Platform Status",body:"ALTERNATIVE (\u201Eპლატფორმა\u201C) არის ტექნოლოგიური შუამავალი, რომელიც გამყიდველებს საშუალებას აძლევს განათავსონ პროდუქცია და მყიდველებს \u2014 შეიძინონ იგი. პლატფორმა არ არის გამყიდველი, მწარმოებელი ან სავაჭრო ბრენდის წარმომადგენელი. ALTERNATIVE მოქმედებს \u00ABელექტრონული კომერციის შესახებ\u00BB საქართველოს კანონის (2023 წ.) მე-8 და მე-9 მუხლების შესაბამისად, რომელიც ანიჭებს შუალედური მომსახურების მიმწოდებელს პასუხისმგებლობისგან განთავისუფლებას. ALTERNATIVE operates as an intermediary e-commerce platform under Georgian Law on Electronic Commerce (2023). The platform is NOT the seller. All responsibility for product authenticity, legality, and IP compliance rests solely with the individual seller."},
+      {heading:"მუხლი 2 — გამყიდველთა ვალდებულებები / Article 2 — Seller Obligations",body:"გამყიდველი ვალდებულია: ა) განათავსოს მხოლოდ ორიგინალური, ავთენტური პროდუქცია; ბ) ლუქსური ბრენდის პროდუქტის შემთხვევაში წარმოადგინოს შესყიდვის ან ავთენტურობის დამადასტურებელი დოკუმენტი; გ) დაიცვას მინიმალური ფასი \u20BE100 GEL; დ) პასუხი აგოს მომხმარებელთა ყველა ჩივილზე 48 საათის განმავლობაში; ე) ნებისმიერი ბრენდის სახელის, ლოგოს ან სასაქონლო ნიშნის გამოყენება მის ლისტინგში ნიშნავს, რომ გამყიდველი იღებს სრულ იურიდიულ პასუხისმგებლობას ამ ბრენდის IP უფლებების მიმართ. Sellers must: list only authentic products; provide authentication for luxury brands; maintain minimum price of \u20BE100 GEL; respond to complaints within 48 hours; accept full IP liability when using brand names."},
+      {heading:"მუხლი 3 — პლატფორმის პასუხისმგებლობის შეზღუდვა / Article 3 — Liability Limitation",body:"ALTERNATIVE არ აგებს პასუხს გამყიდველთა მიერ განთავსებული პროდუქციის ავთენტურობაზე, ხარისხზე ან კანონიერებაზე. პლატფორმა განთავისუფლებულია პასუხისმგებლობისგან \u00ABელექტრონული კომერციის შესახებ\u00BB კანონის შესაბამისად, იმ პირობით, რომ: ა) პლატფორმამ არ განახორციელა ჩარევა გამყიდველის კონტენტის შინაარსში; ბ) პლატფორმამ შეტყობინებისთანავე \u2014 48 საათის განმავლობაში \u2014 მოახდინა სათანადო რეაქცია. ALTERNATIVE-ს მაქსიმალური პასუხისმგებლობა ნებისმიერ საქმეში შეზღუდულია კონკრეტული ტრანზაქციის საფასურით. Alternative is exempt from liability under Georgian E-Commerce Law safe harbor provision, provided it acts upon takedown notices within 48 hours."},
+      {heading:"მუხლი 4 — ანგარიშის შეჩერება / Article 4 — Account Suspension",body:"ALTERNATIVE-ს უფლება აქვს დაუყოვნებლივ და შეტყობინების გარეშე შეაჩეროს ან გააუქმოს ნებისმიერი გამყიდველის ანგარიში, თუ: ა) გამოვლინდა ყალბი ან არაორიგინალური პროდუქციის განთავსება; ბ) IP დარღვევის notice მიღებულ იქნა ბრენდისგან ან უფლებამოსილი მხარისგან; გ) ფასი განთავსდა \u20BE100-ზე ქვემოთ სისტემის გვერდის ავლით; დ) მომხმარებელთა 3 ან მეტი დადასტურებული ჩივილი ავთენტურობასთან დაკავშირებით. Alternative reserves the right to immediately suspend any seller account for: counterfeit products, IP infringement notices, price circumvention below \u20BE100, or 3+ verified authenticity complaints."},
+      {heading:"გამყიდველის ხელშეკრულება / Seller Confirmation",body:"ამ ხელშეკრულების ელექტრონული დადასტურებით გამყიდველი ვალდებულია: 1) განათავსოს მხოლოდ ორიგინალური პროდუქცია; 2) ფლობდეს ბრენდის გამოყენების უფლებამოსილებას; 3) IP დარღვევის შემთხვევაში იღებს სრულ პასუხისმგებლობას; 4) ეთანხმება \u20BE100 მინიმალურ ფასს; 5) ეთანხმება ALTERNATIVE-ის უფლებას ლისტინგი წაშალოს ან ანგარიში შეაჩეროს; 6) არის სრულწლოვანი და ბიზნეს ოპერაციების სამართლებრივი უფლება აქვს."},
+      {heading:"ელექტრონული დადასტურება / Electronic Acceptance",body:"საქართველოს სამოქალაქო კოდექსის 327-ე მუხლის მიხედვით, ელექტრონული დადასტურება სრულფასოვანი ხელშეკრულების ფორმაა და სასამართლოში ძალაში შესვლადია. დადასტურებისას ჩაიწერება: seller ID, timestamp (UTC), IP მისამართი და ხელშეკრულების ვერსია. Per Georgian Civil Code Article 327, electronic confirmation constitutes a legally binding contract. Acceptance is logged with: seller ID, timestamp (UTC), IP address, and agreement version."},
+    ],
+  },
+  'ip-policy': {
+    label: "Legal",
+    title: "Intellectual Property Policy",
+    updated: "March 2026",
+    sections: [
+      {heading:"ALTERNATIVE-ის პოზიცია / Our Position",body:"ALTERNATIVE პატივს სცემს ყველა ბრენდის ინტელექტუალური საკუთრების უფლებებს. პლატფორმა ითანამშრომლებს ნებისმიერ ბრენდთან, რომელიც ჩვენთან დაუკავშირდება IP დარღვევის გამოსასწორებლად. Alternative respects all brands\u2019 intellectual property rights and cooperates with any brand that contacts us regarding IP infringement."},
+      {heading:"Step 1 — Notice Received / შეტყობინების მიღება",body:"IP rights holders may submit a takedown notice to legal@alternative.ge. The notice must include: brand name, URL of the infringing listing, and the basis of the IP right claim. ბრენდი გზავნის notice-ს legal@alternative.ge-ზე, მიუთითებს: ბრენდის სახელი, URL, IP უფლების საფუძველი."},
+      {heading:"Step 2 — Confirmation (24 hours) / დადასტურება",body:"ALTERNATIVE will confirm receipt of the takedown notice within 24 hours of submission. ALTERNATIVE ადასტურებს მიღებას 24 საათის განმავლობაში."},
+      {heading:"Step 3 — Under Review (48 hours) / განხილვა",body:"The reported listing will be placed under review within 48 hours. During review, the listing is hidden from the public marketplace and displays as \"temporarily unavailable\". ლისტინგი გადადის \"under review\" სტატუსში — მომხმარებლისთვის ჩანს \"temporarily unavailable\". ეს 48-საათიანი response window კრიტიკულია safe harbor-ისთვის."},
+      {heading:"Step 4 — Seller Response (72 hours) / გამყიდველის პასუხი",body:"The seller is notified and given 72 hours to provide proof of authenticity or authorization for the disputed listing. გამყიდველს ეძლევა 72 საათი დასამტკიცებლად ავთენტურობა."},
+      {heading:"Step 5 — Resolution (120 hours) / გადაწყვეტა",body:"If the seller fails to provide sufficient proof within the allotted time, the listing is permanently removed and the account may be suspended. The total process completes within 120 hours (5 days). დამტკიცება ვერ მოხდა → ლისტინგი წაიშლება, ანგარიში შეჩერდება."},
+      {heading:"Repeat Offenders / განმეორებითი დარღვევა",body:"Sellers who receive multiple IP takedown notices may have their accounts permanently terminated. All takedown actions are logged with timestamps for legal documentation."},
+      {heading:"Contact / კონტაქტი",body:"To submit an IP infringement notice, contact us at legal@alternative.ge with the required documentation. For general inquiries: info@alternative.ge or +995 555 999 555."},
+    ],
+  },
 };
 
 // ── LEGAL PAGE ───────────────────────────────────────────────────────────────
@@ -81,7 +109,7 @@ export default function LegalPage({type,setPage,L,mobile}) {
   const px=mobile?"16px":"40px";
 
   return (
-    <div style={{paddingTop:mobile?52:80,background:C.cream}}>
+    <div style={{paddingTop:mobile?78:104,background:C.cream}}>
       <SEO {...pageMeta(type)} schema={breadcrumbSchema([{name:"Home",url:"/"},{name:content.title}])} />
       {/* HEADER */}
       <div style={{borderBottom:`1px solid ${C.lgray}`,padding:mobile?"28px 0":"40px 0"}}>

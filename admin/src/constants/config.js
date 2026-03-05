@@ -5,4 +5,4 @@
 export const WHATSAPP_NUMBER = "995555999555";
 
 /** Video verification add-on price in GEL (shown on product page and in PreorderModal). */
-export const VIDEO_VERIFICATION_GEL = 15;
+export const VIDEO_VERIFICATION_GEL = 28;

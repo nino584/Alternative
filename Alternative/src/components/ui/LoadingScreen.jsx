@@ -1,18 +1,17 @@
 import { useState, useEffect } from 'react';
 
+const BASE = import.meta.env.BASE_URL;
+
 export default function LoadingScreen({ onComplete }) {
   const [phase, setPhase] = useState(0); // 0=initial, 1=animate, 2=fadeout, 3=done
 
   useEffect(() => {
-    // Phase 1: Start animation after brief delay
     const t1 = setTimeout(() => setPhase(1), 100);
-    // Phase 2: Start fadeout
-    const t2 = setTimeout(() => setPhase(2), 1800);
-    // Phase 3: Remove from DOM
+    const t2 = setTimeout(() => setPhase(2), 2000);
     const t3 = setTimeout(() => {
       setPhase(3);
       if (onComplete) onComplete();
-    }, 2400);
+    }, 2700);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, [onComplete]);
 
@@ -21,52 +20,64 @@ export default function LoadingScreen({ onComplete }) {
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 99999,
-      background: '#191919',
+      background: '#f5f0eb',
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
       opacity: phase === 2 ? 0 : 1,
-      transition: 'opacity 0.6s ease',
+      transition: 'opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1)',
     }}>
       <style>{`
-        @keyframes logoReveal {
-          0% { letter-spacing: 0.8em; opacity: 0; transform: translateY(10px); }
-          60% { letter-spacing: 0.35em; opacity: 1; transform: translateY(0); }
-          100% { letter-spacing: 0.25em; opacity: 1; transform: translateY(0); }
+        @keyframes logoScale {
+          0% { opacity: 0; transform: scale(0.7); filter: blur(8px); }
+          50% { opacity: 1; transform: scale(1.04); filter: blur(0); }
+          100% { opacity: 1; transform: scale(1); filter: blur(0); }
         }
-        @keyframes lineGrow {
-          0% { width: 0; }
-          100% { width: 80px; }
+        @keyframes shimmerLine {
+          0% { width: 0; opacity: 0; }
+          30% { opacity: 1; }
+          100% { width: 100px; opacity: 1; }
         }
-        @keyframes subtitleFade {
-          0% { opacity: 0; transform: translateY(5px); }
-          100% { opacity: 1; transform: translateY(0); }
+        @keyframes glowPulse {
+          0%, 100% { opacity: 0.3; transform: translate(-50%,-50%) scale(1); }
+          50% { opacity: 0.55; transform: translate(-50%,-50%) scale(1.1); }
         }
       `}</style>
 
-      {/* Brand name */}
-      <h1 style={{
-        fontFamily: "'Alido', Georgia, serif",
-        fontSize: 'clamp(24px, 5vw, 42px)',
-        fontWeight: 300,
-        color: '#faf8f5',
-        margin: 0,
-        letterSpacing: '0.25em',
-        textTransform: 'uppercase',
-        animation: phase >= 1 ? 'logoReveal 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards' : 'none',
-        opacity: phase >= 1 ? undefined : 0,
-      }}>
-        ALTERNATIVE
-      </h1>
+      {/* Logo with glow */}
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {/* Blurred circular glow behind logo */}
+        <div style={{
+          position: 'absolute', top: '50%', left: '50%',
+          transform: 'translate(-50%,-50%)',
+          width: 'clamp(120px, 22vw, 200px)', height: 'clamp(120px, 22vw, 200px)',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(177,154,122,0.25) 0%, rgba(177,154,122,0.08) 50%, transparent 70%)',
+          filter: 'blur(20px)',
+          animation: phase >= 1 ? 'glowPulse 2.5s ease-in-out infinite' : 'none',
+          opacity: phase >= 1 ? undefined : 0,
+        }} />
+        <div style={{
+          position: 'relative',
+          animation: phase >= 1 ? 'logoScale 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards' : 'none',
+          opacity: phase >= 1 ? undefined : 0,
+        }}>
+          <img
+            src={`${BASE}images/logo.png`}
+            alt="Alternative"
+            style={{ height: 'clamp(50px, 10vw, 80px)', width: 'auto', display: 'block' }}
+          />
+        </div>
+      </div>
 
       {/* Gold accent line */}
       <div style={{
         height: 1,
         background: 'linear-gradient(90deg, transparent, #b19a7a, transparent)',
-        marginTop: 20,
-        animation: phase >= 1 ? 'lineGrow 1s 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards' : 'none',
+        marginTop: 24,
+        animation: phase >= 1 ? 'shimmerLine 1s 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards' : 'none',
         width: phase >= 1 ? undefined : 0,
+        opacity: 0,
       }} />
-
     </div>
   );
 }

@@ -38,7 +38,7 @@ const productSchema = z.object({
 
 // ── GET /api/products — public ────────────────────────────────────────────
 router.get('/', (req, res) => {
-  const products = getAllProducts();
+  const products = getAllProducts().filter(p => !p.productStatus || p.productStatus === 'approved');
   res.json({ products });
 });
 

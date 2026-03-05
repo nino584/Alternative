@@ -15,7 +15,7 @@ import SEO from '../components/SEO.jsx';
 import { pageMeta, productSchema, breadcrumbSchema, productAlt } from '../utils/seo.js';
 
 // ── PRODUCT PAGE ──────────────────────────────────────────────────────────────
-export default function ProductPage({mobile,product:productProp,setPage,setSelected,addToCart,toast,wishlist,onWishlist,L,products:productsProp}) {
+export default function ProductPage({mobile,product:productProp,setPage,setSelected,addToCart,toast,wishlist,onWishlist,onQuickView,L,products:productsProp}) {
   const { slug } = useParams();
   const ALL_PRODUCTS = productsProp || PRODUCTS;
   // Support both slug format "id-brand-name" and plain id
@@ -56,7 +56,7 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
 
   // All hooks must run before early return
   const imgs=p?(p.images&&p.images.length>0?p.images:(p.img?[p.img]:[])):[];
-  const effectivePrice=p?(p.sale||p.price):0;
+  const effectivePrice=p?(p.sale!=null?p.sale:p.price):0;
   const totalPrice=effectivePrice;
   const related=p?ALL_PRODUCTS.filter(x=>x.section===p.section&&x.cat===p.cat&&x.id!==p.id).slice(0,4):[];
 
@@ -90,7 +90,7 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
   }, [p?.id]);
 
   if (!p) return (
-    <div style={{paddingTop:80,background:C.cream}}>
+    <div style={{paddingTop:100,background:C.cream}}>
       <div style={{textAlign:"center",padding:"100px 20px",minHeight:"60vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
         <p style={{...T.displaySm,color:C.gray,marginBottom:24}}>{L.productNotFound}</p>
         <HoverBtn onClick={()=>setPage("catalog")} variant="primary">{L.backToCollection}</HoverBtn>
@@ -123,15 +123,19 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
   ];
 
   return (
-    <div style={{paddingTop:80,background:C.cream}}>
+    <div style={{paddingTop:100,background:C.cream}}>
       <SEO {...seoMeta} schema={seoSchema} />
       <div style={{maxWidth:1360,margin:"0 auto",padding:mobile?"16px 16px 60px":"28px 40px 80px",display:"grid",gridTemplateColumns:mobile?"1fr":"1fr 1fr",gap:mobile?28:72,alignItems:"start"}}>
-        <div style={{position:mobile?"relative":"sticky",top:mobile?"auto":96}}>
+        <div style={{position:mobile?"relative":"sticky",top:mobile?"auto":116}}>
           <div style={{aspectRatio:"1/1",overflow:"hidden",marginBottom:3,position:"relative",background:"#ffffff",cursor:mobile?"default":"crosshair"}}
             onMouseMove={e=>{if(mobile)return;const r=e.currentTarget.getBoundingClientRect();setZoomPos({x:((e.clientX-r.left)/r.width)*100,y:((e.clientY-r.top)/r.height)*100});}}
             onMouseLeave={()=>setZoomPos(null)}>
-            <img src={imgs[activeImg]} alt={productAlt(p)} loading={activeImg===0?"eager":"lazy"} onError={e=>{e.target.style.opacity="0.3";}}
+            <img src={imgs[activeImg]} alt={productAlt(p)} loading={activeImg===0?"eager":"lazy"} onError={e=>{e.target.style.display="none";e.target.nextElementSibling&&(e.target.nextElementSibling.style.display="flex");}}
               style={{width:"100%",height:"100%",objectFit:"contain",transition:zoomPos?"none":"transform 0.3s",transformOrigin:zoomPos?`${zoomPos.x}% ${zoomPos.y}%`:"center center",transform:zoomPos?"scale(2)":"scale(1)"}}/>
+            <div style={{display:"none",width:"100%",height:"100%",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"linear-gradient(165deg,#f5f0eb 0%,#e8e0d6 100%)",position:"absolute",top:0,left:0}}>
+              <span style={{fontFamily:"'Alido',serif",fontSize:64,fontWeight:700,color:"rgba(177,154,122,0.3)",textTransform:"uppercase"}}>{(p.brand||"A").charAt(0)}</span>
+              <span style={{fontFamily:"'Alido',serif",fontSize:12,color:"rgba(177,154,122,0.5)",letterSpacing:"0.2em",textTransform:"uppercase",marginTop:12}}>PHOTO COMING SOON</span>
+            </div>
             {p.sale&&<div style={{position:"absolute",top:14,left:14,background:C.red,padding:"5px 12px",zIndex:2}}><span style={{...T.label,color:C.white}}>Sale</span></div>}
             <button onClick={()=>onWishlist&&onWishlist(p.id)}
               style={{position:"absolute",top:14,right:14,background:wished?"rgba(177,154,122,0.9)":"rgba(255,255,255,0.85)",border:"none",width:44,height:44,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",transition:"all 0.2s",zIndex:2}}>
@@ -143,7 +147,7 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
           <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:3}}>
             {imgs.map((src,i)=>(
               <div key={i} onClick={()=>setActiveImg(i)} style={{aspectRatio:"1/1",overflow:"hidden",cursor:"pointer",border:`2px solid ${i===activeImg?C.tan:"transparent"}`,transition:"border-color 0.2s",background:"#ffffff"}}>
-                <img src={src} alt={`${p.name} view ${i+1}`} loading="lazy" style={{width:"100%",height:"100%",objectFit:"contain"}}/>
+                <img src={src} alt={`${p.name} view ${i+1}`} loading="lazy" onError={e=>{e.target.style.display="none";}} style={{width:"100%",height:"100%",objectFit:"contain"}}/>
               </div>
             ))}
           </div>
@@ -152,7 +156,8 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
         <div>
           <p style={{...T.labelSm,color:C.tan,marginBottom:6,letterSpacing:"0.2em"}}>{p.brand}</p>
           <h1 style={{fontFamily:"'Alido',serif",fontSize:mobile?30:38,fontWeight:300,color:C.black,lineHeight:1.15,marginBottom:6}}>{L&&L.localNames&&L.localNames[p.name]||p.name}</h1>
-          <p style={{...T.bodySm,color:C.gray,marginBottom:20}}>{p.color} · {p.section}</p>
+          <p style={{...T.bodySm,color:C.gray,marginBottom:p.vendorName?6:20}}>{p.color} · {p.section}</p>
+          {p.vendorName&&<p style={{...T.bodySm,fontSize:12,color:C.tan,marginBottom:20}}>{L?.byVendor||"by"} {p.vendorName}</p>}
 
           <div style={{marginBottom:24,display:"flex",alignItems:"baseline",gap:12}}>
             <span style={{fontFamily:"'Alido',serif",fontSize:34,color:p.sale?C.red:C.black,lineHeight:1}}>GEL {effectivePrice}</span>
@@ -372,13 +377,21 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
           </DetailAccordion>
 
           {/* Share buttons */}
-          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+          <p style={{...T.labelSm,color:C.gray,fontSize:9,marginTop:16,marginBottom:8}}>{L.shareProduct||"SHARE"}</p>
+          <div style={{ display: "flex", gap: 8 }}>
             <button onClick={() => { const url = window.location.href; window.open(`https://wa.me/?text=${encodeURIComponent(p.name + " - " + url)}`, "_blank"); }}
               style={{ flex: 1, padding: "10px 0", border: `1px solid ${C.lgray}`, background: "none", ...T.labelSm, fontSize: 9, color: C.gray, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, transition: "all 0.2s" }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = "#25D366"; e.currentTarget.style.color = "#25D366"; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = C.lgray; e.currentTarget.style.color = C.gray; }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492l4.574-1.466A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.813c-2.188 0-4.214-.7-5.869-1.891l-.421-.313-2.714.87.887-2.636-.344-.449A9.786 9.786 0 012.188 12 9.813 9.813 0 0112 2.188 9.813 9.813 0 0121.813 12 9.813 9.813 0 0112 21.813z"/></svg>
-              {L.shareWhatsApp||"WhatsApp"}
+              WhatsApp
+            </button>
+            <button onClick={() => { window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, "_blank", "width=600,height=400"); }}
+              style={{ flex: 1, padding: "10px 0", border: `1px solid ${C.lgray}`, background: "none", ...T.labelSm, fontSize: 9, color: C.gray, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, transition: "all 0.2s" }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "#1877F2"; e.currentTarget.style.color = "#1877F2"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = C.lgray; e.currentTarget.style.color = C.gray; }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+              Facebook
             </button>
             <button onClick={() => { navigator.clipboard.writeText(window.location.href).then(() => toast(L.linkCopied||"Link copied!", "success")); }}
               style={{ flex: 1, padding: "10px 0", border: `1px solid ${C.lgray}`, background: "none", ...T.labelSm, fontSize: 9, color: C.gray, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, transition: "all 0.2s" }}
@@ -455,7 +468,7 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
                 <span style={{...T.labelSm,color:C.gray,fontSize:9,letterSpacing:"0.1em"}}>{L.completeLookTotal||"COMPLETE LOOK TOTAL"}</span>
               </div>
               <span style={{fontFamily:"'Alido',serif",fontSize:22,color:C.black}}>
-                GEL {effectivePrice + outfit.reduce((sum,it)=>(sum+(it.sale||it.price)),0)}
+                GEL {effectivePrice + outfit.reduce((sum,it)=>(sum+(it.sale!=null?it.sale:it.price)),0)}
               </span>
             </div>
           </div>
@@ -474,7 +487,7 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
               <h3 style={{ ...T.displaySm, color: C.black, fontSize: "clamp(18px,2vw,22px)", marginBottom: 28 }}>{L.recentlyViewed||"Recently Viewed"}</h3>
               <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 3 }}>
                 {recentProducts.map(rp => (
-                  <ProductCard key={rp.id} product={rp} wishlist={wishlist} onWishlist={onWishlist} L={L} onSelect={() => setPage("product", rp)} mobile={mobile} />
+                  <ProductCard key={rp.id} product={rp} wishlist={wishlist} onWishlist={onWishlist} onQuickView={onQuickView} L={L} onSelect={() => setPage("product", rp)} mobile={mobile} />
                 ))}
               </div>
             </div>
@@ -487,7 +500,7 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
           <div style={{maxWidth:1360,margin:"0 auto",padding:"0 40px"}}>
             <p style={{...T.labelSm,color:C.tan,marginBottom:10}}>{L.fromSameCollection}</p>
             <div style={{display:"grid",gridTemplateColumns:mobile?"repeat(2,1fr)":"repeat(4,1fr)",gap:3}}>
-              {related.map(item=><ProductCard key={item.id} product={item} wishlist={wishlist} onWishlist={onWishlist} L={L}
+              {related.map(item=><ProductCard key={item.id} product={item} wishlist={wishlist} onWishlist={onWishlist} onQuickView={onQuickView} L={L} mobile={mobile}
                 onSelect={()=>{setPage("product",item);window.scrollTo({top:0,behavior:"smooth"});}}/>)}
             </div>
           </div>

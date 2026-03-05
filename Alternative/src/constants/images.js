@@ -2,7 +2,7 @@
 // Static images live in public/images/. Hero: place hero.jpg (or hero.png / hero.webp) there.
 const BASE = import.meta.env.BASE_URL;
 export const IMAGES_DIR = BASE + "images";
-export const HERO_IMAGE = `${IMAGES_DIR}/hero.png`;
+export const HERO_IMAGE = `${IMAGES_DIR}/hero.jpg`;
 
 export const BI = {
   bag_stone:       `${IMAGES_DIR}/womenswear.jpg`,

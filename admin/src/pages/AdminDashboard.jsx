@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { C, T } from '../constants/theme.js';
 import { api } from '../api.js';
-import { Logo } from '../components/Logo.jsx';
+
 import Sidebar from '../components/Sidebar.jsx';
 import DashboardOverview from '../components/DashboardOverview.jsx';
 import OrdersPanel from '../components/OrdersPanel.jsx';
@@ -12,6 +12,9 @@ import StatsPanel from '../components/StatsPanel.jsx';
 import SettingsPanel from '../components/SettingsPanel.jsx';
 import PromosPanel from '../components/PromosPanel.jsx';
 import ReturnsPanel from '../components/ReturnsPanel.jsx';
+import AffiliatesPanel from '../components/AffiliatesPanel.jsx';
+import SuppliersPanel from '../components/SuppliersPanel.jsx';
+import SupplierDashboard from '../components/SupplierDashboard.jsx';
 
 // ── ADMIN DASHBOARD (Shell) ──────────────────────────────────────────────────
 export default function AdminDashboard({ mobile, user, onLogout, L, lang, setLang }) {
@@ -27,24 +30,29 @@ export default function AdminDashboard({ mobile, user, onLogout, L, lang, setLan
   // ── Data from API ──────────────────────────────────────────────────────────
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const refreshData = useCallback(() => {
+    setLoading(true);
     Promise.all([
-      api.getProducts().catch(() => ({ products: [] })),
-      api.getOrders().catch(() => ({ orders: [] })),
+      api.getProducts().catch(err => { toast("Failed to load products", "error"); return { products: [] }; }),
+      api.getOrders().catch(err => { toast("Failed to load orders", "error"); return { orders: [] }; }),
     ]).then(([pData, oData]) => {
       setProducts(pData.products || []);
       setOrders(oData.orders || []);
+      setLoading(false);
     });
-  }, []);
+  }, [toast]);
+
+  useEffect(() => { refreshData(); }, [refreshData]);
 
   // ── Render active panel ────────────────────────────────────────────────────
   const renderPanel = () => {
     switch (tab) {
       case "dashboard":
-        return <DashboardOverview orders={orders} products={products} mobile={mobile} setTab={setTab} L={L} />;
+        return <DashboardOverview orders={orders} products={products} mobile={mobile} setTab={setTab} L={L} lang={lang} refreshData={refreshData} />;
       case "orders":
-        return <OrdersPanel orders={orders} setOrders={setOrders} mobile={mobile} toast={toast} L={L} />;
+        return <OrdersPanel orders={orders} setOrders={setOrders} products={products} mobile={mobile} toast={toast} L={L} refreshData={refreshData} />;
       case "products":
         return <ProductsPanel products={products} setProducts={setProducts} mobile={mobile} toast={toast} L={L} />;
       case "customers":
@@ -57,10 +65,19 @@ export default function AdminDashboard({ mobile, user, onLogout, L, lang, setLan
         return <PromosPanel mobile={mobile} toast={toast} L={L} />;
       case "returns":
         return <ReturnsPanel mobile={mobile} toast={toast} L={L} />;
+      case "affiliates":
+        return <AffiliatesPanel mobile={mobile} toast={toast} L={L} />;
+      case "suppliers":
+        return <SuppliersPanel mobile={mobile} toast={toast} L={L} />;
+      case "my-products":
+      case "my-orders":
+      case "earnings":
+        return <SupplierDashboard tab={tab} mobile={mobile} toast={toast} L={L} user={user} />;
       case "settings":
         return <SettingsPanel mobile={mobile} toast={toast} L={L} />;
       default:
-        return <DashboardOverview orders={orders} products={products} mobile={mobile} setTab={setTab} L={L} />;
+        if (user?.role === 'supplier') return <SupplierDashboard tab="dashboard" mobile={mobile} toast={toast} L={L} user={user} />;
+        return <DashboardOverview orders={orders} products={products} mobile={mobile} setTab={setTab} L={L} lang={lang} />;
     }
   };
 
@@ -94,9 +111,8 @@ export default function AdminDashboard({ mobile, user, onLogout, L, lang, setLan
             position: "sticky", top: 0, zIndex: 50,
           }}>
             <p style={{ ...T.label, color: C.black, fontSize: 12 }}>
-              {(L?.[{dashboard:"navDashboard",orders:"navOrders",products:"navProducts",customers:"navCustomers",subscribers:"navSubscribers",promos:"navPromos",returns:"navReturns",stats:"navStatistics",settings:"navSettings"}[tab]] || tab).toUpperCase()}
+              {(L?.[{dashboard:"navDashboard",orders:"navOrders",products:"navProducts",customers:"navCustomers",subscribers:"navSubscribers",promos:"navPromos",returns:"navReturns",affiliates:"navAffiliates",suppliers:"navSuppliers",stats:"navStatistics",settings:"navSettings","my-products":"navMyProducts","my-orders":"navMyOrders",earnings:"navEarnings"}[tab]] || tab).toUpperCase()}
             </p>
-            <Logo size={0.6} />
           </div>
         )}
 

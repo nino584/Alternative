@@ -30,7 +30,7 @@ export default function BrandsPage({setPage,setSelected,L,mobile}) {
   const col2 = BRANDS.slice(mid);
 
   return (
-    <div style={{paddingTop:mobile?52:80,minHeight:"100vh",background:C.white||"#fff"}}>
+    <div style={{paddingTop:mobile?78:104,minHeight:"100vh",background:C.white||"#fff"}}>
       <SEO {...pageMeta("brands")} schema={breadcrumbSchema([{name:"Home",url:"/"},{name:"Designers"}])} />
       <div style={{maxWidth:1360,margin:"0 auto",padding:`${mobile?"24px":"48px"} ${px} 0`}}>
         <p style={{...T.labelSm,color:C.tan,marginBottom:mobile?32:48,fontSize:mobile?12:14,letterSpacing:2}}>DESIGNERS</p>

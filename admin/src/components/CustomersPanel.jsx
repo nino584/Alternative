@@ -30,7 +30,7 @@ export default function CustomersPanel({ orders, mobile, toast, L }) {
 
   const exportCSV = () => {
     const headers = ["Name","Email","Phone","Role","Registered","Orders"];
-    const rows = filtered.map(c => [c.name, c.email, c.phone || "", c.role || "user", c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "", orderCounts[c.id] || 0]);
+    const rows = filtered.map(c => [`"${(c.name||"").replace(/"/g,'""')}"`, `"${(c.email||"").replace(/"/g,'""')}"`, `"${(c.phone||"").replace(/"/g,'""')}"`, c.role || "user", c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "", orderCounts[c.id] || 0]);
     const csv = [headers, ...rows].map(r => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "customers.csv"; a.click();

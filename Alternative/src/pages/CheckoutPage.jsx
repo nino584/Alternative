@@ -27,10 +27,6 @@ export default function CheckoutPage({cart,user,L,setPage,onComplete,toast,mobil
     if ((!cart||cart.length===0)&&step!==3&&confirmedItems.length===0) setPage("catalog");
   },[cart,step,setPage,confirmedItems.length]);
 
-  const subtotal=(cart||[]).reduce((s,o)=>s+((Number(o.sale)||Number(o.price)||0)*(o.qty||1)),0);
-  const videoFee=wantVideo?VIDEO_VERIFICATION_GEL:0;
-  const grandTotal=Math.max(0,subtotal+videoFee-promoDiscount);
-
   // Guest form
   const [promoCode,setPromoCode]=useState("");
   const [promoApplied,setPromoApplied]=useState(null); // {code, discount, type}
@@ -48,6 +44,9 @@ export default function CheckoutPage({cart,user,L,setPage,onComplete,toast,mobil
   const removePromo=()=>{setPromoApplied(null);setPromoCode("");setPromoError("");};
 
   const promoDiscount=promoApplied?promoApplied.discount:0;
+  const subtotal=(cart||[]).reduce((s,o)=>s+((Number(o.sale)||Number(o.price)||0)*(o.qty||1)),0);
+  const videoFee=wantVideo?VIDEO_VERIFICATION_GEL:0;
+  const grandTotal=Math.max(0,subtotal+videoFee-promoDiscount);
   const [gf,setGf]=useState({firstName:"",lastName:"",email:"",phone:"",address:"",city:"",country:"Georgia",postal:"",notes:""});
   const gu=(k,v)=>setGf(p=>({...p,[k]:v}));
 
@@ -82,15 +81,18 @@ export default function CheckoutPage({cart,user,L,setPage,onComplete,toast,mobil
       try {
         const orderIds=[];
         for (const item of cart) {
+          const affiliateCode=localStorage.getItem('affiliate_ref')||'';
           const res = await api.createOrder({
             productId:item.id, productName:item.name, selectedSize:item.selectedSize||"One Size",
-            img:item.img||"", brand:item.brand||"", color:item.color||"",
+            img:(item.img && !item.img.startsWith('data:')) ? item.img : "", brand:item.brand||"", color:item.color||"",
             wantVideo, customerName, phone, email, notes:wantVideo?notes:"", shippingAddress,
             price:Number(item.sale)||Number(item.price), depositPaid:Number(item.sale)||Number(item.price),
-            payMethod,
+            payMethod, affiliateCode, promoCode:promoApplied?.code||"",
           });
           if(res.order?.orderId) orderIds.push(res.order.orderId);
         }
+        localStorage.removeItem('affiliate_ref');
+        if(promoApplied) setPromoApplied(null);
         setConfirmedOrderId(orderIds.join(", "));
         setConfirmedItems([...cart]);
         setConfirmedTotal(grandTotal);
@@ -207,7 +209,7 @@ export default function CheckoutPage({cart,user,L,setPage,onComplete,toast,mobil
       <div style={{background:C.white,borderBottom:`1px solid ${C.lgray}`,position:"sticky",top:0,zIndex:100}}>
         <div style={{maxWidth:1200,margin:"0 auto",padding:mobile?"14px 16px":"18px 40px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <button onClick={()=>setPage("home")} style={{background:"none",border:"none",cursor:"pointer",padding:0}}>
-            <Logo size={mobile?0.55:0.65}/>
+            <Logo size={mobile?1.2:1.5}/>
           </button>
           <div style={{display:"flex",alignItems:"center",gap:mobile?12:24}}>
             {/* Step indicators */}
@@ -245,7 +247,7 @@ export default function CheckoutPage({cart,user,L,setPage,onComplete,toast,mobil
                 <>
                   <div style={{padding:"14px 18px",background:"rgba(177,154,122,0.05)",border:`1px solid rgba(177,154,122,0.12)`,marginBottom:24,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                     <p style={{...T.bodySm,color:C.brown,fontSize:12}}>{L?.haveAccount||"Already have an account?"}</p>
-                    <button onClick={()=>setPage("auth")} style={{background:"none",border:"none",...T.label,color:C.tan,fontSize:11,cursor:"pointer",textDecoration:"underline"}}>{L?.signInBtn||"Sign In"}</button>
+                    <button onClick={()=>{window.__returnAfterAuth="checkout";setPage("auth");}} style={{background:"none",border:"none",...T.label,color:C.tan,fontSize:11,cursor:"pointer",textDecoration:"underline"}}>{L?.signInBtn||"Sign In"}</button>
                   </div>
 
                   <p style={{...T.labelSm,color:C.black,fontSize:10,letterSpacing:"0.12em",marginBottom:16}}>{L?.contactDetails||"CONTACT DETAILS"}</p>

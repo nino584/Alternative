@@ -1,9 +1,28 @@
 const API = '/api';
 
+function getCsrfToken() {
+  const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : '';
+}
+
+function buildHeaders(options) {
+  const headers = { 'Content-Type': 'application/json', ...options.headers };
+  const method = (options.method || 'GET').toUpperCase();
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+    headers['X-CSRF-Token'] = getCsrfToken();
+  }
+  return headers;
+}
+
+// Global session-expired handler — set by App.jsx
+let onSessionExpired = null;
+export function setSessionExpiredHandler(fn) { onSessionExpired = fn; }
+
 async function request(path, options = {}) {
+  const headers = buildHeaders(options);
   const res = await fetch(`${API}${path}`, {
-    credentials: 'include', // send cookies
-    headers: { 'Content-Type': 'application/json', ...options.headers },
+    credentials: 'include',
+    headers,
     ...options,
   });
 
@@ -14,12 +33,13 @@ async function request(path, options = {}) {
       const refreshRes = await fetch(`${API}/auth/refresh`, {
         method: 'POST',
         credentials: 'include',
+        headers: { 'X-CSRF-Token': getCsrfToken() },
       });
       if (refreshRes.ok) {
-        // Retry original request with new token
+        const retryHeaders = buildHeaders(options);
         const retryRes = await fetch(`${API}${path}`, {
           credentials: 'include',
-          headers: { 'Content-Type': 'application/json', ...options.headers },
+          headers: retryHeaders,
           ...options,
         });
         if (!retryRes.ok) {
@@ -29,6 +49,8 @@ async function request(path, options = {}) {
         return retryRes.json();
       }
     }
+    // Session is truly dead — force re-login
+    if (onSessionExpired && !path.includes('/auth/login')) onSessionExpired();
     throw { status: 401, message: body.error || 'Unauthorized' };
   }
 
@@ -55,32 +77,31 @@ export const api = {
   me: () =>
     request('/auth/me'),
 
-  // Products (public)
+  // Admin: Products
   getProducts: () =>
     request('/products'),
 
-  getProduct: (id) =>
-    request(`/products/${id}`),
-
-  // Products (admin)
   createProduct: (data) =>
-    request('/products', { method: 'POST', body: JSON.stringify(data) }),
+    request('/admin/products', { method: 'POST', body: JSON.stringify(data) }),
 
   updateProduct: (id, data) =>
-    request(`/products/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    request(`/admin/products/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
 
   deleteProduct: (id) =>
-    request(`/products/${id}`, { method: 'DELETE' }),
+    request(`/admin/products/${id}`, { method: 'DELETE' }),
 
-  // Orders
+  // Admin: Orders
   getOrders: () =>
-    request('/orders'),
-
-  createOrder: (data) =>
-    request('/orders', { method: 'POST', body: JSON.stringify(data) }),
+    request('/admin/orders'),
 
   updateOrderStatus: (orderId, status) =>
     request(`/orders/${orderId}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+
+  sendMessage: (orderId, content, media) =>
+    request('/admin/messages', { method: 'POST', body: JSON.stringify({ orderId, content, media }) }),
+
+  getMessages: (orderId) =>
+    request(`/admin/messages/${encodeURIComponent(orderId)}`),
 
   // Admin: Customers
   getCustomers: () =>
@@ -114,7 +135,63 @@ export const api = {
   getStockNotifications: () =>
     request('/admin/stock-notifications'),
 
-  // Admin: Settings (placeholder — store in localStorage for now)
+  // Admin: Affiliates
+  getAffiliates: () =>
+    request('/affiliates/admin/list'),
+  updateAffiliateStatus: (id, status) =>
+    request(`/affiliates/admin/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+  payoutAffiliate: (id) =>
+    request(`/affiliates/admin/${id}/payout`, { method: 'POST' }),
+
+  // Admin: Suppliers
+  getSuppliers: () =>
+    request('/suppliers/admin/list'),
+  updateSupplierStatus: (id, status) =>
+    request(`/suppliers/admin/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+  updateSupplierCommission: (id, commissionRate) =>
+    request(`/suppliers/admin/${id}/commission`, { method: 'PATCH', body: JSON.stringify({ commissionRate }) }),
+  payoutSupplier: (id) =>
+    request(`/suppliers/admin/${id}/payout`, { method: 'POST' }),
+  approveProduct: (id, productStatus) =>
+    request(`/suppliers/admin/products/${id}/approval`, { method: 'PATCH', body: JSON.stringify({ productStatus }) }),
+  getSupplierProducts: (id) =>
+    request(`/suppliers/admin/${id}/products`),
+
+  // Supplier self-service
+  getSupplierProfile: () =>
+    request('/suppliers/me'),
+  updateSupplierProfile: (data) =>
+    request('/suppliers/me', { method: 'PUT', body: JSON.stringify(data) }),
+  getMyProducts: () =>
+    request('/suppliers/me/products'),
+  createMyProduct: (data) =>
+    request('/suppliers/me/products', { method: 'POST', body: JSON.stringify(data) }),
+  updateMyProduct: (id, data) =>
+    request(`/suppliers/me/products/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteMyProduct: (id) =>
+    request(`/suppliers/me/products/${id}`, { method: 'DELETE' }),
+  getMyOrders: () =>
+    request('/suppliers/me/orders'),
+  getMyStats: () =>
+    request('/suppliers/me/stats'),
+
+  // Supplier agreement
+  acceptAgreement: (data) =>
+    request('/suppliers/me/agreement', { method: 'POST', body: JSON.stringify(data) }),
+
+  // Invite: set password via token
+  setupPassword: (token, password) =>
+    request('/auth/reset-password', { method: 'POST', body: JSON.stringify({ token, password }) }),
+
+  // Admin: Takedowns
+  initiateTakedown: (data) =>
+    request('/suppliers/admin/takedown', { method: 'POST', body: JSON.stringify(data) }),
+  updateTakedown: (id, data) =>
+    request(`/suppliers/admin/takedown/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  getTakedowns: () =>
+    request('/suppliers/admin/takedowns'),
+
+  // Settings (localStorage placeholder)
   getSettings: () => {
     try {
       const s = localStorage.getItem('alt_admin_settings');

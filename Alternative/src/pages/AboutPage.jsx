@@ -8,7 +8,7 @@ import { pageMeta, breadcrumbSchema } from '../utils/seo.js';
 // ── ABOUT PAGE ────────────────────────────────────────────────────────────────
 export default function AboutPage({setPage,L,mobile}) {
   return (
-    <div style={{paddingTop:mobile?52:80,background:C.cream}}>
+    <div style={{paddingTop:mobile?78:104,background:C.cream}}>
       <SEO {...pageMeta("about")} schema={breadcrumbSchema([{name:"Home",url:"/"},{name:"About"}])} />
       <div style={{position:"relative",height:mobile?280:460,overflow:"hidden"}}>
         <img src={BI.store_interior} alt="Alternative concept store interior in Tbilisi" loading="lazy" style={{width:"100%",height:"100%",objectFit:"cover"}}/>

@@ -12,6 +12,9 @@ const icons = {
   promos: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 5H3v14h18V5z"/><path d="M12 5v14"/><circle cx="7" cy="10" r="1" fill="currentColor"/><circle cx="17" cy="14" r="1" fill="currentColor"/></svg>,
   returns: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>,
   stats: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
+  affiliates: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>,
+  suppliers: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+  earnings: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>,
   settings: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>,
   logout: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
   menu: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>,
@@ -19,15 +22,20 @@ const icons = {
 };
 
 const NAV_KEYS = [
-  { key: "dashboard", tKey: "navDashboard", fallback: "Dashboard", icon: "dashboard" },
-  { key: "orders", tKey: "navOrders", fallback: "Orders", icon: "orders" },
-  { key: "products", tKey: "navProducts", fallback: "Products", icon: "products" },
-  { key: "customers", tKey: "navCustomers", fallback: "Customers", icon: "customers" },
-  { key: "subscribers", tKey: "navSubscribers", fallback: "Subscribers", icon: "subscribers" },
-  { key: "promos", tKey: "navPromos", fallback: "Promo Codes", icon: "promos" },
-  { key: "returns", tKey: "navReturns", fallback: "Returns", icon: "returns" },
-  { key: "stats", tKey: "navStatistics", fallback: "Statistics", icon: "stats" },
-  { key: "settings", tKey: "navSettings", fallback: "Settings", icon: "settings" },
+  { key: "dashboard", tKey: "navDashboard", fallback: "Dashboard", icon: "dashboard", roles: ["admin", "supplier"] },
+  { key: "orders", tKey: "navOrders", fallback: "Orders", icon: "orders", roles: ["admin"] },
+  { key: "products", tKey: "navProducts", fallback: "Products", icon: "products", roles: ["admin"] },
+  { key: "customers", tKey: "navCustomers", fallback: "Customers", icon: "customers", roles: ["admin"] },
+  { key: "subscribers", tKey: "navSubscribers", fallback: "Subscribers", icon: "subscribers", roles: ["admin"] },
+  { key: "promos", tKey: "navPromos", fallback: "Promo Codes", icon: "promos", roles: ["admin"] },
+  { key: "returns", tKey: "navReturns", fallback: "Returns", icon: "returns", roles: ["admin"] },
+  { key: "affiliates", tKey: "navAffiliates", fallback: "Affiliates", icon: "affiliates", roles: ["admin"] },
+  { key: "suppliers", tKey: "navSuppliers", fallback: "Suppliers", icon: "suppliers", roles: ["admin"] },
+  { key: "my-products", tKey: "navMyProducts", fallback: "My Products", icon: "products", roles: ["supplier"] },
+  { key: "my-orders", tKey: "navMyOrders", fallback: "My Orders", icon: "orders", roles: ["supplier"] },
+  { key: "earnings", tKey: "navEarnings", fallback: "Earnings", icon: "earnings", roles: ["supplier"] },
+  { key: "stats", tKey: "navStatistics", fallback: "Statistics", icon: "stats", roles: ["admin"] },
+  { key: "settings", tKey: "navSettings", fallback: "Settings", icon: "settings", roles: ["admin", "supplier"] },
 ];
 
 export default function Sidebar({ activeTab, setTab, user, onLogout, mobile, lang, setLang, L }) {
@@ -39,7 +47,7 @@ export default function Sidebar({ activeTab, setTab, user, onLogout, mobile, lan
       <div style={{ padding: "24px 20px 20px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 12 }}>
         <Logo size={0.65} />
         <div style={{ padding: "4px 10px", background: C.black }}>
-          <span style={{ ...T.labelSm, color: C.white, fontSize: 9, fontWeight: 700 }}>ADMIN</span>
+          <span style={{ ...T.labelSm, color: C.white, fontSize: 9, fontWeight: 700 }}>MASTER</span>
         </div>
         {mobile && (
           <button onClick={() => setOpen(false)} style={{ marginLeft: "auto", background: "none", border: "none", color: C.black, cursor: "pointer" }}>
@@ -50,7 +58,7 @@ export default function Sidebar({ activeTab, setTab, user, onLogout, mobile, lan
 
       {/* Nav items */}
       <nav style={{ padding: "14px 10px", flex: 1 }}>
-        {NAV_KEYS.map(item => {
+        {NAV_KEYS.filter(item => !item.roles || item.roles.includes(user?.role || 'admin')).map(item => {
           const isActive = activeTab === item.key;
           return (
             <button
@@ -125,7 +133,7 @@ export default function Sidebar({ activeTab, setTab, user, onLogout, mobile, lan
         </button>
         <Logo size={0.55} />
         <div style={{ padding: "4px 10px", background: C.black }}>
-          <span style={{ ...T.labelSm, color: C.white, fontSize: 9, fontWeight: 700 }}>ADMIN</span>
+          <span style={{ ...T.labelSm, color: C.white, fontSize: 9, fontWeight: 700 }}>MASTER</span>
         </div>
       </div>
 

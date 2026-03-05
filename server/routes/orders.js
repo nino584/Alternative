@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { randomBytes } from 'crypto';
 import nodemailer from 'nodemailer';
-import { getAllOrders, getOrdersByUser, createOrder, updateOrderStatus, getOrderById, getProductById, addStatusHistory } from '../db/store.js';
+import { getAllOrders, getOrdersByUser, createOrder, updateOrderStatus, getOrderById, getProductById, addStatusHistory, getAffiliateByCode, createAffiliateClick, addAffiliatePendingEarnings, getPromoCodes, updatePromoCode, getSupplierById, addSupplierEarnings } from '../db/store.js';
 import { authenticate, optionalAuth } from '../middleware/auth.js';
 import { requireRole } from '../middleware/rbac.js';
 import { validate } from '../middleware/validate.js';
@@ -277,7 +277,7 @@ const VALID_STATUSES = ['reserved', 'sourcing', 'confirmed', 'shipped', 'deliver
 const orderSchema = z.object({
   productId: z.union([z.number(), z.string()]),
   productName: z.string().min(1).max(200),
-  img: z.string().max(500).optional().default(''),
+  img: z.string().optional().default(''),
   brand: z.string().max(100).optional().default(''),
   color: z.string().max(100).optional().default(''),
   selectedSize: z.string().min(1).max(50).default('One Size'),
@@ -294,6 +294,9 @@ const orderSchema = z.object({
   }),
   price: z.number().positive(),
   depositPaid: z.number().positive(),
+  payMethod: z.string().max(20).optional().default('BOG'),
+  affiliateCode: z.string().max(30).optional().default(''),
+  promoCode: z.string().max(30).optional().default(''),
 });
 
 const statusUpdateSchema = z.object({
@@ -320,12 +323,50 @@ router.get('/:orderId', authenticate, (req, res) => {
 
 // ── POST /api/orders — create order (authenticated or guest) ─────────────
 router.post('/', optionalAuth, validate(orderSchema), (req, res) => {
-  // Server-side price validation: look up actual product price
+  // Server-side validation: look up actual product price & image
   const product = getProductById(Number(req.validated.productId)) || getProductById(String(req.validated.productId));
-  if (product) {
-    const serverPrice = product.sale ?? product.price;
-    req.validated.price = serverPrice;
-    req.validated.depositPaid = serverPrice;
+  if (!product) {
+    return res.status(400).json({ error: 'Product not found. Please try again.' });
+  }
+  let serverPrice = product.sale ?? product.price;
+
+  // Apply promo code discount server-side
+  let promoDiscount = 0;
+  if (req.validated.promoCode) {
+    const promos = getPromoCodes();
+    const promo = promos.find(p => p.code.toLowerCase() === req.validated.promoCode.trim().toLowerCase() && p.active);
+    if (promo) {
+      const valid = (!promo.minOrder || serverPrice >= promo.minOrder)
+        && (!promo.maxUses || promo.usedCount < promo.maxUses)
+        && (!promo.expiresAt || new Date(promo.expiresAt) >= new Date());
+      if (valid) {
+        promoDiscount = promo.type === 'percent'
+          ? Math.round((serverPrice * promo.value) / 100)
+          : promo.value;
+        promoDiscount = Math.min(promoDiscount, serverPrice);
+        serverPrice = serverPrice - promoDiscount;
+        updatePromoCode(promo.code, { usedCount: (promo.usedCount || 0) + 1 });
+        req.validated.promoCode = promo.code; // normalize case
+        req.validated.promoDiscount = promoDiscount;
+      } else {
+        req.validated.promoCode = '';
+      }
+    } else {
+      req.validated.promoCode = '';
+    }
+  }
+
+  req.validated.price = serverPrice;
+  req.validated.depositPaid = serverPrice;
+  // Use product image if client didn't send one or sent base64 (avoid storing large blobs in orders)
+  if (!req.validated.img || req.validated.img.startsWith('data:')) {
+    req.validated.img = product.img?.startsWith('data:') ? '' : (product.img || '');
+  }
+
+  // Attach vendor info from product
+  if (product.vendorId) {
+    req.validated.vendorId = product.vendorId;
+    req.validated.vendorName = product.vendorName || '';
   }
 
   const orderId = 'ALT-' + randomBytes(6).toString('hex').toUpperCase();
@@ -335,6 +376,33 @@ router.post('/', optionalAuth, validate(orderSchema), (req, res) => {
     status: 'reserved',
     ...req.validated,
   });
+
+  // Supplier earnings tracking
+  if (product.vendorId) {
+    const supplier = getSupplierById(product.vendorId);
+    if (supplier && supplier.status === 'approved') {
+      const supplierShare = Math.round(serverPrice * (100 - supplier.commissionRate) / 100);
+      addSupplierEarnings(supplier.id, supplierShare);
+    }
+  }
+
+  // Affiliate commission tracking
+  if (req.validated.affiliateCode) {
+    const affiliate = getAffiliateByCode(req.validated.affiliateCode);
+    if (affiliate && affiliate.status === 'approved') {
+      const commission = Math.round(order.price * affiliate.commission_rate / 100);
+      createAffiliateClick({
+        affiliate_code: affiliate.code,
+        type: 'conversion',
+        order_id: orderId,
+        order_amount: order.price,
+        commission,
+        status: 'pending',
+      });
+      addAffiliatePendingEarnings(affiliate.code, commission);
+    }
+  }
+
   sendOrderConfirmation(order);
   res.status(201).json({ order });
 });

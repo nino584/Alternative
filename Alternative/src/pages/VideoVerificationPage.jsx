@@ -16,7 +16,7 @@ export default function VideoVerificationPage({setPage,L,mobile}) {
   const [playing,setPlaying]=useState(false);
 
   return (
-    <div style={{paddingTop:mobile?52:80,background:C.cream}}>
+    <div style={{paddingTop:mobile?78:104,background:C.cream}}>
       <SEO {...pageMeta("video-verification")} schema={breadcrumbSchema([{name:"Home",url:"/"},{name:"Video Verification"}])} />
       {/* HERO */}
       <div style={{background:C.black,padding:mobile?"48px 0":"80px 0"}}>

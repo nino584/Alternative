@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 
 const DISMISS_KEY = 'alt_app_banner_dismissed';
 const BANNER_H = 36;
 
-export default function AppBanner({ mobile, onHeightChange }) {
+export default function AppBanner({ mobile, onHeightChange, L }) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -48,7 +48,7 @@ export default function AppBanner({ mobile, onHeightChange }) {
           letterSpacing: '0.06em',
           color: 'rgba(212,208,200,0.55)', margin: 0,
         }}>
-          {mobile ? 'Experience Alternative on the app' : 'The Alternative experience is better on the app'}
+          {mobile ? (L?.appBannerMobile||'Experience Alternative on the app') : (L?.appBannerDesktop||'The Alternative experience is better on the app')}
         </p>
 
         <a href="https://apps.apple.com" target="_blank" rel="noopener noreferrer" style={{
@@ -65,7 +65,7 @@ export default function AppBanner({ mobile, onHeightChange }) {
         onMouseEnter={e => { e.currentTarget.style.color = 'rgba(177,154,122,1)'; e.currentTarget.style.borderColor = 'rgba(177,154,122,0.5)'; }}
         onMouseLeave={e => { e.currentTarget.style.color = 'rgba(177,154,122,0.7)'; e.currentTarget.style.borderColor = 'rgba(177,154,122,0.25)'; }}
         >
-          Download
+          {L?.download||'Download'}
         </a>
 
         <button onClick={dismiss} aria-label="Dismiss" style={{

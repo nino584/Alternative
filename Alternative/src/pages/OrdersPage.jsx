@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { C, T } from '../constants/theme.js';
 import { ORDER_STATUSES } from '../constants/data.js';
+import { api } from '../api.js';
 import HoverBtn from '../components/ui/HoverBtn.jsx';
 import Footer from '../components/layout/Footer.jsx';
 
@@ -31,13 +32,17 @@ export default function OrdersPage({mobile,orders,setPage,toast,L,products}) {
 
   const handleCancel=()=>{
     if(window.confirm&&window.confirm(L&&L.cancelConfirm||"Cancel this order? Your payment will be fully refunded.")){
-      toast(L&&L.cancelSuccess||"Cancellation request sent.","success");
+      api.cancelOrder(current.orderId||current.id).then(()=>{
+        toast(L&&L.cancelSuccess||"Cancellation request sent.","success");
+      }).catch(()=>{
+        toast(L&&L.cancelError||"Could not cancel order. Please try again.","error");
+      });
     }
   };
 
   if (allOrders.length===0) {
     return (
-      <div style={{paddingTop:mobile?52:80,minHeight:"100vh",background:C.cream}}>
+      <div style={{paddingTop:mobile?78:104,minHeight:"100vh",background:C.cream}}>
         <div style={{padding:"32px 0 20px",borderBottom:`1px solid ${C.lgray}`}}>
           <div style={{maxWidth:1360,margin:"0 auto",padding:mobile?"0 20px":"0 40px",display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}>
             <div>
@@ -56,7 +61,7 @@ export default function OrdersPage({mobile,orders,setPage,toast,L,products}) {
   }
 
   return (
-    <div style={{paddingTop:mobile?52:80,minHeight:"100vh",background:C.cream}}>
+    <div style={{paddingTop:mobile?78:104,minHeight:"100vh",background:C.cream}}>
       <div style={{padding:"32px 0 20px",borderBottom:`1px solid ${C.lgray}`}}>
         <div style={{maxWidth:1360,margin:"0 auto",padding:mobile?"0 20px":"0 40px",display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}>
           <div>
@@ -152,11 +157,19 @@ export default function OrdersPage({mobile,orders,setPage,toast,L,products}) {
               ))}
             </div>
 
-            {(current.status==="reserved"||current.status==="sourcing")&&(
-              <HoverBtn onClick={handleCancel} variant="danger" style={{padding:"10px 24px",fontSize:10}}>
-                {L&&L.cancelOrder||"Cancel Order (Free)"}
-              </HoverBtn>
-            )}
+            {/* Action buttons */}
+            <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+              {(current.status==="reserved"||current.status==="sourcing")&&(
+                <HoverBtn onClick={handleCancel} variant="secondary" style={{padding:"10px 24px",fontSize:10}}>
+                  {L?.cancelOrder||"Cancel Order"}
+                </HoverBtn>
+              )}
+              {current.status==="delivered"&&(
+                <HoverBtn onClick={()=>setPage("returns")} variant="secondary" style={{padding:"10px 24px",fontSize:10}}>
+                  {L?.createReturn||"Request Return"}
+                </HoverBtn>
+              )}
+            </div>
           </div>
         )}
       </div>

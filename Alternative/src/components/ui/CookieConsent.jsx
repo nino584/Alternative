@@ -38,7 +38,7 @@ export default function CookieConsent({ L, mobile, setPage }) {
       style={{
         position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 9999,
         background: C.black, borderTop: `1px solid rgba(177,154,122,0.2)`,
-        padding: mobile ? '20px 16px' : '20px 40px',
+        padding: mobile ? '14px 14px' : '20px 40px',
         boxShadow: '0 -4px 24px rgba(0,0,0,0.2)',
         animation: 'slideUp 0.3s ease',
       }}>
@@ -46,13 +46,13 @@ export default function CookieConsent({ L, mobile, setPage }) {
         maxWidth: 1360, margin: '0 auto',
         display: 'flex', alignItems: mobile ? 'stretch' : 'center',
         flexDirection: mobile ? 'column' : 'row',
-        gap: mobile ? 16 : 24,
+        gap: mobile ? 10 : 24,
       }}>
         <div style={{ flex: 1 }}>
-          <p style={{ ...T.heading, color: C.white, fontSize: 14, marginBottom: 6 }}>
+          <p style={{ ...T.heading, color: C.white, fontSize: mobile ? 12 : 14, marginBottom: mobile ? 4 : 6 }}>
             {L?.cookieTitle || 'We value your privacy'}
           </p>
-          <p style={{ ...T.bodySm, color: 'rgba(168,162,150,0.7)', fontSize: 12, lineHeight: 1.7 }}>
+          <p style={{ ...T.bodySm, color: 'rgba(168,162,150,0.7)', fontSize: mobile ? 10 : 12, lineHeight: mobile ? 1.5 : 1.7 }}>
             {L?.cookieBody || 'We use essential cookies for site functionality and optional analytics cookies to improve your experience. No personal data is sold or shared with third parties.'}
             {' '}
             <button
@@ -69,9 +69,9 @@ export default function CookieConsent({ L, mobile, setPage }) {
           <button
             onClick={() => accept('essential')}
             style={{
-              padding: '10px 20px', background: 'transparent',
+              padding: mobile ? '8px 14px' : '10px 20px', background: 'transparent',
               border: `1px solid rgba(168,162,150,0.3)`, color: 'rgba(168,162,150,0.7)',
-              ...T.labelSm, fontSize: 10, cursor: 'pointer', letterSpacing: '0.08em',
+              ...T.labelSm, fontSize: mobile ? 9 : 10, cursor: 'pointer', letterSpacing: '0.08em',
               transition: 'all 0.2s',
             }}>
             {L?.essentialOnly || 'Essential Only'}
@@ -79,8 +79,8 @@ export default function CookieConsent({ L, mobile, setPage }) {
           <button
             onClick={() => accept('all')}
             style={{
-              padding: '10px 20px', background: C.tan, border: 'none', color: C.white,
-              ...T.labelSm, fontSize: 10, cursor: 'pointer', letterSpacing: '0.08em',
+              padding: mobile ? '8px 14px' : '10px 20px', background: C.tan, border: 'none', color: C.white,
+              ...T.labelSm, fontSize: mobile ? 9 : 10, cursor: 'pointer', letterSpacing: '0.08em',
               transition: 'all 0.2s',
             }}>
             {L?.acceptAll || 'Accept All'}

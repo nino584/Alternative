@@ -6,3 +6,4 @@ dist/
 server/db/data.json
 server/logs/
 server/backups/
+server/db/backups/

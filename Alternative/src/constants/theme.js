@@ -189,9 +189,9 @@ export const STYLES = `
   /* Gold accent divider */
   .gold-divider{width:40px;height:1px;background:linear-gradient(90deg,transparent,var(--c-tan),transparent);margin:0 auto}
 
-  /* Elegant card hover lift */
-  .luxury-card{transition:all 0.4s cubic-bezier(0.25,0.46,0.45,0.94)}
-  .luxury-card:hover{box-shadow:0 8px 40px rgba(0,0,0,0.08);transform:translateY(-2px)}
+  /* Elegant card hover — shadow only on image box */
+  .luxury-card .card-img{transition:box-shadow 0.4s cubic-bezier(0.25,0.46,0.45,0.94)}
+  .luxury-card:hover .card-img{box-shadow:0 8px 40px rgba(0,0,0,0.08)}
 
   /* Premium input — bottom border only, minimal */
   .luxury-input{background:transparent;border:none;border-bottom:1px solid var(--c-lgray);padding:16px 0;font-size:16px;color:var(--c-black);outline:none;transition:border-color 0.3s ease;width:100%;font-family:'Alido',serif;letter-spacing:0.02em}

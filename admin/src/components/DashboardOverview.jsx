@@ -2,14 +2,14 @@ import { C, T } from '../constants/theme.js';
 import HoverBtn from './HoverBtn.jsx';
 
 const STATUS_COLOR = {
-  reserved: C.brown, sourcing: C.tan, confirmed: "#1a5c8b", shipped: C.green, delivered: C.gray,
+  reserved: C.brown, confirmed: "#1a5c8b", shipped: C.green, delivered: C.gray,
 };
 
-export default function DashboardOverview({ orders, products, mobile, setTab, L }) {
-  const totalRevenue = orders.reduce((s, o) => s + (o.depositPaid || o.price || 0), 0);
+export default function DashboardOverview({ orders, products, mobile, setTab, L, lang }) {
+  const totalRevenue = orders.reduce((s, o) => s + (o.depositPaid ?? o.price ?? 0), 0);
   const today = new Date().toISOString().slice(0, 10);
   const ordersToday = orders.filter(o => o.createdAt?.slice(0, 10) === today).length;
-  const pendingOrders = orders.filter(o => ["reserved", "sourcing"].includes(o.status)).length;
+  const pendingOrders = orders.filter(o => ["reserved"].includes(o.status)).length;
   const videoOrders = orders.filter(o => o.wantVideo).length;
   const videoRate = orders.length > 0 ? Math.round((videoOrders / orders.length) * 100) : 0;
 
@@ -28,8 +28,8 @@ export default function DashboardOverview({ orders, products, mobile, setTab, L 
   for (let i = 6; i >= 0; i--) {
     const d = new Date(); d.setDate(d.getDate() - i);
     const key = d.toISOString().slice(0, 10);
-    const dayLabel = d.toLocaleDateString("en", { weekday: "short" });
-    const rev = orders.filter(o => o.createdAt?.slice(0, 10) === key).reduce((s, o) => s + (o.depositPaid || o.price || 0), 0);
+    const dayLabel = d.toLocaleDateString(lang||"en", { weekday: "short" });
+    const rev = orders.filter(o => o.createdAt?.slice(0, 10) === key).reduce((s, o) => s + (o.depositPaid ?? o.price ?? 0), 0);
     last7.push({ key, dayLabel, rev });
   }
   const maxRev = Math.max(...last7.map(d => d.rev), 1);
@@ -148,7 +148,7 @@ export default function DashboardOverview({ orders, products, mobile, setTab, L 
                     <td style={{ padding: "12px 16px" }}>
                       <span style={{ ...T.labelSm, fontSize: 10, padding: "4px 10px", background: STATUS_COLOR[o.status] || C.gray, color: C.white, borderRadius: 1 }}>{o.status || "—"}</span>
                     </td>
-                    <td style={{ ...T.bodySm, color: C.black, padding: "12px 16px", fontWeight: 500 }}>GEL {o.depositPaid || o.price || 0}</td>
+                    <td style={{ ...T.bodySm, color: C.black, padding: "12px 16px", fontWeight: 500 }}>GEL {o.depositPaid ?? o.price ?? 0}</td>
                     <td style={{ ...T.labelSm, color: C.gray, padding: "12px 16px", fontSize: 11 }}>{o.createdAt?.slice(0, 10) || "—"}</td>
                   </tr>
                 ))}

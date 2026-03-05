@@ -4,9 +4,17 @@ import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import { v4 as uuid } from 'uuid';
 import rateLimit from 'express-rate-limit';
-import { findUserByEmail, createUser, findUserById, updateUser, deleteUser, storeRefreshToken, hasRefreshToken, removeRefreshToken, storeResetToken, consumeResetToken } from '../db/store.js';
+import {
+  findUserByEmail, createUser, findUserById, updateUser, deleteUser,
+  storeRefreshToken, hasRefreshToken, removeRefreshToken, removeAllRefreshTokensForUser,
+  storeResetToken, consumeResetToken,
+  getLoginAttempts, recordLoginAttempt,
+} from '../db/store.js';
 import { authenticate, generateTokens, getAccessCookieOptions, getRefreshCookieOptions } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
+import { passwordSchema, resetPasswordSchema, changePasswordSchema, updateProfileSchema } from '../schemas.js';
+import { generateSecret, generateOtpauthUri, verifyTotp } from '../lib/totp.js';
+import { logSecurityEvent, SEC_EVENTS } from '../lib/securityLog.js';
 
 const router = Router();
 
@@ -14,7 +22,15 @@ const router = Router();
 const DUMMY_HASH = bcryptjs.hashSync('__timing_safe_dummy__', 12);
 
 // Email verification tokens (in-memory, production would use DB)
-const verificationTokens = new Map(); // token -> { userId, email, expiresAt }
+const verificationTokens = new Map();
+
+// ── Account Lockout (persisted via store.js) ─────────────────────────────────
+function checkAccountLockout(email) {
+  const attempts = getLoginAttempts(email);
+  if (!attempts) return false;
+  if (attempts.lockedUntil && new Date(attempts.lockedUntil) > new Date()) return true;
+  return false;
+}
 
 // Rate limit: 10 login attempts per 15 min per IP
 const loginLimiter = rateLimit({
@@ -44,16 +60,24 @@ const registerSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(100),
   email: z.string().email('Invalid email address'),
   phone: z.string().min(5, 'Phone number is required').max(20),
-  password: z.string().min(8, 'Password must be at least 8 characters')
-    .regex(/[A-Z]/, 'Must contain an uppercase letter')
-    .regex(/[a-z]/, 'Must contain a lowercase letter')
-    .regex(/[0-9]/, 'Must contain a number')
-    .regex(/[!@#$%^&*(),.?":{}|<>]/, 'Must contain a special character'),
+  password: passwordSchema,
+});
+
+const twoFaVerifySchema = z.object({
+  code: z.string().length(6, 'Code must be 6 digits').regex(/^\d{6}$/, 'Code must be 6 digits'),
 });
 
 // ── POST /api/auth/login ──────────────────────────────────────────────────
 router.post('/login', loginLimiter, validate(loginSchema), async (req, res) => {
   const { email, password } = req.validated;
+  const ua = req.headers['user-agent'] || '';
+  const ip = req.ip;
+
+  // Check account lockout BEFORE password comparison
+  if (checkAccountLockout(email)) {
+    logSecurityEvent(SEC_EVENTS.LOGIN_LOCKED, { email, ip, ua });
+    return res.status(429).json({ error: 'Account temporarily locked due to too many failed attempts. Try again in 30 minutes.' });
+  }
 
   const user = findUserByEmail(email);
   // Always compare against a hash to prevent timing-based user enumeration
@@ -61,14 +85,35 @@ router.post('/login', loginLimiter, validate(loginSchema), async (req, res) => {
   const valid = await bcryptjs.compare(password, hashToCompare);
 
   if (!user || !valid) {
+    recordLoginAttempt(email, true);
+    logSecurityEvent(SEC_EVENTS.LOGIN_FAILED, { email, ip, ua });
     return res.status(401).json({ error: 'Invalid email or password' });
   }
 
+  // Check if 2FA is enabled — require TOTP code
+  if (user.twoFactorEnabled && user.twoFactorSecret) {
+    const totpCode = req.body.totpCode;
+    if (!totpCode) {
+      // Password is correct but 2FA code needed — return special response
+      return res.status(200).json({ requires2FA: true, message: 'Two-factor authentication code required' });
+    }
+    if (!verifyTotp(user.twoFactorSecret, totpCode)) {
+      logSecurityEvent(SEC_EVENTS.TWO_FA_FAILED, { email, ip, ua, userId: user.id });
+      return res.status(401).json({ error: 'Invalid two-factor authentication code' });
+    }
+  }
+
+  // Successful login — clear failed attempts (persisted)
+  recordLoginAttempt(email, false);
+
   const { accessToken, refreshToken } = generateTokens(user);
-  storeRefreshToken(refreshToken);
+  storeRefreshToken(refreshToken, user.id, ua);
 
   res.cookie('access_token', accessToken, getAccessCookieOptions());
   res.cookie('refresh_token', refreshToken, getRefreshCookieOptions());
+
+  const eventType = user.role === 'admin' ? SEC_EVENTS.ADMIN_LOGIN : SEC_EVENTS.LOGIN_SUCCESS;
+  logSecurityEvent(eventType, { email, ip, ua, userId: user.id, role: user.role });
 
   res.json({
     user: { id: user.id, name: user.name, email: user.email, role: user.role },
@@ -78,6 +123,8 @@ router.post('/login', loginLimiter, validate(loginSchema), async (req, res) => {
 // ── POST /api/auth/register ────────────────────────────────────────────────
 router.post('/register', registerLimiter, validate(registerSchema), async (req, res) => {
   const { name, email, phone, password } = req.validated;
+  const ua = req.headers['user-agent'] || '';
+  const ip = req.ip;
 
   if (findUserByEmail(email)) {
     return res.status(409).json({ error: 'Email already registered' });
@@ -94,10 +141,12 @@ router.post('/register', registerLimiter, validate(registerSchema), async (req, 
   });
 
   const { accessToken, refreshToken } = generateTokens(user);
-  storeRefreshToken(refreshToken);
+  storeRefreshToken(refreshToken, user.id, ua);
 
   res.cookie('access_token', accessToken, getAccessCookieOptions());
   res.cookie('refresh_token', refreshToken, getRefreshCookieOptions());
+
+  logSecurityEvent(SEC_EVENTS.REGISTER, { email, ip, ua, userId: user.id });
 
   res.status(201).json({
     user: { id: user.id, name: user.name, email: user.email, role: user.role },
@@ -148,7 +197,13 @@ const refreshLimiter = rateLimit({
 // ── POST /api/auth/refresh ─────────────────────────────────────────────────
 router.post('/refresh', refreshLimiter, (req, res) => {
   const token = req.cookies?.refresh_token;
-  if (!token || !hasRefreshToken(token)) {
+  const ua = req.headers['user-agent'] || '';
+
+  if (!token || !hasRefreshToken(token, ua)) {
+    if (token) {
+      // Token exists but UA mismatch — possible theft
+      logSecurityEvent(SEC_EVENTS.SUSPICIOUS_UA_CHANGE, { ip: req.ip, ua });
+    }
     return res.status(401).json({ error: 'Invalid refresh token' });
   }
 
@@ -163,10 +218,12 @@ router.post('/refresh', refreshLimiter, (req, res) => {
     // Rotate: revoke old, issue new
     removeRefreshToken(token);
     const { accessToken, refreshToken } = generateTokens(user);
-    storeRefreshToken(refreshToken);
+    storeRefreshToken(refreshToken, user.id, ua);
 
     res.cookie('access_token', accessToken, getAccessCookieOptions());
     res.cookie('refresh_token', refreshToken, getRefreshCookieOptions());
+
+    logSecurityEvent(SEC_EVENTS.TOKEN_REFRESH, { userId: user.id, ip: req.ip });
 
     res.json({ user: { id: user.id, name: user.name, email: user.email, role: user.role } });
   } catch {
@@ -180,6 +237,8 @@ router.post('/logout', (req, res) => {
   const token = req.cookies?.refresh_token;
   if (token) removeRefreshToken(token);
 
+  logSecurityEvent(SEC_EVENTS.LOGOUT, { ip: req.ip, ua: req.headers['user-agent'] });
+
   res.clearCookie('access_token', { path: '/' });
   res.clearCookie('refresh_token', { path: '/' });
   res.json({ ok: true });
@@ -189,18 +248,19 @@ router.post('/logout', (req, res) => {
 // Handles Google / Facebook token-based login
 router.post('/social', loginLimiter, async (req, res) => {
   const { provider, token } = req.body || {};
+  const ua = req.headers['user-agent'] || '';
+  const ip = req.ip;
+
   if (!provider || !token) return res.status(400).json({ error: 'Provider and token are required' });
 
   let email, name;
 
   try {
     if (provider === 'google') {
-      // Verify Google ID token via Google's tokeninfo endpoint
       const gRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(token)}`);
       if (!gRes.ok) return res.status(401).json({ error: 'Invalid Google token' });
       const gData = await gRes.json();
       if (!gData.email) return res.status(401).json({ error: 'Google token missing email' });
-      // Validate audience claim to prevent confused deputy attacks
       const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
       if (GOOGLE_CLIENT_ID && gData.aud !== GOOGLE_CLIENT_ID) {
         return res.status(401).json({ error: 'Google token audience mismatch' });
@@ -208,7 +268,6 @@ router.post('/social', loginLimiter, async (req, res) => {
       email = gData.email;
       name = gData.name || gData.email.split('@')[0];
     } else if (provider === 'facebook') {
-      // Verify Facebook access token via Graph API
       const fbRes = await fetch(`https://graph.facebook.com/me?fields=id,name,email&access_token=${encodeURIComponent(token)}`);
       if (!fbRes.ok) return res.status(401).json({ error: 'Invalid Facebook token' });
       const fbData = await fbRes.json();
@@ -238,10 +297,12 @@ router.post('/social', loginLimiter, async (req, res) => {
   }
 
   const { accessToken, refreshToken } = generateTokens(user);
-  storeRefreshToken(refreshToken);
+  storeRefreshToken(refreshToken, user.id, ua);
 
   res.cookie('access_token', accessToken, getAccessCookieOptions());
   res.cookie('refresh_token', refreshToken, getRefreshCookieOptions());
+
+  logSecurityEvent(SEC_EVENTS.SOCIAL_LOGIN, { email, provider, ip, ua, userId: user.id });
 
   res.json({
     user: { id: user.id, name: user.name, email: user.email, role: user.role },
@@ -250,14 +311,76 @@ router.post('/social', loginLimiter, async (req, res) => {
 
 // ── GET /api/auth/me ───────────────────────────────────────────────────────
 router.get('/me', authenticate, (req, res) => {
-  res.json({ user: req.user });
+  const user = findUserById(req.user.id);
+  const has2FA = !!(user?.twoFactorEnabled);
+  res.json({ user: { ...req.user, twoFactorEnabled: has2FA } });
+});
+
+// ── 2FA Setup: POST /api/auth/2fa/setup ──────────────────────────────────
+// Admin-only: Generate TOTP secret and return otpauth URI for QR scanning
+router.post('/2fa/setup', authenticate, (req, res) => {
+  const user = findUserById(req.user.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  if (user.role !== 'admin') return res.status(403).json({ error: '2FA is only available for admin accounts' });
+  if (user.twoFactorEnabled) return res.status(400).json({ error: '2FA is already enabled' });
+
+  const secret = generateSecret();
+  // Store secret temporarily (not enabled until verified)
+  updateUser(user.id, { twoFactorSecret: secret, twoFactorEnabled: false });
+
+  const uri = generateOtpauthUri(secret, user.email);
+  res.json({ secret, otpauthUri: uri });
+});
+
+// ── 2FA Verify: POST /api/auth/2fa/verify ────────────────────────────────
+// Confirm 2FA setup by providing a valid code from authenticator app
+router.post('/2fa/verify', authenticate, validate(twoFaVerifySchema), (req, res) => {
+  const user = findUserById(req.user.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  if (!user.twoFactorSecret) return res.status(400).json({ error: 'Run 2FA setup first' });
+  if (user.twoFactorEnabled) return res.status(400).json({ error: '2FA is already enabled' });
+
+  const { code } = req.validated;
+  if (!verifyTotp(user.twoFactorSecret, code)) {
+    logSecurityEvent(SEC_EVENTS.TWO_FA_FAILED, { userId: user.id, ip: req.ip, action: 'setup_verify' });
+    return res.status(400).json({ error: 'Invalid code. Make sure your authenticator app is synced.' });
+  }
+
+  updateUser(user.id, { twoFactorEnabled: true });
+  logSecurityEvent(SEC_EVENTS.TWO_FA_ENABLED, { userId: user.id, email: user.email, ip: req.ip });
+
+  res.json({ ok: true, message: '2FA enabled successfully' });
+});
+
+// ── 2FA Disable: POST /api/auth/2fa/disable ──────────────────────────────
+router.post('/2fa/disable', authenticate, async (req, res) => {
+  const user = findUserById(req.user.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  if (!user.twoFactorEnabled) return res.status(400).json({ error: '2FA is not enabled' });
+
+  // Require password confirmation to disable
+  const { password, code } = req.body || {};
+  if (!password) return res.status(400).json({ error: 'Password is required to disable 2FA' });
+
+  const valid = await bcryptjs.compare(password, user.password);
+  if (!valid) return res.status(401).json({ error: 'Incorrect password' });
+
+  // Also require a valid TOTP code
+  if (!code || !verifyTotp(user.twoFactorSecret, code)) {
+    return res.status(400).json({ error: 'Valid 2FA code is required' });
+  }
+
+  updateUser(user.id, { twoFactorSecret: null, twoFactorEnabled: false });
+  logSecurityEvent(SEC_EVENTS.TWO_FA_DISABLED, { userId: user.id, email: user.email, ip: req.ip });
+
+  res.json({ ok: true, message: '2FA disabled' });
 });
 
 // ── POST /api/auth/forgot-password ───────────────────────────────────────────
 const forgotLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, message: { error: 'Too many reset attempts. Try again later.' } });
 router.post('/forgot-password', forgotLimiter, (req, res) => {
   const { email } = req.body || {};
-  if (!email || typeof email !== 'string' || !email.includes('@')) {
+  if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
     return res.status(400).json({ error: 'Valid email is required' });
   }
   const user = findUserByEmail(email);
@@ -267,18 +390,17 @@ router.post('/forgot-password', forgotLimiter, (req, res) => {
   const token = uuid().replace(/-/g, '');
   storeResetToken(token, user.id);
 
-  // In production, send email with reset link. For now, log it.
+  logSecurityEvent(SEC_EVENTS.PASSWORD_RESET_REQUESTED, { email, ip: req.ip });
+
   console.log(`[PASSWORD RESET] Token for ${email}: ${token}`);
   console.log(`[PASSWORD RESET] Reset link: /auth/reset?token=${token}`);
 
   res.json({ ok: true });
 });
 
-// ── POST /api/auth/reset-password ────────────────────────────────────────────
-router.post('/reset-password', async (req, res) => {
-  const { token, password } = req.body || {};
-  if (!token || !password) return res.status(400).json({ error: 'Token and password are required' });
-  if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
+// ── POST /api/auth/reset-password (with full password strength validation) ──
+router.post('/reset-password', validate(resetPasswordSchema), async (req, res) => {
+  const { token, password } = req.validated;
 
   const userId = consumeResetToken(token);
   if (!userId) return res.status(400).json({ error: 'Invalid or expired reset token' });
@@ -287,14 +409,17 @@ router.post('/reset-password', async (req, res) => {
   const updated = updateUser(userId, { password: hash });
   if (!updated) return res.status(404).json({ error: 'User not found' });
 
+  // Revoke all refresh tokens for this user (force re-login everywhere)
+  removeAllRefreshTokensForUser(userId);
+
+  logSecurityEvent(SEC_EVENTS.PASSWORD_RESET_COMPLETED, { userId, ip: req.ip });
+
   res.json({ ok: true });
 });
 
-// ── POST /api/auth/change-password ───────────────────────────────────────────
-router.post('/change-password', authenticate, async (req, res) => {
-  const { currentPassword, newPassword } = req.body || {};
-  if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Current and new password are required' });
-  if (newPassword.length < 8) return res.status(400).json({ error: 'New password must be at least 8 characters' });
+// ── POST /api/auth/change-password (with full password strength validation) ──
+router.post('/change-password', authenticate, validate(changePasswordSchema), async (req, res) => {
+  const { currentPassword, newPassword } = req.validated;
 
   const user = findUserById(req.user.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
@@ -305,19 +430,25 @@ router.post('/change-password', authenticate, async (req, res) => {
   const hash = await bcryptjs.hash(newPassword, 12);
   updateUser(user.id, { password: hash });
 
+  // Revoke all other refresh tokens (keep current session alive by issuing new tokens)
+  removeAllRefreshTokensForUser(user.id);
+  const ua = req.headers['user-agent'] || '';
+  const { accessToken, refreshToken } = generateTokens(user);
+  storeRefreshToken(refreshToken, user.id, ua);
+  res.cookie('access_token', accessToken, getAccessCookieOptions());
+  res.cookie('refresh_token', refreshToken, getRefreshCookieOptions());
+
+  logSecurityEvent(SEC_EVENTS.PASSWORD_CHANGED, { userId: user.id, email: user.email, ip: req.ip });
+
   res.json({ ok: true });
 });
 
-// ── PUT /api/auth/profile ────────────────────────────────────────────────────
-router.put('/profile', authenticate, (req, res) => {
-  const { name, phone } = req.body || {};
+// ── PUT /api/auth/profile (with Zod validation) ──────────────────────────────
+router.put('/profile', authenticate, validate(updateProfileSchema), (req, res) => {
+  const { name, phone } = req.validated;
   const updates = {};
-  if (name && typeof name === 'string' && name.trim().length >= 2 && name.length <= 100) {
-    updates.name = name.trim();
-  }
-  if (phone !== undefined && typeof phone === 'string' && phone.length <= 20) {
-    updates.phone = phone.trim();
-  }
+  if (name) updates.name = name.trim();
+  if (phone !== undefined) updates.phone = phone.trim();
   if (Object.keys(updates).length === 0) return res.status(400).json({ error: 'No valid fields to update' });
 
   const updated = updateUser(req.user.id, updates);
@@ -337,9 +468,10 @@ router.delete('/account', authenticate, async (req, res) => {
   const valid = await bcryptjs.compare(password, user.password);
   if (!valid) return res.status(401).json({ error: 'Incorrect password' });
 
+  logSecurityEvent(SEC_EVENTS.ACCOUNT_DELETED, { userId: user.id, email: user.email, ip: req.ip });
+
   deleteUser(user.id);
 
-  // Clear auth cookies
   res.clearCookie('access_token', { path: '/' });
   res.clearCookie('refresh_token', { path: '/' });
 

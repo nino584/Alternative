@@ -18,15 +18,15 @@ function getSeasonLabel(lang) {
   // Feb–Jul = SS, Aug–Jan = FW
   const isSS = m >= 1 && m <= 6;
   const seasonYear = m === 0 ? y - 1 : y; // Jan counts as prev year's FW
-  if (lang === "ka") return isSS ? `გაზაფხული / ზაფხული ${y}` : `შემოდგომა / ზამთარი ${isSS ? y : (m === 0 ? y : y)}`;
-  if (lang === "ru") return isSS ? `ВЕСНА / ЛЕТО ${y}` : `ОСЕНЬ / ЗИМА ${m === 0 ? y : y}`;
-  return isSS ? `SPRING / SUMMER ${y}` : `FALL / WINTER ${m === 0 ? y : y}`;
+  if (lang === "ka") return isSS ? `გაზაფხული / ზაფხული ${y}` : `შემოდგომა / ზამთარი ${seasonYear}`;
+  if (lang === "ru") return isSS ? `ВЕСНА / ЛЕТО ${y}` : `ОСЕНЬ / ЗИМА ${seasonYear}`;
+  return isSS ? `SPRING / SUMMER ${y}` : `FALL / WINTER ${seasonYear}`;
 }
 
 // ── HOMEPAGE ──────────────────────────────────────────────────────────────────
 const DEMO_VIDEO_URL = "https://cdn.shopify.com/videos/c/o/v/87c0928e89c34bdfb4e4fefc45f14cb2.mp4";
 
-export default function HomePage({setPage,setSelected,L,lang,mobile,products:productsProp,wishlist,onWishlist}) {
+export default function HomePage({setPage,setSelected,L,lang,mobile,products:productsProp,wishlist,onWishlist,onQuickView}) {
   const [vis,setVis]=useState(false);
   const [heroSrc,setHeroSrc]=useState(HERO_IMAGE);
   const [vidPlaying,setVidPlaying]=useState(false);
@@ -44,7 +44,7 @@ export default function HomePage({setPage,setSelected,L,lang,mobile,products:pro
       <SEO {...pageMeta("home")} />
 
       {/* ── HERO ───────────────────────────────────────────────────────────── */}
-      <section style={mobile?{minHeight:"100vh",display:"flex",flexDirection:"column",overflow:"hidden",position:"relative",paddingTop:60}:{height:"100vh",display:"grid",gridTemplateColumns:"1fr 1fr",overflow:"hidden",minHeight:600,position:"relative"}}>
+      <section style={mobile?{display:"flex",flexDirection:"column",overflow:"hidden",position:"relative",paddingTop:60}:{height:"100vh",display:"grid",gridTemplateColumns:"1fr 1fr",overflow:"hidden",minHeight:600,position:"relative"}}>
         {mobile&&(
           <div style={{height:280,overflow:"hidden",flexShrink:0}}>
             <img src={heroSrc} alt="Alternative luxury pre-order fashion" fetchpriority="high" onError={()=>setHeroSrc(BI.bag_stone)} style={{width:"100%",height:"100%",objectFit:"cover",opacity:vis?1:0,transition:"opacity 1.2s ease"}}/>
@@ -106,10 +106,10 @@ export default function HomePage({setPage,setSelected,L,lang,mobile,products:pro
               <p style={{...T.labelSm,color:C.tan,marginBottom:10,letterSpacing:"0.14em"}}>{L.featuredLabel}</p>
               <h2 style={{...T.displayMd,color:C.black,fontSize:mobile?"clamp(22px,6vw,32px)":undefined}}>{L.featuredTitle}</h2>
             </div>
-            <button onClick={()=>setPage("catalog")} className="luxury-link" style={{background:"none",border:"none",...T.bodySm,color:C.gray,cursor:"pointer",padding:"4px 0",fontSize:13}}>View all →</button>
+            <button onClick={()=>setPage("catalog")} className="luxury-link" style={{background:"none",border:"none",...T.bodySm,color:C.gray,cursor:"pointer",padding:"4px 0",fontSize:13}}>{L.viewAll||"View all →"}</button>
           </div>
           <div style={{display:"grid",gridTemplateColumns:mobile?"1fr 1fr":"repeat(3,1fr)",gap:mobile?10:3}}>
-            {(productsProp||PRODUCTS).slice(0,mobile?4:3).map(p=><ProductCard key={p.id} product={p} onSelect={()=>{setPage("product",p);}} wishlist={wishlist} onWishlist={onWishlist} L={L} mobile={mobile}/>)}
+            {(productsProp||PRODUCTS).slice(0,mobile?4:3).map(p=><ProductCard key={p.id} product={p} onSelect={()=>{setPage("product",p);}} onQuickView={onQuickView} wishlist={wishlist} onWishlist={onWishlist} L={L} mobile={mobile}/>)}
           </div>
         </div>
       </section>
@@ -147,9 +147,11 @@ export default function HomePage({setPage,setSelected,L,lang,mobile,products:pro
           <div style={{display:"flex",animation:"marqueeScroll 40s linear infinite",width:"max-content"}}>
             {[...Array(2)].map((_,setIdx)=>(
               <div key={setIdx} style={{display:"flex",alignItems:"center",flexShrink:0}}>
-                {["Bottega Veneta","Saint Laurent","Loewe","Chloé","Brunello Cucinelli","Max Mara","Valentino","Tom Ford","Cartier","Gucci","Loro Piana","The Row","Moncler","Golden Goose"].map((brand,i)=>(
+                {[{name:"Bottega Veneta",logo:"bottega-veneta.svg",h:18},{name:"Saint Laurent",logo:"saint-laurent.svg",h:16},{name:"Loewe",logo:"loewe-2.svg",h:32},{name:"Chloé",logo:"chloe.svg",h:22},{name:"Brunello Cucinelli",logo:"brunello-cucinelli.svg",h:13},{name:"Max Mara",logo:"max-mara.svg",h:20},{name:"Valentino",logo:"valentino.svg",h:18},{name:"Tom Ford",logo:"tom-ford.svg",h:20},{name:"Cartier",logo:"cartier-2.svg",h:24},{name:"Gucci",logo:"gucci.svg",h:30},{name:"Loro Piana",logo:"loro-piana.svg",h:18},{name:"The Row",logo:"the-row.svg",h:22},{name:"Moncler",logo:"moncler.svg",h:18},{name:"Golden Goose",logo:"golden-goose.svg",h:15}].map((brand,i)=>(
                   <div key={`${setIdx}-${i}`} style={{display:"flex",alignItems:"center",flexShrink:0}}>
-                    <span style={{fontFamily:"'Alido',serif",fontSize:mobile?15:18,fontWeight:400,color:"rgba(25,25,25,0.35)",whiteSpace:"nowrap",padding:mobile?"0 20px":"0 32px",letterSpacing:"0.04em"}}>{brand}</span>
+                    <span style={{padding:mobile?"0 20px":"0 32px",display:"inline-flex",alignItems:"center",flexShrink:0}}>
+                      <img src={`${import.meta.env.BASE_URL}images/brands/${brand.logo}`} alt={brand.name} style={{height:mobile?Math.round(brand.h*0.7):brand.h,width:"auto",opacity:0.35,filter:"grayscale(100%)",display:"block"}}/>
+                    </span>
                     <span style={{color:"rgba(25,25,25,0.12)",fontSize:6,flexShrink:0}}>·</span>
                   </div>
                 ))}

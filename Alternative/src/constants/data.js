@@ -4,10 +4,13 @@ import { PI } from './images.js';
 // ── SIZES ─────────────────────────────────────────────────────────────────────
 export const SIZES_CLOTHING = ["XS","S","M","L","XL","XXL"];
 export const SIZES_CLOTHING_W = ["XXS","XS","S","M","L","XL","XXL","XXXL"];
-export const SIZES_CLOTHING_M = ["XS","S","M","L","XL","XXL","XXXL"];
+export const SIZES_CLOTHING_M = ["XS","S","M","L","XL","XXL","XXXL","XXXXL"];
 export const SIZES_SHOES = ["36","37","38","39","40","41","42","43","44","45"];
-export const SIZES_SHOES_W = ["35","36","37","38","39","40","41"];
+export const SIZES_SHOES_W = ["36","37","38","39","40","41"];
+export const SIZES_KIDS_BABY = ["0-3M","3-6M","6-9M","9-12M","12-18M","18-24M"];
 export const SIZES_SHOES_M = ["39","40","41","42","43","44","45","46","47"];
+export const SIZES_KIDS_CLOTHING = ["0-3M","3-6M","6-9M","9-12M","12-18M","18-24M","2Y","3Y","4Y","5Y","6Y","8Y","10Y","12Y","14Y"];
+export const SIZES_KIDS_SHOES = ["17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35"];
 export const SIZES_BAGS = ["One Size"];
 export const SIZES_ACC = ["One Size"];
 
@@ -27,7 +30,7 @@ export const PRODUCTS = [
     details:{code:"ALT-LW006",composition:"100% Calfskin",madeIn:"Spain",dimensions:"H: 14cm  W: 18cm  D: 6cm",features:["Soft pebbled texture","Signature puzzle geometric panels","Gold chain strap","Adjustable chain length","Zip closure"]}},
   {id:7,name:"Tailored Wool Blazer",section:"Womenswear",cat:"Clothing",sub:"Clothing",type:"Blazers",color:"Camel",price:380,sale:null,lead:"12–16 days",tag:"New",img:PI.blazer,sizes:SIZES_CLOTHING_W,fit:{fit:"Relaxed fit",notes:"Model is 175cm wearing size S. Size down for tailored look."},brand:"Max Mara",desc:"80% wool, 20% cashmere. Structured shoulder. Satin lining.",
     details:{code:"ALT-MM007",composition:"80% Wool, 20% Cashmere. Lining: 100% Viscose",madeIn:"Italy",features:["Structured shoulder","Full satin lining","Single-breasted closure","Relaxed fit","Notch lapel"]}},
-  {id:8,name:"Leather Belt — 25mm",section:"Womenswear",cat:"Accessories",sub:"Accessories",type:"Belts",color:"Cognac",price:115,sale:null,lead:"8–10 days",tag:"",img:PI.belt,sizes:["70cm","75cm","80cm","85cm","90cm"],fit:{fit:"True to size",notes:"Measure your waist and choose the corresponding length."},brand:"Valentino",desc:"Vegetable-tanned calfskin. V-Logo signature buckle.",
+  {id:8,name:"Leather Belt — 25mm",section:"Womenswear",cat:"Accessories",sub:"Accessories",type:"Belts",color:"Cognac",price:115,sale:null,lead:"8–10 days",tag:"",img:PI.belt,sizes:SIZES_ACC,fit:{fit:"True to size",notes:"Measure your waist and choose the corresponding length."},brand:"Valentino",desc:"Vegetable-tanned calfskin. V-Logo signature buckle.",
     details:{code:"ALT-VL008",composition:"100% Calfskin",madeIn:"Italy",features:["Vegetable-tanned leather","V-Logo signature buckle","Gold-tone hardware","Width: 25mm","5-hole adjustable closure"]}},
   {id:9,name:"Automatic Mesh Watch",section:"Menswear",cat:"Watches",sub:"Watches",type:"Automatic",color:"Silver",price:480,sale:null,lead:"14–18 days",tag:"Popular",img:PI.watch1,sizes:SIZES_ACC,fit:{fit:"One Size",notes:"Case diameter: 40mm. Adjustable mesh strap."},brand:"Tom Ford",desc:"Sapphire crystal glass. Swiss automatic movement. 5ATM water resistance.",
     details:{code:"ALT-TF009",composition:"Stainless Steel, Sapphire Crystal",madeIn:"Switzerland",dimensions:"Case diameter: 40mm",features:["Swiss automatic movement","Sapphire crystal glass","Mesh bracelet strap","5ATM water resistance","Case diameter: 40mm"]}},
@@ -41,16 +44,15 @@ export const PRODUCTS = [
     details:{code:"ALT-TR013",composition:"90% Virgin Wool, 10% Cashmere. Lining: 100% Cupro",madeIn:"Italy",features:["Double-breasted closure","Structured shoulder","Full cupro lining","Oversized silhouette","Two front welt pockets"]}},
   {id:14,name:"Ceramic Dress Watch",section:"Menswear",cat:"Watches",sub:"Watches",type:"Dress",color:"White",price:390,sale:null,lead:"14–18 days",tag:"Limited",img:PI.dresswatch,sizes:SIZES_ACC,fit:{fit:"One Size",notes:"Case diameter: 39mm. Alligator leather strap."},brand:"Tom Ford",desc:"Ceramic bezel. Swiss quartz movement. Sapphire crystal.",
     details:{code:"ALT-TF014",composition:"Ceramic, Stainless Steel, Sapphire Crystal",madeIn:"Switzerland",dimensions:"Case diameter: 39mm",features:["Ceramic bezel","Swiss quartz movement","Sapphire crystal glass","Alligator leather strap","Case diameter: 39mm"]}},
-  {id:15,name:"Mini Puffer Jacket",section:"Kidswear",cat:"Clothing",sub:"Clothing",type:"Jackets",color:"Cream",price:145,sale:null,lead:"10–14 days",tag:"New",img:PI.puffer,sizes:["2Y","4Y","6Y","8Y","10Y","12Y"],fit:{fit:"True to age",notes:"Comfortable fit, not oversized. Machine washable at 30°."},brand:"Moncler",desc:"Lightweight goose-down fill. Snap-button closure. Machine washable.",
+  {id:15,name:"Mini Puffer Jacket",section:"Kidswear",cat:"Clothing",sub:"Clothing",type:"Jackets",color:"Cream",price:145,sale:null,lead:"10–14 days",tag:"New",img:PI.puffer,sizes:["2Y","4Y","6Y","8Y","10Y","12Y"],fit:{fit:"True to age",notes:"Comfortable fit, not oversized. Machine washable at 30°."},brand:"Moncler",desc:"Lightweight goose-down fill. Snap-button closure. Machine washable.",kidsGender:"Boy",
     details:{code:"ALT-MC015",composition:"Shell: 100% Polyamide. Fill: 90% Goose Down, 10% Feather",madeIn:"Romania",features:["Lightweight goose-down fill","Snap-button closure","Machine washable at 30°","Hooded design","Elastic cuffs"]}},
-  {id:16,name:"Canvas Sneaker",section:"Kidswear",cat:"Shoes",sub:"Shoes",type:"Sneakers",color:"White",price:85,sale:null,lead:"8–10 days",tag:"",img:PI.sneaker,sizes:["27","28","29","30","31","32","33","34","35"],fit:{fit:"True to size",notes:"Rubber sole. Recommended to measure foot length before ordering."},brand:"Golden Goose",desc:"Canvas upper. Signature star. Rubber sole. Velcro closure.",
+  {id:16,name:"Canvas Sneaker",section:"Kidswear",cat:"Shoes",sub:"Shoes",type:"Sneakers",color:"White",price:85,sale:null,lead:"8–10 days",tag:"",img:PI.sneaker,sizes:["27","28","29","30","31","32","33","34","35"],fit:{fit:"True to size",notes:"Rubber sole. Recommended to measure foot length before ordering."},brand:"Golden Goose",desc:"Canvas upper. Signature star. Rubber sole. Velcro closure.",kidsGender:"Girl",
     details:{code:"ALT-GG016",composition:"Upper: 100% Canvas. Sole: Rubber",madeIn:"Italy",features:["Signature star appliqué","Rubber sole","Velcro closure","Padded insole","Reinforced toe cap"]}},
 ];
 
 // ── ORDER STATUSES ────────────────────────────────────────────────────────────
 export const ORDER_STATUSES = [
-  {key:"reserved",label:"Reserved",desc:"Reservation confirmed. We are processing your order now.",color:C.brown},
-  {key:"sourcing",label:"Sourcing",desc:"Your item is being sourced from our verified supplier network.",color:C.tan},
+  {key:"reserved",label:"Ordered",desc:"Order confirmed. We are processing your order now.",color:C.brown},
   {key:"confirmed",label:"Confirmed",desc:"Item confirmed in stock and being packaged.",color:"#1a5c8b"},
   {key:"shipped",label:"Shipped",desc:"In transit to Georgia. Estimated arrival 3–5 days.",color:C.green},
   {key:"delivered",label:"Delivered",desc:"Order delivered. Enjoy!",color:C.gray},

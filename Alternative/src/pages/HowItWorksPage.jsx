@@ -30,7 +30,7 @@ export default function HowItWorksPage({setPage,L,mobile}) {
   ];
 
   return (
-    <div style={{paddingTop:mobile?52:80,background:C.cream}}>
+    <div style={{paddingTop:mobile?78:104,background:C.cream}}>
       <SEO {...howMeta} schema={howSchema} />
       <div style={{background:C.black,padding:mobile?"48px 0":"72px 0"}}>
         <div style={{maxWidth:900,margin:"0 auto",padding:mobile?"0 16px":"0 40px",textAlign:"center"}}>

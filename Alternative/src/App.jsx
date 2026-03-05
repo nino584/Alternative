@@ -16,8 +16,10 @@ import ToastContainer from './components/ui/ToastContainer.jsx';
 import CookieConsent, { initAnalyticsIfConsented } from './components/ui/CookieConsent.jsx';
 import SearchOverlay from './components/overlays/SearchOverlay.jsx';
 import CartDrawer from './components/overlays/CartDrawer.jsx';
+import QuickViewModal from './components/overlays/QuickViewModal.jsx';
 import StylistChat from './components/ui/StylistChat.jsx';
 const CheckoutPage = lazy(() => import('./pages/CheckoutPage.jsx'));
+const BagsCheckoutPage = lazy(() => import('./pages/BagsCheckoutPage.jsx'));
 
 import HomePage from './pages/HomePage.jsx';
 import CatalogPage from './pages/CatalogPage.jsx';
@@ -33,6 +35,9 @@ const MembershipPage = lazy(() => import('./pages/MembershipPage.jsx'));
 const LegalPage = lazy(() => import('./pages/LegalPage.jsx'));
 const ContactPage = lazy(() => import('./pages/ContactPage.jsx'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage.jsx'));
+const AffiliatePage = lazy(() => import('./pages/AffiliatePage.jsx'));
+const AffiliateDashboard = lazy(() => import('./pages/AffiliateDashboard.jsx'));
+const BecomeSupplierPage = lazy(() => import('./pages/BecomeSupplierPage.jsx'));
 
 const STORAGE_KEYS = { cart: "alternative_cart", orders: "alternative_orders", wishlist: "alternative_wishlist", lang: "alternative_lang" };
 
@@ -65,6 +70,7 @@ export default function App() {
   const [bannerH,setBannerH]=useState(0);
   const [showCart,setShowCart]=useState(false);
   const [toasts,setToasts]=useState([]);
+  const [quickViewProduct,setQuickViewProduct]=useState(null);
   const [lang,setLang]=useState(()=>readStorage(STORAGE_KEYS.lang,"en"));
   const mobile = useIsMobile();
 
@@ -82,7 +88,20 @@ export default function App() {
   const page = pageFromRoute;
   const L = LANG_DATA[lang] || LANG_DATA.en;
 
-  useEffect(()=>{window.scrollTo({top:0,behavior:"smooth"});},[pathname]);
+  useEffect(()=>{window.scrollTo({top:0,behavior:"instant"});},[pathname]);
+
+  // ── Affiliate ref tracking ───────────────────────────────────────────────
+  useEffect(()=>{
+    const params=new URLSearchParams(window.location.search);
+    const ref=params.get('ref');
+    if(ref){
+      localStorage.setItem('affiliate_ref',ref);
+      api.trackAffiliateClick(ref).catch(()=>{});
+      params.delete('ref');
+      const newUrl=params.toString()?`${window.location.pathname}?${params}`:window.location.pathname;
+      window.history.replaceState({},'',newUrl);
+    }
+  },[]);
 
   // ── Restore session + load products from API on mount ──────────────────
   useEffect(() => {
@@ -133,7 +152,7 @@ export default function App() {
     } catch (_) {}
     // Sync to server if logged in
     if (user) api.saveWishlist(wishlist).catch(() => {});
-  },[wishlist]);
+  },[wishlist,user]);
   useEffect(()=>{
     try {
       if (typeof window!=="undefined"&&window.localStorage) {
@@ -149,8 +168,13 @@ export default function App() {
   },[]);
 
   const addToCart=useCallback((product, selectedSize, notes)=>{
-    const item={id:product.id,name:product.name,img:product.img,color:product.color,price:product.price,sale:product.sale,brand:product.brand,section:product.section,lead:product.lead,selectedSize:selectedSize||"One Size",qty:1,addedAt:Date.now(),notes:notes||""};
-    setCart(p=>[item,...p]);
+    const size=selectedSize||"One Size";
+    setCart(p=>{
+      const idx=p.findIndex(x=>x.id===product.id&&x.selectedSize===size);
+      if(idx>=0) return p.map((item,i)=>i===idx?{...item,qty:(item.qty||1)+1}:item);
+      const item={id:product.id,name:product.name,img:product.img,color:product.color,price:product.price,sale:product.sale,brand:product.brand,section:product.section,cat:product.cat||"",lead:product.lead,selectedSize:size,qty:1,addedAt:Date.now(),notes:notes||""};
+      return[item,...p];
+    });
   },[]);
 
   const removeFromCart=useCallback((i)=>{
@@ -168,7 +192,10 @@ export default function App() {
 
   const placeOrder=useCallback(()=>{
     setCart([]);
-    // Don't close checkout — step 3 "Thank You" page still shows
+    // Refresh orders from server so "My Orders" is up to date
+    api.getOrders().then(oData => {
+      if (oData?.orders?.length) setOrders(oData.orders);
+    }).catch(() => {});
   },[]);
 
   const onWishlist=useCallback((id)=>{
@@ -186,6 +213,8 @@ export default function App() {
   const handleLogout = useCallback(async () => {
     try { await api.logout(); } catch (_) {}
     setUser(null);
+    setCart([]);
+    setWishlist([]);
     setPage("home");
   }, [setPage]);
 
@@ -204,8 +233,8 @@ export default function App() {
         *:focus-visible{outline:2px solid #b19a7a;outline-offset:2px}
       `}</style>
       <a href="#main-content" className="skip-link">Skip to content</a>
-      {siteLoaded&&<AppBanner mobile={mobile} onHeightChange={setBannerH}/>}
-      {page!=="checkout"&&<Nav page={page} setPage={setPage} cartCount={cart.length}
+      {siteLoaded&&page!=="checkout"&&page!=="checkout-bags"&&<AppBanner mobile={mobile} onHeightChange={setBannerH} L={L}/>}
+      {page!=="checkout"&&page!=="checkout-bags"&&<Nav page={page} setPage={setPage} cartCount={cart.length}
         user={user} setUser={setUser} onLogout={handleLogout}
         onSearch={()=>setShowSearch(true)} onCart={()=>setShowCart(true)}
         wishlistCount={wishlist.length}
@@ -213,30 +242,37 @@ export default function App() {
       <main id="main-content" role="main">
       <Suspense fallback={<div style={{minHeight:"100vh"}} role="status" aria-label="Loading page"/>}>
         <Routes>
-          <Route path="/" element={<HomePage setPage={setPage} setSelected={setSelected} products={products} wishlist={wishlist} onWishlist={onWishlist} L={L} lang={lang} mobile={mobile}/>}/>
-          <Route path="/catalog" element={<CatalogPage {...commonProps} setSelected={setSelected} products={products} wishlist={wishlist} onWishlist={onWishlist} mobile={mobile} topOffset={bannerH}/>}/>
-          <Route path="/product/:slug" element={<ProductPage {...commonProps} setSelected={setSelected} products={products} addToCart={addToCart} wishlist={wishlist} onWishlist={onWishlist} mobile={mobile}/>}/>
+          <Route path="/" element={<HomePage setPage={setPage} setSelected={setSelected} products={products} wishlist={wishlist} onWishlist={onWishlist} onQuickView={setQuickViewProduct} L={L} lang={lang} mobile={mobile}/>}/>
+          <Route path="/catalog" element={<CatalogPage {...commonProps} setSelected={setSelected} products={products} wishlist={wishlist} onWishlist={onWishlist} onQuickView={setQuickViewProduct} mobile={mobile} topOffset={bannerH}/>}/>
+          <Route path="/product/:slug" element={<ProductPage {...commonProps} setSelected={setSelected} products={products} addToCart={addToCart} wishlist={wishlist} onWishlist={onWishlist} onQuickView={setQuickViewProduct} mobile={mobile}/>}/>
           <Route path="/how" element={<HowItWorksPage setPage={setPage} L={L} mobile={mobile}/>}/>
           <Route path="/about" element={<AboutPage setPage={setPage} L={L} mobile={mobile}/>}/>
           <Route path="/orders" element={<OrdersPage orders={orders} products={products} setPage={setPage} toast={toast} L={L} mobile={mobile}/>}/>
           <Route path="/auth" element={<AuthPage setPage={setPage} setUser={setUser} toast={toast} L={L} mobile={mobile}/>}/>
-          <Route path="/account" element={<AccountPage {...commonProps} orders={orders} products={products} wishlist={wishlist} onWishlist={onWishlist} mobile={mobile}/>}/>
+          <Route path="/account" element={<AccountPage {...commonProps} orders={orders} products={products} wishlist={wishlist} onWishlist={onWishlist} onQuickView={setQuickViewProduct} mobile={mobile}/>}/>
           <Route path="/brands" element={<BrandsPage setPage={setPage} setSelected={setSelected} products={products} L={L} mobile={mobile}/>}/>
           <Route path="/video-verification" element={<VideoVerificationPage setPage={setPage} L={L} mobile={mobile}/>}/>
           <Route path="/membership" element={<MembershipPage setPage={setPage} L={L} mobile={mobile}/>}/>
+          <Route path="/affiliate" element={<AffiliatePage setPage={setPage} L={L} mobile={mobile}/>}/>
+          <Route path="/affiliate/dashboard" element={<AffiliateDashboard setPage={setPage} L={L} mobile={mobile}/>}/>
+          <Route path="/become-supplier" element={<BecomeSupplierPage setPage={setPage} L={L} mobile={mobile}/>}/>
           <Route path="/privacy" element={<LegalPage type="privacy" setPage={setPage} L={L} mobile={mobile}/>}/>
           <Route path="/terms" element={<LegalPage type="terms" setPage={setPage} L={L} mobile={mobile}/>}/>
           <Route path="/returns" element={<LegalPage type="returns" setPage={setPage} L={L} mobile={mobile}/>}/>
           <Route path="/shipping" element={<LegalPage type="shipping" setPage={setPage} L={L} mobile={mobile}/>}/>
           <Route path="/accessibility" element={<LegalPage type="accessibility" setPage={setPage} L={L} mobile={mobile}/>}/>
+          <Route path="/seller-agreement" element={<LegalPage type="seller-agreement" setPage={setPage} L={L} mobile={mobile}/>}/>
+          <Route path="/ip-policy" element={<LegalPage type="ip-policy" setPage={setPage} L={L} mobile={mobile}/>}/>
           <Route path="/contact" element={<ContactPage setPage={setPage} L={L} mobile={mobile}/>}/>
-          <Route path="/checkout" element={<CheckoutPage cart={cart} user={user} L={L} setPage={setPage} onComplete={placeOrder} toast={toast} mobile={mobile}/>}/>
+          <Route path="/checkout" element={<CheckoutPage cart={cart.filter(i=>i.cat!=="Bags")} user={user} L={L} setPage={setPage} onComplete={placeOrder} toast={toast} mobile={mobile}/>}/>
+          <Route path="/checkout-bags" element={<BagsCheckoutPage cart={cart.filter(i=>i.cat==="Bags")} user={user} L={L} setPage={setPage} onComplete={placeOrder} toast={toast} mobile={mobile}/>}/>
           <Route path="*" element={<NotFoundPage setPage={setPage} L={L} mobile={mobile}/>}/>
         </Routes>
       </Suspense>
       </main>
       {showSearch&&<SearchOverlay onClose={()=>setShowSearch(false)} setPage={setPage} setSelected={setSelected} products={products} L={L} mobile={mobile}/>}
-      {showCart&&<CartDrawer cart={cart} onClose={()=>setShowCart(false)} setPage={setPage} removeFromCart={removeFromCart} updateCartQty={updateCartQty} onCheckout={()=>{setShowCart(false);setPage("checkout");}} L={L} mobile={mobile}/>}
+      {showCart&&<CartDrawer cart={cart} onClose={()=>setShowCart(false)} setPage={setPage} removeFromCart={removeFromCart} updateCartQty={updateCartQty} onCheckout={()=>{setShowCart(false);const hasBags=cart.some(i=>i.cat==="Bags");const hasOther=cart.some(i=>i.cat!=="Bags");if(hasBags&&!hasOther)setPage("checkout-bags");else if(!hasBags&&hasOther)setPage("checkout");else setPage("checkout-bags");}} L={L} mobile={mobile}/>}
+      {quickViewProduct&&<QuickViewModal product={quickViewProduct} onClose={()=>setQuickViewProduct(null)} addToCart={addToCart} setPage={setPage} onWishlist={onWishlist} wishlist={wishlist} toast={toast} L={L} mobile={mobile}/>}
       <StylistChat mobile={mobile} lang={lang} setPage={setPage} L={L}/>
       <ToastContainer toasts={toasts} mobile={mobile} role="status" aria-live="polite"/>
       <CookieConsent L={L} mobile={mobile} setPage={setPage}/>

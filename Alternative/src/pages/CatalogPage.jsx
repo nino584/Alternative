@@ -10,7 +10,7 @@ import { SkeletonProductGrid } from '../components/ui/SkeletonLoader.jsx';
 import { pageMeta, collectionSchema } from '../utils/seo.js';
 
 // ── CATALOG PAGE ── LuisaViaRoma-style sidebar layout ──────────────────────────
-export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,initSection,initSub,L,toast,user,setUser,mobile,products:productsProp,topOffset=0}) {
+export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,onQuickView,initSection,initSub,L,toast,user,setUser,mobile,products:productsProp,topOffset=0}) {
   const [section,setSection]=useState(initSection||"Womenswear");
   const [subCat,setSubCat]=useState("All");
   const [price,setPrice]=useState("all");
@@ -21,9 +21,14 @@ export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,ini
   const [sizeFilter,setSizeFilter]=useState([]);
   const [brandFilter,setBrandFilter]=useState("All");
   const [brandSearch,setBrandSearch]=useState("");
+  const [kidsGender,setKidsGender]=useState("All");
   const [expanded,setExpanded]=useState({});
 
   useEffect(()=>{setTypeFilter("All");setColorFilter("All");setSizeFilter([]);setBrandFilter("All");setBrandSearch("");},[subCat]);
+  useEffect(()=>{if(section!=="Kidswear")setKidsGender("All");},[section]);
+  // Scroll to top when switching sections or subcategories
+  useEffect(()=>{window.scrollTo({top:0,behavior:"instant"});},[section]);
+  useEffect(()=>{window.scrollTo({top:0,behavior:"instant"});},[subCat]);
 
   useEffect(()=>{
     if (typeof window==="undefined") return;
@@ -36,6 +41,8 @@ export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,ini
     delete window.__initSection;
     delete window.__initSub;
     delete window.__initBrand;
+    // Double rAF ensures DOM is fully painted before scrolling
+    requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,0)));
   },[]);
 
   const subCats={
@@ -45,10 +52,17 @@ export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,ini
     Kidswear:[[L.newIn,"New In"],[L.clothing,"Clothing"],[L.shoes,"Shoes"],[L.accessories,"Accessories"]],
   };
 
+  const clothingTypes = section==="Menswear"
+    ? [[L.typeBlazers,"Blazers"],[L.typeCoats,"Coats"],[L.typeJackets,"Jackets"],[L.typeTops,"Tops"],[L.typePants,"Pants"],[L.typeKnits,"Knits"],[L.typeDenim,"Denim"]]
+    : [[L.typeBlazers,"Blazers"],[L.typeCoats,"Coats"],[L.typeJackets,"Jackets"],[L.typeDresses,"Dresses"],[L.typeTops,"Tops"],[L.typePants,"Pants"],[L.typeKnits,"Knits"],[L.typeDenim,"Denim"]];
   const typeChips={
-    Clothing:[[L.typeBlazers,"Blazers"],[L.typeCoats,"Coats"],[L.typeJackets,"Jackets"],[L.typeDresses,"Dresses"],[L.typeTops,"Tops"],[L.typePants,"Pants"],[L.typeKnits,"Knits"],[L.typeDenim,"Denim"]],
-    Shoes:[[L.typeSneakers,"Sneakers"],[L.typeLoafers,"Loafers"],[L.typeMules,"Mules"],[L.typeBoots,"Boots"],[L.typeHeels,"Heels"]],
-    Bags:[[L.typeTotes,"Totes"],[L.typeCrossbody,"Crossbody"],[L.typeShoulderBags,"Shoulder Bags"],[L.typeDuffle,"Duffle"],[L.typeClutch,"Clutch"]],
+    Clothing:clothingTypes,
+    Shoes:section==="Menswear"
+      ?[[L.typeSneakers,"Sneakers"],[L.typeLoafers,"Loafers"],[L.typeBoots,"Boots"]]
+      :[[L.typeSneakers,"Sneakers"],[L.typeLoafers,"Loafers"],[L.typeMules,"Mules"],[L.typeBoots,"Boots"],[L.typeHeels,"Heels"]],
+    Bags:section==="Menswear"
+      ?[[L.typeTotes,"Totes"],[L.typeCrossbody,"Crossbody"],[L.typeDuffle,"Duffle"]]
+      :[[L.typeTotes,"Totes"],[L.typeCrossbody,"Crossbody"],[L.typeShoulderBags,"Shoulder Bags"],[L.typeDuffle,"Duffle"],[L.typeClutch,"Clutch"]],
     Accessories:[[L.typeScarves,"Scarves"],[L.typeBelts,"Belts"],[L.typeSunglasses,"Sunglasses"],[L.typeHats,"Hats"]],
     Watches:[[L.typeAutomatic,"Automatic"],[L.typeBracelet,"Bracelet"],[L.typeDress,"Dress"]],
     Jewellery:[[L.typeRings,"Rings"],[L.typeNecklaces,"Necklaces"],[L.typeBracelets,"Bracelets"],[L.typeEarrings,"Earrings"]],
@@ -76,7 +90,8 @@ export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,ini
   const filtered = useMemo(() => {
     let result=[...ALL_PRODUCTS];
     if (section!=="All") result=result.filter(p=>p.section===section);
-    if (subCat==="New In") result=result.filter(p=>p.tag==="New");
+    if (section==="Kidswear"&&kidsGender!=="All") result=result.filter(p=>p.kidsGender===kidsGender);
+    if (subCat==="New In") { /* show all, sorted newest-first below */ }
     else if (subCat==="Sale") result=result.filter(p=>p.sale||p.tag==="Sale");
     else if (subCat==="Brands") { /* handled by navigation */ }
     else if (subCat!=="All") result=result.filter(p=>p.sub===subCat||p.cat===subCat);
@@ -87,17 +102,18 @@ export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,ini
     if (price==="under200") result=result.filter(p=>(p.sale||p.price)<200);
     else if (price==="200-400") result=result.filter(p=>{const ep=p.sale||p.price;return ep>=200&&ep<=400;});
     else if (price==="over400") result=result.filter(p=>(p.sale||p.price)>400);
-    if (sortBy==="new") result.sort((a,b)=>(b.tag==="New"?1:0)-(a.tag==="New"?1:0));
+    if (subCat==="New In") result.sort((a,b)=>b.id-a.id);
+    else if (sortBy==="new") result.sort((a,b)=>b.id-a.id);
     else if (sortBy==="low") result.sort((a,b)=>(a.sale||a.price)-(b.sale||b.price));
     else if (sortBy==="high") result.sort((a,b)=>(b.sale||b.price)-(a.sale||a.price));
     return result;
-  }, [ALL_PRODUCTS, section, subCat, typeFilter, colorFilter, sizeFilter, brandFilter, price, sortBy]);
+  }, [ALL_PRODUCTS, section, subCat, kidsGender, typeFilter, colorFilter, sizeFilter, brandFilter, price, sortBy]);
 
-  const activeFilters = [subCat!=="All",typeFilter!=="All",colorFilter!=="All",sizeFilter.length>0,brandFilter!=="All",price!=="all"].filter(Boolean).length;
+  const activeFilters = [subCat!=="All",typeFilter!=="All",colorFilter!=="All",sizeFilter.length>0,brandFilter!=="All",price!=="all",kidsGender!=="All"].filter(Boolean).length;
 
   const colorMap={"Black":"#1a1a1a","Camel":"#c4a66a","Ivory":"#f5f0e8","Nude":"#d4b5a0","Burgundy":"#6b1d3a","Cognac":"#8b4513","Silver":"#b8b8b8","Gold":"#c9a94e","Tan":"#c19a6b","Charcoal":"#4a4a4a","Cream":"#f5f0dc","White":"#fafafa"};
   const toggleExp = (key) => setExpanded(prev=>({...prev,[key]:!prev[key]}));
-  const clearAll = ()=>{setSubCat("All");setTypeFilter("All");setColorFilter("All");setSizeFilter([]);setBrandFilter("All");setPrice("all");setBrandSearch("");};
+  const clearAll = ()=>{setSubCat("All");setTypeFilter("All");setColorFilter("All");setSizeFilter([]);setBrandFilter("All");setPrice("all");setBrandSearch("");setKidsGender("All");};
 
   const catalogMeta = pageMeta("catalog", { section: section !== "All" ? section : null, cat: subCat !== "All" ? subCat : null });
   const catalogSchema = collectionSchema(filtered, section !== "All" ? `${section} Collection` : "All Products", "/catalog");
@@ -109,8 +125,11 @@ export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,ini
   const priceFilterLabel = price==="all"?(L.allSub||"All"):price==="under200"?L.underGel200:price==="200-400"?L.gel200to400:L.overGel400;
 
   // Page title
-  const pageTitle = subCat!=="All"&&subCat!=="New In"&&subCat!=="Sale"&&subCat!=="Brands"
-    ? `${sectionLabel} · ${subCatLabel}` : sectionLabel;
+  const kidsGenderLabel = kidsGender==="Girl"?(L.kidsGirl||"Girl"):kidsGender==="Boy"?(L.kidsBoy||"Boy"):kidsGender==="Baby"?(L.kidsBaby||"Baby"):"";
+  const pageTitle = section==="Kidswear"&&kidsGender!=="All"
+    ? (subCat!=="All"&&subCat!=="New In"&&subCat!=="Sale"?`${kidsGenderLabel} · ${subCatLabel}`:`${sectionLabel} · ${kidsGenderLabel}`)
+    : (subCat!=="All"&&subCat!=="New In"&&subCat!=="Sale"&&subCat!=="Brands"
+    ? `${sectionLabel} · ${subCatLabel}` : sectionLabel);
 
   // Active filter chips
   const filterChips=[];
@@ -120,6 +139,7 @@ export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,ini
   if (colorFilter!=="All") filterChips.push({label:colorFilter,clear:()=>setColorFilter("All")});
   if (sizeFilter.length>0) filterChips.push({label:sizeFilter.join(", "),clear:()=>setSizeFilter([])});
   if (price!=="all") filterChips.push({label:priceFilterLabel,clear:()=>setPrice("all")});
+  if (kidsGender!=="All") filterChips.push({label:kidsGender==="Girl"?(L.kidsGirl||"Girl"):kidsGender==="Boy"?(L.kidsBoy||"Boy"):(L.kidsBaby||"Baby"),clear:()=>setKidsGender("All")});
 
   // Mobile pill style
   const pillStyle=(active)=>({
@@ -162,11 +182,11 @@ export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,ini
   );
 
   return (
-    <div style={{paddingTop:(mobile?52:80)+topOffset,minHeight:"100vh",background:C.cream}}>
+    <div style={{paddingTop:(mobile?78:104)+topOffset,minHeight:"100vh",background:C.cream}}>
       <SEO {...catalogMeta} schema={catalogSchema} />
 
       {/* ── SECTION TABS (sticky) ── */}
-      <div style={{position:"sticky",top:(mobile?52:80)+topOffset,background:C.cream,zIndex:50,borderBottom:`1px solid ${C.lgray}`}}>
+      <div style={{position:"sticky",top:(mobile?78:88)+topOffset,background:C.cream,zIndex:50,borderBottom:`1px solid ${C.lgray}`}}>
         <div style={{maxWidth:1360,margin:"0 auto",padding:mobile?"0 16px":"0 40px"}}>
           {!mobile?(
             <div style={{display:"flex",gap:0}}>
@@ -180,7 +200,7 @@ export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,ini
               ))}
             </div>
           ):(
-            <div style={{display:"flex",gap:0,overflowX:"auto",WebkitOverflowScrolling:"touch",msOverflowStyle:"none",scrollbarWidth:"none"}}>
+            <div style={{display:"flex",gap:0,justifyContent:"center",overflowX:"auto",WebkitOverflowScrolling:"touch",msOverflowStyle:"none",scrollbarWidth:"none"}}>
               {[{k:"Womenswear",l:L.womenswear},{k:"Menswear",l:L.menswear},{k:"Kidswear",l:L.kidswear}].map(({k:s,l:sl})=>(
                 <button key={s} onClick={()=>{setSection(s);clearAll();}}
                   style={{...T.label,fontSize:10,padding:"12px 16px",background:"none",border:"none",color:section===s?C.black:C.gray,borderBottom:section===s?`2px solid ${C.black}`:"2px solid transparent",transition:"all 0.25s ease",whiteSpace:"nowrap",flexShrink:0,cursor:"pointer"}}>
@@ -190,11 +210,24 @@ export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,ini
             </div>
           )}
         </div>
+        {/* Kidswear gender tabs */}
+        {section==="Kidswear"&&(
+          <div style={{maxWidth:1360,margin:"0 auto",padding:mobile?"0 16px":"0 40px",borderTop:`1px solid rgba(200,200,190,0.3)`}}>
+            <div style={{display:"flex",gap:0,overflowX:"auto"}}>
+              {[{k:"All",l:L.allSub||"All"},{k:"Girl",l:L.kidsGirl||"Girl"},{k:"Boy",l:L.kidsBoy||"Boy"},{k:"Baby",l:L.kidsBaby||"Baby"}].map(({k,l})=>(
+                <button key={k} onClick={()=>setKidsGender(k)}
+                  style={{...T.bodySm,fontSize:mobile?11:12,fontWeight:kidsGender===k?600:400,padding:mobile?"10px 14px":"10px 20px",background:"none",border:"none",color:kidsGender===k?C.black:C.gray,borderBottom:kidsGender===k?`2px solid ${C.tan}`:"2px solid transparent",transition:"all 0.2s ease",whiteSpace:"nowrap",cursor:"pointer",flexShrink:0}}>
+                  {l}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── MOBILE: STICKY REFINE + SORT ── */}
       {mobile&&(
-        <div style={{position:"sticky",top:(mobile?96:130)+topOffset,background:`rgba(231,232,225,0.97)`,backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",zIndex:49,borderBottom:`1px solid ${C.lgray}`}}>
+        <div style={{position:"sticky",top:(mobile?110:130)+topOffset,background:`rgba(231,232,225,0.97)`,backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",zIndex:49,borderBottom:`1px solid ${C.lgray}`}}>
           <div style={{display:"flex",alignItems:"center"}}>
             <button onClick={()=>setRefineOpen(true)}
               style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"14px 16px",background:"none",border:"none",borderRight:`1px solid ${C.lgray}`,...T.labelSm,fontSize:10,color:C.black,cursor:"pointer",letterSpacing:"0.1em",position:"relative"}}>
@@ -214,9 +247,9 @@ export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,ini
 
       {/* ── DESKTOP: PAGE HEADER ── */}
       {!mobile&&(
-        <div style={{maxWidth:1360,margin:"0 auto",padding:"32px 40px 0"}}>
-          <h1 style={{...T.displayMd,color:C.black,textAlign:"center",marginBottom:6}}>{pageTitle}</h1>
-          <p style={{...T.bodySm,fontSize:12,color:C.gray,textAlign:"center",marginBottom:20}}>
+        <div style={{maxWidth:1360,margin:"0 auto",padding:"14px 40px 0"}}>
+          <h1 style={{...T.displayMd,color:C.black,textAlign:"center",marginBottom:4,fontSize:"clamp(28px, 3vw, 42px)"}}>{pageTitle}</h1>
+          <p style={{...T.bodySm,fontSize:12,color:C.gray,textAlign:"center",marginBottom:14}}>
             {sectionLabel}{subCat!=="All"&&<> &nbsp;/&nbsp; {subCatLabel}</>}{typeFilter!=="All"&&<> &nbsp;/&nbsp; {typeFilterLabel}</>}
           </p>
 
@@ -264,7 +297,7 @@ export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,ini
 
         {/* ── DESKTOP SIDEBAR ── */}
         {!mobile&&(
-          <div style={{width:220,flexShrink:0,position:"sticky",top:130,alignSelf:"flex-start",maxHeight:"calc(100vh - 140px)",overflowY:"auto",overflowX:"hidden",scrollbarWidth:"thin",paddingRight:24,paddingTop:8}}>
+          <div style={{width:220,flexShrink:0,position:"sticky",top:140+topOffset,alignSelf:"flex-start",maxHeight:`calc(100vh - ${150+topOffset}px)`,overflowY:"auto",overflowX:"hidden",scrollbarWidth:"thin",paddingRight:24,paddingTop:8}}>
 
             {/* Categories */}
             <SidebarSection title={L.categoryLabel||"Categories"} value={subCatLabel} sKey="categories">
@@ -390,7 +423,7 @@ export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,ini
             </div>
           ) : (
             <div style={{display:"grid",gridTemplateColumns:mobile?"1fr 1fr":"repeat(4,1fr)",gap:mobile?10:3}}>
-              {filtered.map(p=><ProductCard key={p.id} product={p} wishlist={wishlist} onWishlist={onWishlist} L={L} mobile={mobile}
+              {filtered.map(p=><ProductCard key={p.id} product={p} wishlist={wishlist} onWishlist={onWishlist} onQuickView={onQuickView} L={L} mobile={mobile}
                 onSelect={()=>{setPage("product",p);}}/>)}
             </div>
           )}
@@ -432,6 +465,18 @@ export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,ini
                 ))}
               </div>
             </div>
+
+            {/* KIDSWEAR GENDER */}
+            {section==="Kidswear"&&(
+              <div style={{marginBottom:24}}>
+                <p style={{...T.labelSm,color:C.black,fontSize:11,letterSpacing:"0.12em",marginBottom:14}}>{L.kidswear||"KIDSWEAR"}</p>
+                <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+                  {[{k:"All",l:L.allSub||"All"},{k:"Girl",l:L.kidsGirl||"Girl"},{k:"Boy",l:L.kidsBoy||"Boy"},{k:"Baby",l:L.kidsBaby||"Baby"}].map(({k,l})=>(
+                    <button key={k} onClick={()=>setKidsGender(k)} style={pillStyle(kidsGender===k)}>{l}</button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* CATEGORY */}
             <div style={{marginBottom:24}}>

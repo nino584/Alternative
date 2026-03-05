@@ -22,6 +22,7 @@ const icons = {
   address: "M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z M12 13a3 3 0 100-6 3 3 0 000 6",
   payment: "M1 4h22v16H1z M1 10h22",
   returns: "M1 4v6h6 M3.51 15a9 9 0 102.13-9.36L1 10",
+  messages: "M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z",
   signout: "M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4 M16 17l5-5-5-5 M21 12H9",
   edit: "M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7 M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z",
   trash: "M3 6h18 M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2",
@@ -161,7 +162,7 @@ function EmptyState({ icon, title, subtitle, action, actionLabel }) {
 }
 
 // ── ACCOUNT PAGE ─────────────────────────────────────────────────────────────
-export default function AccountPage({ mobile, user, setUser, setPage, orders, wishlist, onWishlist, toast, L, products: productsProp, onLogout }) {
+export default function AccountPage({ mobile, user, setUser, setPage, orders, wishlist, onWishlist, onQuickView, toast, L, products: productsProp, onLogout }) {
   const [tab, setTab] = useState("overview");
   const getImg=(o)=>{
     if(o.img) return o.img;
@@ -217,6 +218,11 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
   const [retLoading, setRetLoading] = useState(false);
   const [myReturns, setMyReturns] = useState([]);
 
+  // Messages
+  const [messages, setMessages] = useState([]);
+  const [messagesLoading, setMessagesLoading] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
   // Account deletion
   const [deleteModal, setDeleteModal] = useState(false);
   const [delPassword, setDelPassword] = useState("");
@@ -234,6 +240,27 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
   useEffect(() => { if (!user) setPage("auth"); }, [user]);
   useEffect(() => { save(STORAGE.addr, addresses); }, [addresses]);
   useEffect(() => { save(STORAGE.pay, payments); }, [payments]);
+
+  // Load messages & unread count
+  useEffect(() => {
+    if (user) {
+      api.getUnreadCount().then(d => setUnreadCount(d.count || 0)).catch(() => {});
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (tab === "messages" && user) {
+      setMessagesLoading(true);
+      api.getMessages()
+        .then(d => {
+          setMessages(d.messages || []);
+          // Mark all as read
+          api.markAllMessagesRead().then(() => setUnreadCount(0)).catch(() => {});
+        })
+        .catch(() => {})
+        .finally(() => setMessagesLoading(false));
+    }
+  }, [tab, user]);
 
   const resetAddrForm = useCallback(() => { setAName(""); setALine1(""); setALine2(""); setACity(""); setAPostal(""); setACountry("Georgia"); setAPhone(""); }, []);
   const resetPayForm = useCallback(() => { setCNumber(""); setCHolder(""); setCExpiry(""); setCType("visa"); }, []);
@@ -365,6 +392,7 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
       { id: "overview", icon: icons.overview, label: L.overview || "Overview" },
       { id: "wishlist", icon: icons.wishlist, label: `${L.wishlist || "Wishlist"} (${wishlistItems.length})` },
       { id: "orders", icon: icons.orders, label: L.myOrders || "My Orders" },
+      { id: "messages", icon: icons.messages, label: `${L.messages || "Messages"}${unreadCount > 0 ? ` (${unreadCount})` : ""}` },
     ]},
     { key: "details", label: L.myDetails || "MY DETAILS", items: [
       { id: "profile", icon: icons.profile, label: L.profileInfo || "Profile" },
@@ -376,7 +404,7 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
 
   // ── RENDER ──
   return (
-    <div style={{ paddingTop: mobile ? 52 : 80, minHeight: "100vh", background: C.cream }}>
+    <div style={{ paddingTop: mobile ? 78 : 104, minHeight: "100vh", background: C.cream }}>
       {/* Header */}
       <div style={{ borderBottom: `1px solid ${C.lgray}`, padding: mobile ? "28px 0 20px" : "36px 0 24px" }}>
         <div style={{ maxWidth: 1360, margin: "0 auto", padding: mobile ? "0 20px" : "0 40px", display: "flex", justifyContent: "space-between", alignItems: mobile ? "flex-start" : "flex-end", flexDirection: mobile ? "column" : "row", gap: mobile ? 16 : 0 }}>
@@ -385,7 +413,7 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
             <h1 style={{ ...T.displayMd, color: C.black }}>{L.welcome || "Welcome,"} {user.name ? user.name.split(" ")[0] : ""}</h1>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
-            {user.role==="admin" && <HoverBtn onClick={() => window.open(import.meta.env.VITE_ADMIN_URL||"/admin","_blank")} variant="tan" style={{ padding: "10px 20px", fontSize: 10 }}>{L.adminPanel || "Admin Panel"}</HoverBtn>}
+            {user.role==="admin" && <HoverBtn onClick={() => window.open(import.meta.env.VITE_ADMIN_URL||"http://localhost:5174","_blank")} variant="tan" style={{ padding: "10px 20px", fontSize: 10 }}>{L.adminPanel || "Admin Panel"}</HoverBtn>}
             <HoverBtn onClick={() => { if(onLogout)onLogout(); else{setUser(null);setPage("home");} toast(L.signedOut || "Signed out.", "success"); }} variant="secondary" style={{ padding: "10px 20px", fontSize: 10 }}>{L.signOut || "Sign Out"}</HoverBtn>
           </div>
         </div>
@@ -644,7 +672,7 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
               ) : (
                 <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr 1fr" : "repeat(3, 1fr)", gap: 3 }}>
                   {wishlistItems.map(p => (
-                    <ProductCard key={p.id} product={p} wishlist={wishlist} onWishlist={onWishlist} L={L}
+                    <ProductCard key={p.id} product={p} wishlist={wishlist} onWishlist={onWishlist} onQuickView={onQuickView} L={L}
                       onSelect={() => setPage("product", p)} mobile={mobile} />
                   ))}
                 </div>
@@ -655,70 +683,88 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
           {/* ════════ PROFILE ════════ */}
           {tab === "profile" && (
             <div>
-              <SectionHeader title={L.profileInfo || "Profile"} subtitle={L.profileInfoSub || "Manage your personal information"} action={profileEdit ? undefined : () => setProfileEdit(true)} actionLabel={L.editProfile || "Edit Profile"} mobile={mobile} />
+              <SectionHeader title={L.profileInfo || "Profile"} subtitle={L.profileInfoSub || "Manage your personal information"} mobile={mobile} />
 
-              <div style={{ maxWidth: 520, background: C.white, padding: mobile ? 24 : 36 }}>
-                {/* Avatar */}
-                <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 32, paddingBottom: 24, borderBottom: `1px solid ${C.offwhite}` }}>
-                  <div style={{ width: 64, height: 64, borderRadius: "50%", background: C.tan, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <span style={{ ...T.displaySm, color: C.white, fontSize: 26 }}>{(user.name || "U").charAt(0).toUpperCase()}</span>
-                  </div>
-                  <div>
-                    <p style={{ ...T.heading, color: C.black, fontSize: 16, marginBottom: 2 }}>{user.name}</p>
-                    <p style={{ ...T.bodySm, color: C.gray }}>{L.memberSince || "Member since"} 2026</p>
-                  </div>
-                </div>
-
-                {profileEdit ? (
-                  <>
+              {profileEdit ? (
+                <div style={{ maxWidth: 560 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr" : "1fr 1fr", gap: mobile ? 0 : 16 }}>
                     <FormInput label={L.fullNameLabel || "Full Name"} value={pName} onChange={setPName} required />
                     <FormInput label={L.emailLabel || "Email"} value={pEmail} onChange={setPEmail} type="email" required />
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr" : "1fr 1fr", gap: mobile ? 0 : 16 }}>
                     <FormInput label={L.whatsappLabel || "WhatsApp Number"} value={pPhone} onChange={setPPhone} placeholder="+995 5XX XXX XXX" />
                     <FormInput label={L.dateOfBirth || "Date of Birth"} value={pDob} onChange={setPDob} type="date" />
-
-                    <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
-                      <HoverBtn onClick={saveProfile} variant="primary" style={{ padding: "12px 32px" }}>{L.saveChanges || "Save Changes"}</HoverBtn>
-                      <HoverBtn onClick={() => { setProfileEdit(false); setPName(user.name); setPEmail(user.email); setPPhone(user.phone || ""); setPDob(user.dob || ""); }} variant="ghost">{L.cancel || "Cancel"}</HoverBtn>
+                  </div>
+                  <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+                    <HoverBtn onClick={saveProfile} variant="primary" style={{ padding: "12px 32px" }}>{L.saveChanges || "Save Changes"}</HoverBtn>
+                    <HoverBtn onClick={() => { setProfileEdit(false); setPName(user.name); setPEmail(user.email); setPPhone(user.phone || ""); setPDob(user.dob || ""); }} variant="ghost">{L.cancel || "Cancel"}</HoverBtn>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr" : "1fr 1fr", gap: mobile ? 20 : 24, maxWidth: 700 }}>
+                  {/* Personal Info Card */}
+                  <div style={{ padding: mobile ? 20 : 28, borderLeft: `3px solid ${C.tan}`, background: C.white }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+                      <p style={{ ...T.labelSm, color: C.tan, fontSize: 9 }}>{L.personalInfo || "PERSONAL INFO"}</p>
+                      <button onClick={() => setProfileEdit(true)} style={{ ...T.labelSm, fontSize: 8, color: C.tan, background: "none", border: "none", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>
+                        {L.editProfile || "EDIT"}
+                      </button>
                     </div>
-                  </>
-                ) : (
-                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
+                      <div style={{ width: 44, height: 44, borderRadius: "50%", background: C.black, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <span style={{ fontFamily: "'Alido',serif", color: C.white, fontSize: 18 }}>{(user.name || "U").charAt(0).toUpperCase()}</span>
+                      </div>
+                      <div>
+                        <p style={{ ...T.heading, color: C.black, fontSize: 15, marginBottom: 1 }}>{user.name}</p>
+                        <p style={{ ...T.bodySm, color: C.gray, fontSize: 11 }}>{L.memberSince || "Member since"} 2026</p>
+                      </div>
+                    </div>
                     {[
-                      [L.fullNameLabel || "Full Name", user.name],
                       [L.emailLabel || "Email", user.email],
                       [L.whatsappLabel || "WhatsApp", user.phone || "—"],
                       [L.dateOfBirth || "Date of Birth", user.dob || "—"],
                     ].map(([label, val]) => (
-                      <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "14px 0", borderBottom: `1px solid ${C.offwhite}` }}>
-                        <span style={{ ...T.bodySm, color: C.gray }}>{label}</span>
-                        <span style={{ ...T.bodySm, color: C.black, fontWeight: 400 }}>{val}</span>
+                      <div key={label} style={{ padding: "10px 0", borderTop: `1px solid ${C.offwhite}` }}>
+                        <p style={{ ...T.labelSm, color: C.gray, fontSize: 8, marginBottom: 3 }}>{label}</p>
+                        <p style={{ ...T.bodySm, color: C.black, fontSize: 13 }}>{val}</p>
                       </div>
                     ))}
+                  </div>
 
-                    <div style={{ marginTop: 28 }}>
-                      <p style={{ ...T.label, color: C.black, fontSize: 10, marginBottom: 14 }}>{L.changePassword || "Change Password"}</p>
-                      <div style={{ padding: 20, background: C.offwhite, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  {/* Security Card */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: mobile ? 20 : 24 }}>
+                    <div style={{ padding: mobile ? 20 : 28, background: C.white, borderLeft: `3px solid ${C.lgray}` }}>
+                      <p style={{ ...T.labelSm, color: C.gray, fontSize: 9, marginBottom: 16 }}>{L.security || "SECURITY"}</p>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <div>
-                          <p style={{ ...T.bodySm, color: C.gray, fontSize: 13 }}>••••••••</p>
-                          <p style={{ ...T.labelSm, color: C.gray, fontSize: 8, marginTop: 4 }}>{L.lastChanged || "Set during registration"}</p>
+                          <p style={{ ...T.bodySm, color: C.black, fontSize: 13 }}>{L.password || "Password"}</p>
+                          <p style={{ ...T.bodySm, color: C.gray, fontSize: 11, marginTop: 2 }}>••••••••</p>
                         </div>
-                        <HoverBtn onClick={() => setPwModal(true)} variant="ghost" style={{ padding: "8px 18px", fontSize: 9 }}>{L.changeBtn || "Change"}</HoverBtn>
+                        <button onClick={() => setPwModal(true)} style={{ ...T.labelSm, fontSize: 9, padding: "8px 20px", background: "none", border: `1px solid ${C.lgray}`, color: C.black, cursor: "pointer", transition: "all 0.2s" }}
+                          onMouseEnter={e => { e.currentTarget.style.borderColor = C.tan; e.currentTarget.style.color = C.tan; }}
+                          onMouseLeave={e => { e.currentTarget.style.borderColor = C.lgray; e.currentTarget.style.color = C.black; }}>
+                          {L.changeBtn || "CHANGE"}
+                        </button>
                       </div>
                     </div>
 
-                    <div style={{ marginTop: 28 }}>
-                      <p style={{ ...T.label, color: C.red, fontSize: 10, marginBottom: 14 }}>{L.dangerZone || "Danger Zone"}</p>
-                      <div style={{ padding: 20, background: C.offwhite, display: "flex", justifyContent: "space-between", alignItems: "center", border: `1px solid ${C.red}20` }}>
+                    <div style={{ padding: mobile ? 20 : 28, background: C.white, borderLeft: `3px solid rgba(192,57,43,0.3)` }}>
+                      <p style={{ ...T.labelSm, color: "rgba(192,57,43,0.6)", fontSize: 9, marginBottom: 16 }}>{L.dangerZone || "DANGER ZONE"}</p>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <div>
                           <p style={{ ...T.bodySm, color: C.black, fontSize: 13 }}>{L.deleteAccount || "Delete Account"}</p>
-                          <p style={{ ...T.labelSm, color: C.gray, fontSize: 8, marginTop: 4 }}>{L.deleteAccountDesc || "Permanently delete your account and all data"}</p>
+                          <p style={{ ...T.bodySm, color: C.gray, fontSize: 11, marginTop: 2 }}>{L.deleteAccountDesc || "This action is irreversible"}</p>
                         </div>
-                        <HoverBtn onClick={() => setDeleteModal(true)} variant="ghost" style={{ padding: "8px 18px", fontSize: 9, color: C.red, borderColor: C.red }}>{L.deleteAccount || "Delete"}</HoverBtn>
+                        <button onClick={() => setDeleteModal(true)} style={{ ...T.labelSm, fontSize: 9, padding: "8px 20px", background: "none", border: "1px solid rgba(192,57,43,0.25)", color: "#c0392b", cursor: "pointer", transition: "all 0.2s" }}
+                          onMouseEnter={e => e.currentTarget.style.background = "rgba(192,57,43,0.05)"}
+                          onMouseLeave={e => e.currentTarget.style.background = "none"}>
+                          {L.deleteBtn || "DELETE"}
+                        </button>
                       </div>
                     </div>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -815,6 +861,79 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
           )}
 
           {/* ════════ RETURNS ════════ */}
+          {tab === "messages" && (
+            <div>
+              <SectionHeader title={L.messages || "Messages"} subtitle={L.messagesSub || "Photos, videos and updates from your orders"} mobile={mobile} />
+
+              {messagesLoading ? (
+                <div style={{ padding: "48px 20px", textAlign: "center" }}>
+                  <p style={{ ...T.bodySm, color: C.gray }}>{L.loading || "Loading..."}</p>
+                </div>
+              ) : messages.length === 0 ? (
+                <div style={{ background: C.white, padding: mobile ? 40 : 60, textAlign: "center" }}>
+                  <Icon d={icons.messages} size={40} color={C.lgray} />
+                  <p style={{ ...T.heading, color: C.black, fontSize: 16, marginTop: 16, marginBottom: 8 }}>{L.noMessages || "No messages yet"}</p>
+                  <p style={{ ...T.bodySm, color: C.gray }}>{L.noMessagesSub || "When we send photos or videos of your order, they'll appear here."}</p>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  {messages.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map(msg => {
+                    const imgMedia = (msg.media || []).filter(m => m.type === "image");
+                    const vidMedia = (msg.media || []).filter(m => m.type === "video");
+                    const orderRef = orders.find(o => o.orderId === msg.orderId);
+                    const prodImg = orderRef ? getImg(orderRef) : "";
+                    return (
+                      <div key={msg.id} style={{ background: C.white, padding: mobile ? 20 : 28 }}>
+                        {/* Header */}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                            {prodImg && <img src={prodImg} alt="" style={{ width: 40, height: 40, objectFit: "cover", borderRadius: 2 }} />}
+                            <div>
+                              <p style={{ ...T.labelSm, color: C.tan, fontSize: 9, marginBottom: 2 }}>{msg.orderId}</p>
+                              <p style={{ ...T.heading, color: C.black, fontSize: 13 }}>{orderRef?.productName || orderRef?.name || L.orderUpdate || "Order Update"}</p>
+                            </div>
+                          </div>
+                          <p style={{ ...T.labelSm, color: C.lgray, fontSize: 9 }}>
+                            {msg.createdAt ? new Date(msg.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ""}
+                          </p>
+                        </div>
+
+                        {/* Message text */}
+                        {msg.content && (
+                          <p style={{ ...T.bodySm, color: C.gray, marginBottom: 16, lineHeight: 1.7 }}>{msg.content}</p>
+                        )}
+
+                        {/* Photos grid */}
+                        {imgMedia.length > 0 && (
+                          <div style={{ display: "grid", gridTemplateColumns: imgMedia.length === 1 ? "1fr" : mobile ? "1fr 1fr" : "1fr 1fr 1fr", gap: 8, marginBottom: vidMedia.length > 0 ? 12 : 0 }}>
+                            {imgMedia.map((m, j) => (
+                              <img key={j} src={m.data} alt={m.name || "Photo"} style={{ width: "100%", height: imgMedia.length === 1 ? "auto" : 200, objectFit: "cover", borderRadius: 2, cursor: "pointer" }}
+                                onClick={() => window.open(m.data, "_blank")} />
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Video links */}
+                        {vidMedia.length > 0 && (
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                            {vidMedia.map((m, j) => (
+                              <a key={j} href={m.url} target="_blank" rel="noopener noreferrer"
+                                style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 20px", background: C.black, color: C.white, textDecoration: "none", ...T.labelSm, fontSize: 10, letterSpacing: "0.05em", transition: "opacity 0.2s" }}
+                                onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
+                                onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
+                                <span style={{ fontSize: 14 }}>▶</span> {L.watchVideo || "Watch Video"}
+                              </a>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
           {tab === "returns" && (
             <div>
               <SectionHeader title={L.returnsRefunds || "Returns & Refunds"} mobile={mobile} />

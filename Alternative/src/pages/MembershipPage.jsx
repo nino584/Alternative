@@ -17,7 +17,7 @@ export default function MembershipPage({setPage,L,mobile}) {
     }
   },[]);
   return (
-    <div style={{paddingTop:mobile?52:80,background:C.cream}}>
+    <div style={{paddingTop:mobile?78:104,background:C.cream}}>
       <SEO {...pageMeta("membership")} schema={breadcrumbSchema([{name:"Home",url:"/"},{name:"Membership"}])} />
       {/* HERO */}
       <div style={{background:C.black,padding:mobile?"48px 0":"72px 0"}}>
@@ -112,7 +112,7 @@ export default function MembershipPage({setPage,L,mobile}) {
                 </div>
               ))}
               <div style={{marginTop:24}}>
-                <HoverBtn onClick={()=>setPage("auth")} variant="tan" style={{width:"100%"}}>{L.applyNow}</HoverBtn>
+                <HoverBtn onClick={()=>setPage("affiliate")} variant="tan" style={{width:"100%"}}>{L.applyNow}</HoverBtn>
               </div>
             </div>
           </div>

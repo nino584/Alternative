@@ -1,20 +1,23 @@
 import { C, T } from '../constants/theme.js';
 import { VIDEO_VERIFICATION_GEL } from '../constants/config.js';
 
-const ORDER_STATUSES = [
+const ORDER_STATUSES_BASE = [
   { key: "reserved", label: "Reserved", color: C.brown },
-  { key: "sourcing", label: "Sourcing", color: C.tan },
   { key: "confirmed", label: "Confirmed", color: "#1a5c8b" },
   { key: "shipped", label: "Shipped", color: C.green },
   { key: "delivered", label: "Delivered", color: C.gray },
 ];
-const STATUS_COLOR = Object.fromEntries(ORDER_STATUSES.map(s => [s.key, s.color]));
+const STATUS_COLOR = Object.fromEntries(ORDER_STATUSES_BASE.map(s => [s.key, s.color]));
 
 export default function StatsPanel({ orders, mobile, L }) {
+  const ORDER_STATUSES = ORDER_STATUSES_BASE.map(s => ({
+    ...s,
+    label: L?.[`adminStatus_${s.key}`] || s.label,
+  }));
   const orderList = orders.map(o => ({
     item: o.productName || o.name || "—",
     status: o.status || "reserved",
-    amount: o.depositPaid || o.price || 0,
+    amount: o.depositPaid ?? o.price ?? 0,
     wantVideo: !!o.wantVideo,
   }));
 
@@ -54,7 +57,7 @@ export default function StatsPanel({ orders, mobile, L }) {
       {/* Row 1: Revenue by Status + Video Rate */}
       <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr" : "2fr 1fr", gap: 3, marginBottom: 3 }}>
         <div style={{ background: C.cream, padding: 24 }}>
-          <p style={{ ...T.label, color: C.black, fontSize: 12, marginBottom: 20 }}>Revenue by Status</p>
+          <p style={{ ...T.label, color: C.black, fontSize: 12, marginBottom: 20 }}>{L?.adminRevenueByStatus||"Revenue by Status"}</p>
           {revenueByStatus.map(r => (
             <div key={r.key} style={{ marginBottom: 14 }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
@@ -74,15 +77,15 @@ export default function StatsPanel({ orders, mobile, L }) {
 
         <div style={{ background: C.cream, padding: 24, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
           <div>
-            <p style={{ ...T.label, color: C.black, fontSize: 12, marginBottom: 20 }}>Video Verification Rate</p>
+            <p style={{ ...T.label, color: C.black, fontSize: 12, marginBottom: 20 }}>{L?.adminVideoVerifRate||"Video Verification Rate"}</p>
             <div style={{ textAlign: "center", padding: "20px 0" }}>
               <p style={{ fontFamily: "'Alido',serif", fontSize: 52, fontWeight: 300, color: C.tan, lineHeight: 1 }}>{videoRate}%</p>
-              <p style={{ ...T.labelSm, color: C.gray, fontSize: 11, marginTop: 8 }}>{videoOrders} of {orderList.length} orders</p>
+              <p style={{ ...T.labelSm, color: C.gray, fontSize: 11, marginTop: 8 }}>{videoOrders} {L?.adminOf||"of"} {orderList.length} {L?.adminOrders||"orders"}</p>
             </div>
           </div>
           <div style={{ background: C.offwhite, padding: 14 }}>
-            <p style={{ ...T.bodySm, color: C.gray, fontSize: 11 }}>Add-on price: <span style={{ color: C.black, fontWeight: 500 }}>{VIDEO_VERIFICATION_GEL} GEL</span></p>
-            <p style={{ ...T.bodySm, color: C.gray, fontSize: 11, marginTop: 4 }}>Estimated add-on revenue: <span style={{ color: C.tan, fontWeight: 500 }}>{(videoOrders * VIDEO_VERIFICATION_GEL).toLocaleString()} GEL</span></p>
+            <p style={{ ...T.bodySm, color: C.gray, fontSize: 11 }}>{L?.adminAddonPrice||"Add-on price"}: <span style={{ color: C.black, fontWeight: 500 }}>{VIDEO_VERIFICATION_GEL} GEL</span></p>
+            <p style={{ ...T.bodySm, color: C.gray, fontSize: 11, marginTop: 4 }}>{L?.adminEstAddonRevenue||"Estimated add-on revenue"}: <span style={{ color: C.tan, fontWeight: 500 }}>{(videoOrders * VIDEO_VERIFICATION_GEL).toLocaleString()} GEL</span></p>
           </div>
         </div>
       </div>
@@ -90,14 +93,14 @@ export default function StatsPanel({ orders, mobile, L }) {
       {/* Row 2: Best Selling Categories + Orders by Status */}
       <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr" : "1fr 1fr", gap: 3 }}>
         <div style={{ background: C.cream, padding: 24 }}>
-          <p style={{ ...T.label, color: C.black, fontSize: 12, marginBottom: 20 }}>Best Selling Categories</p>
+          <p style={{ ...T.label, color: C.black, fontSize: 12, marginBottom: 20 }}>{L?.adminBestCategories||"Best Selling Categories"}</p>
           {bestCategories.length === 0 ? (
-            <p style={{ ...T.bodySm, color: C.gray }}>No data yet</p>
+            <p style={{ ...T.bodySm, color: C.gray }}>{L?.adminNoData||"No data yet"}</p>
           ) : bestCategories.map(([cat, count]) => (
             <div key={cat} style={{ marginBottom: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
                 <span style={{ ...T.bodySm, color: C.black }}>{cat}</span>
-                <span style={{ ...T.labelSm, color: C.gray, fontSize: 11 }}>{count} orders</span>
+                <span style={{ ...T.labelSm, color: C.gray, fontSize: 11 }}>{count} {L?.adminOrders||"orders"}</span>
               </div>
               <div style={{ width: "100%", height: 6, background: C.lgray }}>
                 <div style={{ width: `${(count / maxCatCount) * 100}%`, height: "100%", background: C.tan, transition: "width 0.6s ease" }} />
@@ -107,7 +110,7 @@ export default function StatsPanel({ orders, mobile, L }) {
         </div>
 
         <div style={{ background: C.cream, padding: 24 }}>
-          <p style={{ ...T.label, color: C.black, fontSize: 12, marginBottom: 20 }}>Orders by Status</p>
+          <p style={{ ...T.label, color: C.black, fontSize: 12, marginBottom: 20 }}>{L?.adminOrdersByStatus||"Orders by Status"}</p>
           {ordersByStatus.map(s => (
             <div key={s.key} style={{ marginBottom: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
@@ -115,7 +118,7 @@ export default function StatsPanel({ orders, mobile, L }) {
                   <span style={{ width: 8, height: 8, background: STATUS_COLOR[s.key], display: "inline-block" }} />
                   <span style={{ ...T.bodySm, color: C.black }}>{s.label}</span>
                 </div>
-                <span style={{ ...T.labelSm, color: C.gray, fontSize: 11 }}>{s.count} orders</span>
+                <span style={{ ...T.labelSm, color: C.gray, fontSize: 11 }}>{s.count} {L?.adminOrders||"orders"}</span>
               </div>
               <div style={{ width: "100%", height: 6, background: C.lgray }}>
                 <div style={{ width: `${maxStatusCount > 0 ? (s.count / maxStatusCount) * 100 : 0}%`, height: "100%", background: STATUS_COLOR[s.key], transition: "width 0.6s ease" }} />

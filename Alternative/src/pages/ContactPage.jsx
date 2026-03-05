@@ -33,7 +33,7 @@ export default function ContactPage({setPage,L,mobile}) {
   };
 
   return (
-    <div style={{paddingTop:mobile?52:80,background:C.cream}}>
+    <div style={{paddingTop:mobile?78:104,background:C.cream}}>
       <SEO {...pageMeta("contact")} schema={breadcrumbSchema([{name:"Home",url:"/"},{name:"Contact"}])} />
       {/* HEADER */}
       <div style={{borderBottom:`1px solid ${C.lgray}`,padding:mobile?"28px 0":"40px 0"}}>

@@ -5,7 +5,7 @@ import SEO from '../components/SEO.jsx';
 
 export default function NotFoundPage({ setPage, L, mobile }) {
   return (
-    <div style={{ paddingTop: mobile ? 56 : 80, minHeight: '100vh', background: C.cream, display: 'flex', flexDirection: 'column' }}>
+    <div style={{ paddingTop: mobile ? 78 : 104, minHeight: '100vh', background: C.cream, display: 'flex', flexDirection: 'column' }}>
       <SEO title="Page Not Found — Alternative" description="The page you're looking for doesn't exist." />
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <div style={{ textAlign: 'center', maxWidth: 480 }}>

@@ -127,15 +127,15 @@ export default function AdminPanel({ mobile, user, setPage, orders, toast, L, pr
   const [colorDropdownOpen, setColorDropdownOpen] = useState(false);
 
   // ── Auth guard ───────────────────────────────────────────────────────────
-  useEffect(() => { if (user?.role!=="admin") setPage("home"); }, [user]);
-  if (user?.role!=="admin") return null;
+  useEffect(() => { if (user !== undefined && user?.role!=="admin") setPage("home"); }, [user, setPage]);
+  if (!user || user?.role!=="admin") return null;
 
   // ── Build order list ─────────────────────────────────────────────────────
   const realOrders = (orders || []).map(o => ({
     orderId: o.orderId || "ALT-" + Date.now(),
     customer: o.customerName || "Customer",
     phone: o.phone || "\u2014",
-    item: o.name,
+    item: o.productName || o.name,
     status: statusOverrides[o.orderId] || o.status || "reserved",
     amount: o.sale || o.price,
     date: new Date().toISOString().slice(0, 10),

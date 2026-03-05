@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { C, T } from '../constants/theme.js';
 import HoverBtn from './HoverBtn.jsx';
 import { api } from '../api.js';
@@ -13,7 +13,7 @@ const IconCross = ({ size = 16, color = C.gray }) => (
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const SECTIONS = ["Womenswear", "Menswear", "Kidswear"];
-const CATEGORIES = ["Clothing", "Shoes", "Bags", "Accessories", "Watches"];
+const CATEGORIES = ["Clothing", "Shoes", "Bags", "Accessories", "Watches", "Jewellery"];
 const TAGS = ["", "New", "Sale", "Popular", "Limited"];
 const CLOTHING_SIZES = ["XXS", "XS", "S", "M", "L", "XL", "XXL", "XXXL"];
 const SHOE_SIZES = ["36", "37", "38", "39", "40", "41", "42", "43", "44", "45"];
@@ -22,20 +22,21 @@ const KIDS_SHOE_SIZES = ["20", "21", "22", "23", "24", "25", "26", "27", "28", "
 const FIT_OPTIONS = ["True to Size", "Runs Small", "Runs Large"];
 
 const BRAND_LIST = [
-  "Acne Studios","Ahlem","Alaia","Alessandra Rich","Alexander McQueen",
-  "Alexander Wang","Ami Paris","Amina Muaddi","Balenciaga","Baziszt",
+  "Acne Studios","Ahlem","Alaïa","Alessandra Rich","Alexander McQueen",
+  "Alexander Wang","AMI Paris","Amina Muaddi","Balenciaga","Baziszt",
   "Bernadette","Blumarine","Bottega Veneta","Brioni","Brunello Cucinelli",
-  "Burberry","Cartier","Celine","Cesare Attolini","Chloé",
-  "Christian Louboutin","Diesel","Dior","District Vision","Dita",
-  "Dolce & Gabbana","Dries Van Noten","Dsquared2","Fendi","Givenchy",
-  "Golden Goose","Gucci","Jacquemus","Jimmy Choo","Kuboraum",
-  "Lardini","LBM","Loewe","Loro Piana","Magda Butrym",
+  "Burberry","Cartier","Celine","Cesare Attolini","Chanel","Chloé",
+  "Chrome Hearts","Christian Louboutin","Diesel","Dior","District Vision","Dita",
+  "Dolce & Gabbana","Dries Van Noten","Dsquared2","Fendi","Ferragamo",
+  "Givenchy","Golden Goose","Goyard","Gucci","Hermès",
+  "Jacquemus","Jimmy Choo","Khaite","Kiton","Kuboraum",
+  "Lardini","LBM","Loewe","Loro Piana","Louis Vuitton","Magda Butrym",
   "Maison Margiela","Manzoni 24","Max Mara","Miu Miu","Moncler",
   "Moschino","Off-White","Palm Angels","Phoebe Philo","Prada",
-  "R13","Rick Owens","Saint Laurent","Salvatore Ferragamo","Sato",
+  "R13","Rick Owens","Rimowa","Rolex","Saint Laurent","Sato",
   "Seraphine","Simonetta Ravizza","Stone Island","T Henri","The Row",
   "Thom Browne","Tod's","Tom Ford","Valentino","Versace",
-  "Vetements","Wardrobe NYC","Zegna",
+  "Vetements","Vivienne Westwood","Wardrobe NYC","Yohji Yamamoto","Zegna",
 ];
 
 const COLOR_LIST = [
@@ -68,6 +69,41 @@ const EMPTY_PRODUCT = {
 
 const DISCOUNT_PRESETS = [10, 15, 20, 25, 30, 40, 50];
 
+// ── Product thumbnail with fallback placeholder ──────────────────────────────
+function ProductThumb({ img, images, name, brand }) {
+  const src = img || (images && images.length > 0 ? images[0] : null);
+  const initial = (brand || name || "?").charAt(0).toUpperCase();
+  const [failed, setFailed] = useState(false);
+
+  if (!src || failed) {
+    return (
+      <div style={{
+        width: 36, height: 36, borderRadius: 4,
+        background: `linear-gradient(135deg, ${C.tan}, ${C.brown || "#8B4513"})`,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        color: C.white, fontSize: 14, fontWeight: 600,
+        fontFamily: "'Georgia', serif", letterSpacing: 0.5,
+        flexShrink: 0,
+      }}>
+        {initial}
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={name || "Product"}
+      onError={() => setFailed(true)}
+      style={{
+        width: 36, height: 36, borderRadius: 4,
+        objectFit: "cover", flexShrink: 0,
+        border: `1px solid ${C.lgray}`,
+      }}
+    />
+  );
+}
+
 export default function ProductsPanel({ products, setProducts, mobile, toast, L }) {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -77,11 +113,15 @@ export default function ProductsPanel({ products, setProducts, mobile, toast, L 
   const [brandOpen, setBrandOpen] = useState(false);
   const [colorSearch, setColorSearch] = useState("");
   const [colorOpen, setColorOpen] = useState(false);
+  const formRef = useRef(null);
 
   const inputStyle = { ...T.bodySm, width: "100%", padding: "10px 14px", border: `1px solid ${C.lgray}`, background: C.offwhite, color: C.black, outline: "none", fontSize: 13 };
 
   // ── Open / Close ────────────────────────────────────────────────────────────
-  const openAdd = () => { setEditingId(null); setForm({ ...EMPTY_PRODUCT }); setShowForm(true); };
+  const openAdd = () => {
+    setEditingId(null); setForm({ ...EMPTY_PRODUCT }); setShowForm(true);
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  };
   const openEdit = (p) => {
     setEditingId(p.id);
     const isOneSize = !p.sizes || p.sizes.length === 0 || (p.sizes.length === 1 && p.sizes[0] === "One Size");
@@ -104,6 +144,7 @@ export default function ProductsPanel({ products, setProducts, mobile, toast, L 
       additionalNotes: p.details?.additionalNotes || "",
     });
     setShowForm(true);
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   };
   const cancel = () => {
     setShowForm(false); setEditingId(null); setForm({ ...EMPTY_PRODUCT });
@@ -240,27 +281,27 @@ export default function ProductsPanel({ products, setProducts, mobile, toast, L 
     <div style={{ background: C.cream, marginBottom: 40, animation: "fadeUp 0.3s ease" }}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderBottom: `1px solid ${C.lgray}` }}>
-        <p style={{ ...T.label, color: C.black, fontSize: 12 }}>Product Catalog ({products.length} items)</p>
+        <p style={{ ...T.label, color: C.black, fontSize: 12 }}>{L?.adminProductCatalog||"Product Catalog"} ({products.length} {L?.adminItems||"items"})</p>
         <HoverBtn onClick={openAdd} variant="tan" style={{ padding: "8px 18px", fontSize: 14, fontWeight: "bold" }}>+</HoverBtn>
       </div>
 
       {/* ── Form ───────────────────────────────────────────────────────────────── */}
       {showForm && (
-        <div style={{ padding: 20, borderBottom: `1px solid ${C.lgray}`, background: C.offwhite, animation: "slideDown 0.2s ease" }}>
+        <div ref={formRef} style={{ padding: 20, borderBottom: `1px solid ${C.lgray}`, background: C.offwhite, animation: "slideDown 0.2s ease" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-            <p style={{ ...T.label, color: C.black, fontSize: 11 }}>{editingId ? "Edit Product" : "Add Product"}</p>
+            <p style={{ ...T.label, color: C.black, fontSize: 11 }}>{editingId ? (L?.adminEditProduct||"Edit Product") : (L?.adminAddProduct||"Add Product")}</p>
             <button onClick={cancel} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, lineHeight: 0 }}><IconCross size={16} /></button>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr" : "1fr 1fr 1fr", gap: 16 }}>
             {/* Name */}
             <div>
-              <label style={{ ...T.labelSm, color: C.gray, display: "block", marginBottom: 6 }}>NAME *</label>
-              <input style={inputStyle} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Product name" />
+              <label style={{ ...T.labelSm, color: C.gray, display: "block", marginBottom: 6 }}>{L?.adminName||"NAME"} *</label>
+              <input style={inputStyle} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder={L?.adminProductName||"Product name"} />
             </div>
             {/* Brand */}
             <div style={{ position: "relative" }}>
-              <label style={{ ...T.labelSm, color: C.gray, display: "block", marginBottom: 6 }}>BRAND</label>
+              <label style={{ ...T.labelSm, color: C.gray, display: "block", marginBottom: 6 }}>{L?.adminBrand||"BRAND"}</label>
               <div style={{ display: "flex", gap: 4, flexWrap: "wrap", padding: "6px 10px", border: `1px solid ${C.lgray}`, background: C.white, minHeight: 38, alignItems: "center", cursor: "pointer" }}
                 onClick={() => setBrandOpen(!brandOpen)}>
                 {form.brand ? (
@@ -268,7 +309,7 @@ export default function ProductsPanel({ products, setProducts, mobile, toast, L 
                     {form.brand}
                     <span onClick={e => { e.stopPropagation(); setForm(f => ({ ...f, brand: "" })); }} style={{ cursor: "pointer", fontWeight: "bold" }}>&times;</span>
                   </span>
-                ) : <span style={{ ...T.bodySm, color: C.lgray, fontSize: 11 }}>Select brand...</span>}
+                ) : <span style={{ ...T.bodySm, color: C.lgray, fontSize: 11 }}>{L?.adminSelectBrand||"Select brand..."}</span>}
               </div>
               {brandOpen && (
                 <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50, background: C.white, border: `1px solid ${C.lgray}`, maxHeight: 220, overflow: "auto", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
@@ -292,7 +333,7 @@ export default function ProductsPanel({ products, setProducts, mobile, toast, L 
             </div>
             {/* Color */}
             <div style={{ position: "relative" }}>
-              <label style={{ ...T.labelSm, color: C.gray, display: "block", marginBottom: 6 }}>COLOR</label>
+              <label style={{ ...T.labelSm, color: C.gray, display: "block", marginBottom: 6 }}>{L?.adminColor||"COLOR"}</label>
               <div style={{ display: "flex", gap: 4, flexWrap: "wrap", padding: "6px 10px", border: `1px solid ${C.lgray}`, background: C.white, minHeight: 38, alignItems: "center", cursor: "pointer" }}
                 onClick={() => setColorOpen(!colorOpen)}>
                 {form.color ? (
@@ -301,7 +342,7 @@ export default function ProductsPanel({ products, setProducts, mobile, toast, L 
                     {form.color}
                     <span onClick={e => { e.stopPropagation(); setForm(f => ({ ...f, color: "" })); }} style={{ cursor: "pointer", fontWeight: "bold" }}>&times;</span>
                   </span>
-                ) : <span style={{ ...T.bodySm, color: C.lgray, fontSize: 11 }}>Select color...</span>}
+                ) : <span style={{ ...T.bodySm, color: C.lgray, fontSize: 11 }}>{L?.adminSelectColor||"Select color..."}</span>}
               </div>
               {colorOpen && (
                 <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50, background: C.white, border: `1px solid ${C.lgray}`, maxHeight: 200, overflow: "auto", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
@@ -326,7 +367,7 @@ export default function ProductsPanel({ products, setProducts, mobile, toast, L 
             </div>
             {/* Section */}
             <div>
-              <label style={{ ...T.labelSm, color: C.gray, display: "block", marginBottom: 6 }}>SECTION</label>
+              <label style={{ ...T.labelSm, color: C.gray, display: "block", marginBottom: 6 }}>{L?.adminSection||"SECTION"}</label>
               <div style={{ display: "flex", gap: 4 }}>
                 {SECTIONS.map(s => (
                   <button key={s} type="button" onClick={() => setForm(f => ({ ...f, section: s, sizes: [] }))}
@@ -338,7 +379,7 @@ export default function ProductsPanel({ products, setProducts, mobile, toast, L 
             </div>
             {/* Category */}
             <div>
-              <label style={{ ...T.labelSm, color: C.gray, display: "block", marginBottom: 6 }}>CATEGORY</label>
+              <label style={{ ...T.labelSm, color: C.gray, display: "block", marginBottom: 6 }}>{L?.adminCategory||"CATEGORY"}</label>
               <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                 {CATEGORIES.map(c => (
                   <button key={c} type="button" onClick={() => setForm(f => ({ ...f, cat: c, sizes: [], oneSize: (c !== "Clothing" && c !== "Shoes") }))}
@@ -350,7 +391,7 @@ export default function ProductsPanel({ products, setProducts, mobile, toast, L 
             </div>
             {/* Tag */}
             <div>
-              <label style={{ ...T.labelSm, color: C.gray, display: "block", marginBottom: 6 }}>TAG</label>
+              <label style={{ ...T.labelSm, color: C.gray, display: "block", marginBottom: 6 }}>{L?.adminTag||"TAG"}</label>
               <div style={{ display: "flex", gap: 4 }}>
                 {TAGS.map(t => (
                   <button key={t || "none"} type="button" onClick={() => setForm(f => ({ ...f, tag: t }))}
@@ -364,7 +405,7 @@ export default function ProductsPanel({ products, setProducts, mobile, toast, L 
 
           {/* ── STOCK STATUS ────────────────────────────────────────────────────── */}
           <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 12 }}>
-            <label style={{ ...T.labelSm, color: C.gray, fontSize: 8 }}>STOCK STATUS</label>
+            <label style={{ ...T.labelSm, color: C.gray, fontSize: 8 }}>{L?.adminStockStatus||"STOCK STATUS"}</label>
             <button type="button" onClick={() => setForm(f => ({ ...f, inStock: !f.inStock }))}
               style={{
                 display: "flex", alignItems: "center", gap: 8, padding: "8px 16px",
@@ -374,23 +415,23 @@ export default function ProductsPanel({ products, setProducts, mobile, toast, L 
               }}>
               <span style={{ width: 8, height: 8, borderRadius: "50%", background: form.inStock ? C.tan : C.red }} />
               <span style={{ ...T.labelSm, fontSize: 10, color: form.inStock ? C.tan : C.red }}>
-                {form.inStock ? "In Stock" : "Out of Stock"}
+                {form.inStock ? (L?.adminInStock||"In Stock") : (L?.adminOutOfStock||"Out of Stock")}
               </span>
             </button>
           </div>
 
           {/* ── PRICING + DISCOUNT ─────────────────────────────────────────────── */}
           <div style={{ marginTop: 20, padding: 16, background: C.white, border: `1px solid ${C.lgray}` }}>
-            <p style={{ ...T.label, color: C.black, fontSize: 10, marginBottom: 14 }}>PRICING & DISCOUNT</p>
+            <p style={{ ...T.label, color: C.black, fontSize: 10, marginBottom: 14 }}>{L?.adminPricingDiscount||"PRICING & DISCOUNT"}</p>
             <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr" : "1fr 1fr 1fr", gap: 16 }}>
               {/* Price */}
               <div>
-                <label style={{ ...T.labelSm, color: C.gray, display: "block", marginBottom: 6 }}>ORIGINAL PRICE (GEL) *</label>
+                <label style={{ ...T.labelSm, color: C.gray, display: "block", marginBottom: 6 }}>{L?.adminOriginalPrice||"ORIGINAL PRICE (GEL)"} *</label>
                 <input style={inputStyle} type="number" value={form.price} onChange={e => onPriceChange(e.target.value)} placeholder="0" />
               </div>
               {/* Discount % */}
               <div>
-                <label style={{ ...T.labelSm, color: C.gray, display: "block", marginBottom: 6 }}>DISCOUNT %</label>
+                <label style={{ ...T.labelSm, color: C.gray, display: "block", marginBottom: 6 }}>{L?.adminDiscountPercent||"DISCOUNT %"}</label>
                 <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                   <input style={{ ...inputStyle, width: 80, flex: "none" }} type="number" min="0" max="99"
                     value={form.discountPercent} onChange={e => setDiscount(e.target.value)} placeholder="0" />
@@ -413,14 +454,14 @@ export default function ProductsPanel({ products, setProducts, mobile, toast, L 
                   {form.discountPercent && (
                     <button type="button" onClick={() => setDiscount("")}
                       style={{ ...T.labelSm, fontSize: 8, padding: "4px 8px", border: `1px solid ${C.lgray}`, background: "transparent", color: C.gray, cursor: "pointer" }}>
-                      Clear
+                      {L?.adminClear||"Clear"}
                     </button>
                   )}
                 </div>
               </div>
               {/* Sale Price (auto-calculated) */}
               <div>
-                <label style={{ ...T.labelSm, color: C.gray, display: "block", marginBottom: 6 }}>SALE PRICE (GEL)</label>
+                <label style={{ ...T.labelSm, color: C.gray, display: "block", marginBottom: 6 }}>{L?.adminSalePrice||"SALE PRICE (GEL)"}</label>
                 <input style={{ ...inputStyle, color: form.sale ? C.red : C.black, fontWeight: form.sale ? 500 : 300 }} type="number"
                   value={form.sale} onChange={e => setSalePrice(e.target.value)} placeholder="Auto-calculated from discount" />
                 {form.price && form.sale && (
@@ -432,14 +473,14 @@ export default function ProductsPanel({ products, setProducts, mobile, toast, L 
             </div>
             {/* Lead Time */}
             <div style={{ marginTop: 12 }}>
-              <label style={{ ...T.labelSm, color: C.gray, display: "block", marginBottom: 6 }}>LEAD TIME</label>
-              <input style={{ ...inputStyle, maxWidth: 300 }} value={form.lead} onChange={e => setForm(f => ({ ...f, lead: e.target.value }))} placeholder="e.g. 10–14 days" />
+              <label style={{ ...T.labelSm, color: C.gray, display: "block", marginBottom: 6 }}>{L?.adminLeadTime||"LEAD TIME"}</label>
+              <input style={{ ...inputStyle, maxWidth: 300 }} value={form.lead} onChange={e => setForm(f => ({ ...f, lead: e.target.value }))} placeholder={L?.adminLeadTimePlaceholder||"e.g. 10–14 days"} />
             </div>
           </div>
 
           {/* ── SIZES ──────────────────────────────────────────────────────────── */}
           <div style={{ marginTop: 16 }}>
-            <label style={{ ...T.labelSm, color: C.gray, fontSize: 8, display: "block", marginBottom: 8 }}>SIZES</label>
+            <label style={{ ...T.labelSm, color: C.gray, fontSize: 8, display: "block", marginBottom: 8 }}>{L?.adminSizes||"SIZES"}</label>
             {getAvailableSizes() ? (
               <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                 {getAvailableSizes().map(sz => (
@@ -450,14 +491,14 @@ export default function ProductsPanel({ products, setProducts, mobile, toast, L 
                 ))}
               </div>
             ) : (
-              <p style={{ ...T.bodySm, color: C.gray, fontSize: 12, padding: "8px 0" }}>One Size (automatic for {form.cat})</p>
+              <p style={{ ...T.bodySm, color: C.gray, fontSize: 12, padding: "8px 0" }}>{L?.adminOneSize||"One Size"} ({L?.adminAutomaticFor||"automatic for"} {form.cat})</p>
             )}
           </div>
 
           {/* ── FIT ────────────────────────────────────────────────────────────── */}
           {(form.cat === "Clothing" || form.cat === "Shoes") && (
             <div style={{ marginTop: 16 }}>
-              <label style={{ ...T.labelSm, color: C.gray, fontSize: 8, display: "block", marginBottom: 8 }}>FIT</label>
+              <label style={{ ...T.labelSm, color: C.gray, fontSize: 8, display: "block", marginBottom: 8 }}>{L?.adminFit||"FIT"}</label>
               <div style={{ display: "flex", gap: 4 }}>
                 {FIT_OPTIONS.map(f => (
                   <button key={f} type="button" onClick={() => setForm(prev => ({ ...prev, fit: f }))}
@@ -471,7 +512,7 @@ export default function ProductsPanel({ products, setProducts, mobile, toast, L 
 
           {/* ── IMAGES ─────────────────────────────────────────────────────────── */}
           <div style={{ marginTop: 16 }}>
-            <label style={{ ...T.labelSm, color: C.gray, fontSize: 8, display: "block", marginBottom: 8 }}>PRODUCT IMAGES ({form.images.length} uploaded)</label>
+            <label style={{ ...T.labelSm, color: C.gray, fontSize: 8, display: "block", marginBottom: 8 }}>{L?.adminProductImages||"PRODUCT IMAGES"} ({form.images.length} {L?.adminUploaded||"uploaded"})</label>
             {form.images.length > 0 && (
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
                 {form.images.map((src, idx) => (
@@ -487,7 +528,7 @@ export default function ProductsPanel({ products, setProducts, mobile, toast, L 
             <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
               <label style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", border: `1px dashed ${C.lgray}`, background: C.offwhite, cursor: "pointer" }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.gray} strokeWidth="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
-                <span style={{ ...T.labelSm, color: C.gray, fontSize: 9 }}>Upload Photos</span>
+                <span style={{ ...T.labelSm, color: C.gray, fontSize: 9 }}>{L?.adminUploadPhotos||"Upload Photos"}</span>
                 <input type="file" accept="image/*" multiple onChange={handleImageUpload} style={{ display: "none" }} />
               </label>
               <div style={{ display: "flex", gap: 6, flex: 1, minWidth: 200 }}>
@@ -500,26 +541,26 @@ export default function ProductsPanel({ products, setProducts, mobile, toast, L 
 
           {/* ── TEMPLATE DESCRIPTION ───────────────────────────────────────────── */}
           <div style={{ marginTop: 20, padding: 16, background: C.white, border: `1px solid ${C.lgray}` }}>
-            <p style={{ ...T.label, color: C.black, fontSize: 10, marginBottom: 14 }}>PRODUCT DETAILS (Template)</p>
+            <p style={{ ...T.label, color: C.black, fontSize: 10, marginBottom: 14 }}>{L?.adminProductDetails||"PRODUCT DETAILS"}</p>
             <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr" : "1fr 1fr", gap: 14 }}>
               <div>
-                <label style={{ ...T.labelSm, color: C.gray, display: "block", marginBottom: 6 }}>PRODUCT CODE / SKU</label>
+                <label style={{ ...T.labelSm, color: C.gray, display: "block", marginBottom: 6 }}>{L?.adminProductCode||"PRODUCT CODE / SKU"}</label>
                 <input style={inputStyle} value={form.itemCode} onChange={e => setForm(f => ({ ...f, itemCode: e.target.value }))} placeholder="e.g. BV-ARCO-001" />
               </div>
               <div>
-                <label style={{ ...T.labelSm, color: C.gray, display: "block", marginBottom: 6 }}>MATERIAL</label>
+                <label style={{ ...T.labelSm, color: C.gray, display: "block", marginBottom: 6 }}>{L?.adminMaterial||"MATERIAL"}</label>
                 <input style={inputStyle} value={form.material} onChange={e => setForm(f => ({ ...f, material: e.target.value }))} placeholder="e.g. 100% Lambskin Leather" />
               </div>
               <div>
-                <label style={{ ...T.labelSm, color: C.gray, display: "block", marginBottom: 6 }}>COMPOSITION</label>
+                <label style={{ ...T.labelSm, color: C.gray, display: "block", marginBottom: 6 }}>{L?.adminComposition||"COMPOSITION"}</label>
                 <input style={inputStyle} value={form.composition} onChange={e => setForm(f => ({ ...f, composition: e.target.value }))} placeholder="e.g. Exterior: Lambskin. Lining: Suede" />
               </div>
               <div>
-                <label style={{ ...T.labelSm, color: C.gray, display: "block", marginBottom: 6 }}>DIMENSIONS</label>
+                <label style={{ ...T.labelSm, color: C.gray, display: "block", marginBottom: 6 }}>{L?.adminDimensions||"DIMENSIONS"}</label>
                 <input style={inputStyle} value={form.dimensions} onChange={e => setForm(f => ({ ...f, dimensions: e.target.value }))} placeholder="e.g. 34×25×12cm" />
               </div>
               <div style={{ gridColumn: mobile ? "1" : "1 / -1" }}>
-                <label style={{ ...T.labelSm, color: C.gray, display: "block", marginBottom: 6 }}>ADDITIONAL NOTES</label>
+                <label style={{ ...T.labelSm, color: C.gray, display: "block", marginBottom: 6 }}>{L?.adminAdditionalNotes||"ADDITIONAL NOTES"}</label>
                 <textarea style={{ ...inputStyle, minHeight: 56, resize: "vertical" }} value={form.additionalNotes} onChange={e => setForm(f => ({ ...f, additionalNotes: e.target.value }))} placeholder="Any additional info about the product..." />
               </div>
             </div>
@@ -528,9 +569,9 @@ export default function ProductsPanel({ products, setProducts, mobile, toast, L 
           {/* Save / Cancel */}
           <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
             <HoverBtn onClick={save} variant="tan" style={{ padding: "10px 28px", fontSize: 9 }}>
-              <IconCheck size={12} color={C.white} /> Save Product
+              <IconCheck size={12} color={C.white} /> {L?.adminSaveProduct||"Save Product"}
             </HoverBtn>
-            <HoverBtn onClick={cancel} variant="ghost" style={{ padding: "10px 20px", fontSize: 9 }}>Cancel</HoverBtn>
+            <HoverBtn onClick={cancel} variant="ghost" style={{ padding: "10px 20px", fontSize: 9 }}>{L?.adminCancel||"Cancel"}</HoverBtn>
           </div>
         </div>
       )}
@@ -538,7 +579,7 @@ export default function ProductsPanel({ products, setProducts, mobile, toast, L 
       {/* ── Product Table ───────────────────────────────────────────────────── */}
       {products.length === 0 ? (
         <div style={{ padding: "48px 20px", textAlign: "center" }}>
-          <p style={{ ...T.bodySm, color: C.gray, marginBottom: 16 }}>No products yet</p>
+          <p style={{ ...T.bodySm, color: C.gray, marginBottom: 16 }}>{L?.adminNoProducts||"No products yet"}</p>
           <HoverBtn onClick={openAdd} variant="tan" style={{ padding: "10px 24px", fontSize: 14, fontWeight: "bold" }}>+</HoverBtn>
         </div>
       ) : (
@@ -546,7 +587,7 @@ export default function ProductsPanel({ products, setProducts, mobile, toast, L 
           <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 800 }}>
             <thead>
               <tr style={{ borderBottom: `1px solid ${C.lgray}`, background: C.offwhite }}>
-                {["", "Name", "Brand", "Section", "Category", "Price", "Sale", "Discount", "Sizes", "Tag", "Stock", "Actions"].map(h => (
+                {["", L?.adminName||"Name", L?.adminBrand||"Brand", L?.adminSection||"Section", L?.adminCategory||"Category", L?.adminPrice||"Price", L?.adminSale||"Sale", L?.adminDiscount||"Discount", L?.adminSizes||"Sizes", L?.adminTag||"Tag", L?.adminStock||"Stock", L?.adminActions||"Actions"].map(h => (
                   <th key={h} style={{ ...T.labelSm, color: C.gray, fontSize: 10, padding: "12px 14px", textAlign: "left", fontWeight: 600 }}>{h}</th>
                 ))}
               </tr>
@@ -559,7 +600,7 @@ export default function ProductsPanel({ products, setProducts, mobile, toast, L 
                     onMouseEnter={e => e.currentTarget.style.background = C.offwhite}
                     onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                     <td style={{ padding: "8px 12px" }}>
-                      {p.img ? <img src={p.img} alt={p.name} loading="lazy" width="36" height="36" style={{ width: 36, height: 36, objectFit: "cover" }} /> : <div style={{ width: 36, height: 36, background: C.lgray }} />}
+                      <ProductThumb img={p.img} images={p.images} name={p.name} brand={p.brand} />
                     </td>
                     <td style={{ ...T.bodySm, color: C.black, padding: "8px 12px", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</td>
                     <td style={{ ...T.bodySm, color: C.gray, padding: "8px 12px", fontSize: 12 }}>{p.brand || "—"}</td>
@@ -582,15 +623,15 @@ export default function ProductsPanel({ products, setProducts, mobile, toast, L 
                     </td>
                     <td style={{ padding: "8px 12px" }}>
                       <div style={{ display: "flex", gap: 6 }}>
-                        <HoverBtn onClick={() => openEdit(p)} variant="ghost" style={{ padding: "5px 12px", fontSize: 10 }}>Edit</HoverBtn>
+                        <HoverBtn onClick={() => openEdit(p)} variant="ghost" style={{ padding: "5px 12px", fontSize: 10 }}>{L?.adminEdit||"Edit"}</HoverBtn>
                         {deleteConfirmId === p.id ? (
                           <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-                            <span style={{ ...T.labelSm, color: C.red, fontSize: 10, marginRight: 4 }}>Sure?</span>
+                            <span style={{ ...T.labelSm, color: C.red, fontSize: 10, marginRight: 4 }}>{L?.adminSure||"Sure?"}</span>
                             <button onClick={() => deleteProduct(p.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 2, lineHeight: 0 }}><IconCheck size={14} color={C.green} /></button>
                             <button onClick={() => setDeleteConfirmId(null)} style={{ background: "none", border: "none", cursor: "pointer", padding: 2, lineHeight: 0 }}><IconCross size={14} color={C.red} /></button>
                           </div>
                         ) : (
-                          <HoverBtn onClick={() => setDeleteConfirmId(p.id)} variant="danger" style={{ padding: "5px 12px", fontSize: 10 }}>Delete</HoverBtn>
+                          <HoverBtn onClick={() => setDeleteConfirmId(p.id)} variant="danger" style={{ padding: "5px 12px", fontSize: 10 }}>{L?.adminDelete||"Delete"}</HoverBtn>
                         )}
                       </div>
                     </td>

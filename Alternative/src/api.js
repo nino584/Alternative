@@ -1,9 +1,24 @@
 const API = '/api';
 
+function getCsrfToken() {
+  const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : '';
+}
+
+function buildHeaders(options) {
+  const headers = { 'Content-Type': 'application/json', ...options.headers };
+  const method = (options.method || 'GET').toUpperCase();
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+    headers['X-CSRF-Token'] = getCsrfToken();
+  }
+  return headers;
+}
+
 async function request(path, options = {}) {
+  const headers = buildHeaders(options);
   const res = await fetch(`${API}${path}`, {
-    credentials: 'include', // send cookies
-    headers: { 'Content-Type': 'application/json', ...options.headers },
+    credentials: 'include',
+    headers,
     ...options,
   });
 
@@ -14,12 +29,14 @@ async function request(path, options = {}) {
       const refreshRes = await fetch(`${API}/auth/refresh`, {
         method: 'POST',
         credentials: 'include',
+        headers: { 'X-CSRF-Token': getCsrfToken() },
       });
       if (refreshRes.ok) {
-        // Retry original request with new token
+        // Retry original request with new token (CSRF token may have rotated)
+        const retryHeaders = buildHeaders(options);
         const retryRes = await fetch(`${API}${path}`, {
           credentials: 'include',
-          headers: { 'Content-Type': 'application/json', ...options.headers },
+          headers: retryHeaders,
           ...options,
         });
         if (!retryRes.ok) {
@@ -130,9 +147,29 @@ export const api = {
 
   // Invoice
   getInvoice: (orderId) =>
-    fetch(`/api/orders/${orderId}/invoice`, { credentials: 'include' }).then(r => r.text()),
+    fetch(`${API}/orders/${orderId}/invoice`, { credentials: 'include', headers: { 'X-CSRF-Token': getCsrfToken() } }).then(r => r.text()),
+
+  // Messages / Notifications
+  getMessages: () => request('/messages'),
+  getUnreadCount: () => request('/messages/unread-count'),
+  markMessageRead: (id) =>
+    request(`/messages/${id}/read`, { method: 'PATCH' }),
+  markAllMessagesRead: () =>
+    request('/messages/mark-all-read', { method: 'POST' }),
 
   // Newsletter unsubscribe
   unsubscribe: (email) =>
     request('/unsubscribe', { method: 'POST', body: JSON.stringify({ email }) }),
+
+  // Affiliate
+  applyAffiliate: (data) =>
+    request('/affiliates/apply', { method: 'POST', body: JSON.stringify(data) }),
+  trackAffiliateClick: (code) =>
+    request('/affiliates/track-click', { method: 'POST', body: JSON.stringify({ code }) }),
+  affiliateLogin: (code, email) =>
+    request('/affiliates/dashboard/login', { method: 'POST', body: JSON.stringify({ code, email }) }),
+
+  // Supplier
+  applySupplier: (data) =>
+    request('/suppliers/apply', { method: 'POST', body: JSON.stringify(data) }),
 };
