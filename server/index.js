@@ -15,7 +15,7 @@ import productRoutes from './routes/products.js';
 import orderRoutes from './routes/orders.js';
 import affiliateRoutes from './routes/affiliates.js';
 import supplierRoutes from './routes/suppliers.js';
-import { getAllUsers, getAllSubscribers, addSubscriber, removeSubscriber, getAllProducts, getStockNotifications, addStockNotification, getWishlist, saveWishlist, getReturnRequests, getReturnRequestsByUser, createReturnRequest, updateReturnStatus, updatePromoCode, deletePromoCode, addPromoCode, getPromoCodes, getMessagesByOrder, getMessagesByUser, getUnreadCountByUser, createMessage, markMessageRead, markAllMessagesRead, getOrderById } from './db/store.js';
+import { getAllUsers, getAllSubscribers, addSubscriber, removeSubscriber, getAllProducts, getAllOrders, getStockNotifications, addStockNotification, getWishlist, saveWishlist, getReturnRequests, getReturnRequestsByUser, createReturnRequest, updateReturnStatus, updatePromoCode, deletePromoCode, addPromoCode, getPromoCodes, getMessagesByOrder, getMessagesByUser, getUnreadCountByUser, createMessage, markMessageRead, markAllMessagesRead, getOrderById } from './db/store.js';
 import nodemailer from 'nodemailer';
 import { authenticate } from './middleware/auth.js';
 import { requireRole } from './middleware/rbac.js';
@@ -233,6 +233,11 @@ app.use('/api/suppliers', csrfProtection, supplierRoutes);
 // ── Admin: Customers (paginated, support can read) ──────────────────────
 app.get('/api/admin/customers', authenticate, requireRole('admin', 'support'), adminIpCheck, (req, res) => {
   res.json(paginate(getAllUsers(), req.query));
+});
+
+// ── Admin: Orders (all orders for admin) ─────────────────────────────────
+app.get('/api/admin/orders', authenticate, requireRole('admin', 'support'), adminIpCheck, (req, res) => {
+  res.json({ orders: getAllOrders() });
 });
 
 // ── Admin: Subscribers (paginated, support can read) ────────────────────
