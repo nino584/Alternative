@@ -33,7 +33,7 @@ export default function BrandsPage({setPage,setSelected,L,mobile}) {
     <div style={{paddingTop:mobile?78:104,minHeight:"100vh",background:C.white||"#fff"}}>
       <SEO {...pageMeta("brands")} schema={breadcrumbSchema([{name:"Home",url:"/"},{name:"Designers"}])} />
       <div style={{maxWidth:1360,margin:"0 auto",padding:`${mobile?"24px":"48px"} ${px} 0`}}>
-        <p style={{...T.labelSm,color:C.tan,marginBottom:mobile?32:48,fontSize:mobile?12:14,letterSpacing:2}}>DESIGNERS</p>
+        <p style={{...T.labelSm,color:C.tan,marginBottom:mobile?32:48,fontSize:mobile?12:14,letterSpacing:2}}>{L?.designersLabel||"DESIGNERS"}</p>
         
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:mobile?"0 20px":"0 64px"}}>
           {[col1,col2].map((col,ci)=>(

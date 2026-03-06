@@ -40,7 +40,7 @@ export default function HowItWorksPage({setPage,L,mobile}) {
         </div>
       </div>
       <div style={{padding:"88px 0"}}>
-        <div style={{maxWidth:900,margin:"0 auto",padding:"0 40px"}}>
+        <div style={{maxWidth:900,margin:"0 auto",padding:mobile?"0 16px":"0 40px"}}>
           {[
             {n:"01",t:L.processStep1T,body:L.processStep1B,note:L.processStep1N},
             {n:"02",t:L.processStep2T,body:L.processStep2B},
@@ -63,7 +63,7 @@ export default function HowItWorksPage({setPage,L,mobile}) {
       </div>
 
       <div style={{background:C.offwhite,padding:"64px 0"}}>
-        <div style={{maxWidth:1360,margin:"0 auto",padding:"0 40px"}}>
+        <div style={{maxWidth:1360,margin:"0 auto",padding:mobile?"0 16px":"0 40px"}}>
           <div style={{textAlign:"center",marginBottom:44}}>
             <p style={{...T.labelSm,color:C.tan,marginBottom:10}}>{L.trackOrder}</p>
             <h2 style={{...T.displayMd,color:C.black}}>{L.orderStatusVisible}</h2>

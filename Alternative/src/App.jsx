@@ -256,13 +256,13 @@ export default function App() {
           <Route path="/affiliate" element={<AffiliatePage setPage={setPage} L={L} mobile={mobile}/>}/>
           <Route path="/affiliate/dashboard" element={<AffiliateDashboard setPage={setPage} L={L} mobile={mobile}/>}/>
           <Route path="/become-supplier" element={<BecomeSupplierPage setPage={setPage} L={L} mobile={mobile}/>}/>
-          <Route path="/privacy" element={<LegalPage type="privacy" setPage={setPage} L={L} mobile={mobile}/>}/>
-          <Route path="/terms" element={<LegalPage type="terms" setPage={setPage} L={L} mobile={mobile}/>}/>
-          <Route path="/returns" element={<LegalPage type="returns" setPage={setPage} L={L} mobile={mobile}/>}/>
-          <Route path="/shipping" element={<LegalPage type="shipping" setPage={setPage} L={L} mobile={mobile}/>}/>
-          <Route path="/accessibility" element={<LegalPage type="accessibility" setPage={setPage} L={L} mobile={mobile}/>}/>
-          <Route path="/seller-agreement" element={<LegalPage type="seller-agreement" setPage={setPage} L={L} mobile={mobile}/>}/>
-          <Route path="/ip-policy" element={<LegalPage type="ip-policy" setPage={setPage} L={L} mobile={mobile}/>}/>
+          <Route path="/privacy" element={<LegalPage type="privacy" setPage={setPage} L={L} lang={lang} mobile={mobile}/>}/>
+          <Route path="/terms" element={<LegalPage type="terms" setPage={setPage} L={L} lang={lang} mobile={mobile}/>}/>
+          <Route path="/returns" element={<LegalPage type="returns" setPage={setPage} L={L} lang={lang} mobile={mobile}/>}/>
+          <Route path="/shipping" element={<LegalPage type="shipping" setPage={setPage} L={L} lang={lang} mobile={mobile}/>}/>
+          <Route path="/accessibility" element={<LegalPage type="accessibility" setPage={setPage} L={L} lang={lang} mobile={mobile}/>}/>
+          <Route path="/seller-agreement" element={<LegalPage type="seller-agreement" setPage={setPage} L={L} lang={lang} mobile={mobile}/>}/>
+          <Route path="/ip-policy" element={<LegalPage type="ip-policy" setPage={setPage} L={L} lang={lang} mobile={mobile}/>}/>
           <Route path="/contact" element={<ContactPage setPage={setPage} L={L} mobile={mobile}/>}/>
           <Route path="/checkout" element={<CheckoutPage cart={cart.filter(i=>i.cat!=="Bags")} user={user} L={L} setPage={setPage} onComplete={placeOrder} toast={toast} mobile={mobile}/>}/>
           <Route path="/checkout-bags" element={<BagsCheckoutPage cart={cart.filter(i=>i.cat==="Bags")} user={user} L={L} setPage={setPage} onComplete={placeOrder} toast={toast} mobile={mobile}/>}/>

@@ -339,23 +339,23 @@ export default function CheckoutPage({cart,user,L,setPage,onComplete,toast,mobil
 
               {/* Video verification */}
               <div style={{borderTop:`1px solid ${C.lgray}`,paddingTop:24,marginTop:8}}>
-                <p style={{...T.labelSm,color:C.black,fontSize:10,letterSpacing:"0.12em",marginBottom:14}}>VIDEO VERIFICATION</p>
+                <p style={{...T.labelSm,color:C.black,fontSize:10,letterSpacing:"0.12em",marginBottom:14}}>{L?.videoVerifLabel||"VIDEO VERIFICATION"}</p>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
                   <button onClick={()=>setWantVideo(false)}
                     onMouseEnter={e=>{if(!(!wantVideo))e.currentTarget.style.borderColor=C.black;}}
                     onMouseLeave={e=>{if(!(!wantVideo))e.currentTarget.style.borderColor="rgba(200,200,190,0.5)";}}
                     style={{padding:"18px 14px",background:!wantVideo?C.black:"transparent",border:`1.5px solid ${!wantVideo?C.black:"rgba(200,200,190,0.5)"}`,cursor:"pointer",textAlign:"center",transition:"all 0.2s"}}>
-                    <p style={{...T.label,fontSize:11,color:!wantVideo?C.white:C.black,marginBottom:4}}>Standard</p>
+                    <p style={{...T.label,fontSize:11,color:!wantVideo?C.white:C.black,marginBottom:4}}>{L?.standardOption||"Standard"}</p>
                     <p style={{fontFamily:"'Alido',serif",fontSize:18,color:!wantVideo?C.white:C.black}}>GEL {subtotal}</p>
                   </button>
                   <button onClick={()=>setWantVideo(true)}
                     onMouseEnter={e=>{if(!wantVideo)e.currentTarget.style.borderColor=C.tan;}}
                     onMouseLeave={e=>{if(!wantVideo)e.currentTarget.style.borderColor="rgba(200,200,190,0.5)";}}
                     style={{padding:"18px 14px",background:wantVideo?C.black:"transparent",border:`1.5px solid ${wantVideo?C.tan:"rgba(200,200,190,0.5)"}`,cursor:"pointer",textAlign:"center",position:"relative",transition:"all 0.2s"}}>
-                    <div style={{position:"absolute",top:-1,right:-1,background:C.tan,padding:"3px 10px"}}><span style={{...T.labelSm,color:C.white,fontSize:7}}>RECOMMENDED</span></div>
+                    <div style={{position:"absolute",top:-1,right:-1,background:C.tan,padding:"3px 10px"}}><span style={{...T.labelSm,color:C.white,fontSize:7}}>{L?.recommended||"RECOMMENDED"}</span></div>
                     <p style={{...T.label,fontSize:11,color:wantVideo?C.white:C.black,marginBottom:4,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
                       <IconVideo size={13} color={wantVideo?C.white:C.black} stroke={1.6}/>
-                      With Video
+                      {L?.withVideo||"With Video"}
                     </p>
                     <p style={{fontFamily:"'Alido',serif",fontSize:18,color:wantVideo?C.white:C.black}}>GEL {subtotal+VIDEO_VERIFICATION_GEL}</p>
                   </button>

@@ -251,7 +251,7 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
                 <div style={{display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
                   <span style={{...T.label,color:C.tan}}>+ GEL {VIDEO_VERIFICATION_GEL} at checkout</span>
                   <button onClick={()=>setShowDemoVideo(!showDemoVideo)} style={{background:"none",border:"none",...T.labelSm,color:C.gray,textDecoration:"underline",cursor:"pointer",fontSize:10,padding:0}}>
-                    {showDemoVideo?"Hide sample":"Watch sample ▶"}
+                    {showDemoVideo?(L.hideSample||"Hide sample"):(L.watchSample||"Watch sample \u25B6")}
                   </button>
                 </div>
               </div>
@@ -497,7 +497,7 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
 
       {related.length>0&&(
         <div style={{borderTop:`1px solid ${C.lgray}`,padding:"64px 0",background:C.offwhite}}>
-          <div style={{maxWidth:1360,margin:"0 auto",padding:"0 40px"}}>
+          <div style={{maxWidth:1360,margin:"0 auto",padding:mobile?"0 16px":"0 40px"}}>
             <p style={{...T.labelSm,color:C.tan,marginBottom:10}}>{L.fromSameCollection}</p>
             <div style={{display:"grid",gridTemplateColumns:mobile?"repeat(2,1fr)":"repeat(4,1fr)",gap:3}}>
               {related.map(item=><ProductCard key={item.id} product={item} wishlist={wishlist} onWishlist={onWishlist} onQuickView={onQuickView} L={L} mobile={mobile}

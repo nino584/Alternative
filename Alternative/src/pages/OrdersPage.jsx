@@ -51,7 +51,7 @@ export default function OrdersPage({mobile,orders,setPage,toast,L,products}) {
             </div>
           </div>
         </div>
-        <div style={{maxWidth:1360,margin:"0 auto",padding:"60px 40px 80px",textAlign:"center"}}>
+        <div style={{maxWidth:1360,margin:"0 auto",padding:mobile?"40px 16px 60px":"60px 40px 80px",textAlign:"center"}}>
           <p style={{...T.displaySm,color:C.gray,marginBottom:16}}>{L&&L.noOrdersYet||"No orders yet."}</p>
           <p style={{...T.bodySm,color:C.gray,marginBottom:28}}>{L&&L.noOrdersHint||"Items you purchase will appear here."}</p>
           <HoverBtn onClick={()=>setPage("catalog")} variant="primary">{L&&L.exploreCollection||"Explore Collection"}</HoverBtn>
@@ -72,7 +72,7 @@ export default function OrdersPage({mobile,orders,setPage,toast,L,products}) {
         </div>
       </div>
 
-      <div style={{maxWidth:1360,margin:"0 auto",padding:"32px 40px 80px",display:"grid",gridTemplateColumns:mobile?"1fr":"300px 1fr",gap:mobile?20:32}}>
+      <div style={{maxWidth:1360,margin:"0 auto",padding:mobile?"24px 16px 60px":"32px 40px 80px",display:"grid",gridTemplateColumns:mobile?"1fr":"300px 1fr",gap:mobile?20:32}}>
         {/* Order list sidebar */}
         <div>
           {allOrders.map((o,idx)=>{

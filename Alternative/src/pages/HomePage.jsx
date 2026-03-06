@@ -174,7 +174,7 @@ export default function HomePage({setPage,setSelected,L,lang,mobile,products:pro
                   onMouseLeave={e=>{e.currentTarget.style.transform="translate(-50%,-50%)";e.currentTarget.style.borderColor="rgba(255,255,255,0.7)";}}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="rgba(255,255,255,0.9)" style={{marginLeft:2}}><polygon points="6 3 20 12 6 21 6 3"/></svg>
                 </button>
-                <p style={{position:"absolute",bottom:mobile?12:20,left:0,right:0,textAlign:"center",fontFamily:"'TT Interphases Pro',sans-serif",fontSize:9,fontWeight:400,letterSpacing:"0.16em",textTransform:"uppercase",color:"rgba(255,255,255,0.6)"}}>WATCH SAMPLE VERIFICATION</p>
+                <p style={{position:"absolute",bottom:mobile?12:20,left:0,right:0,textAlign:"center",fontFamily:"'TT Interphases Pro',sans-serif",fontSize:9,fontWeight:400,letterSpacing:"0.16em",textTransform:"uppercase",color:"rgba(255,255,255,0.6)"}}>{L.watchSampleVerif||"WATCH SAMPLE VERIFICATION"}</p>
               </>
             ):(
               <video src={DEMO_VIDEO_URL} autoPlay playsInline controls onEnded={()=>setVidPlaying(false)} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
@@ -201,7 +201,7 @@ export default function HomePage({setPage,setSelected,L,lang,mobile,products:pro
             <p style={{fontFamily:"'Alido',serif",fontSize:14,fontWeight:400,color:C.onDark,lineHeight:1.7,marginBottom:12}}>{L.verifyBody||"Most stores show you a stock photo and hope for the best. We show you YOUR specific piece — on camera, in natural light, every stitch and detail visible."}</p>
             <p style={{fontFamily:"'Alido',serif",fontSize:14,fontWeight:400,color:C.onDark,lineHeight:1.7,marginBottom:mobile?20:28}}>{L.verifyProof||"Want proof? Add video verification to your order."}</p>
             <div style={{display:"flex",gap:mobile?20:40}}>
-              {[{n:"50+",l:"VERIFIED SUPPLIERS"},{n:"98%",l:"CUSTOMER SATISFACTION"},{n:"4.9",l:"AVERAGE RATING"}].map((s,i)=>(
+              {[{n:"50+",l:L.itemsVerified||"VERIFIED SUPPLIERS"},{n:"98%",l:L.custSatisfaction||"CUSTOMER SATISFACTION"},{n:"4.9",l:L.avgRating||"AVERAGE RATING"}].map((s,i)=>(
                 <div key={i}>
                   <p style={{fontFamily:"'Alido',serif",fontSize:mobile?22:28,fontWeight:300,color:"#fff",marginBottom:4}}>{s.n}</p>
                   <p style={{fontFamily:"'TT Interphases Pro',sans-serif",fontSize:mobile?9:8,fontWeight:500,letterSpacing:"0.12em",color:C.onDarkMuted}}>{s.l}</p>

@@ -476,6 +476,10 @@ export const LANG_DATA = {
     // UI labels
     photoSoon:"Photo Soon", quickView:"Quick View", oneSize:"ONE SIZE",
     newTag:"NEW", withVideo:"With Video", standardOption:"Standard",
+    handPicked:"HAND-PICKED \u00B7 CAMERA-VERIFIED \u00B7 ZERO SURPRISES",
+    watchSampleVerif:"WATCH SAMPLE VERIFICATION", hideSample:"Hide sample", watchSample:"Watch sample \u25B6",
+    passwordHint:"Min 8 chars: uppercase, lowercase, number, special character",
+    videoVerifLabel:"VIDEO VERIFICATION", designersLabel:"DESIGNERS",
     inWishlist:"In Wishlist", addToWishlist:"Add to Wishlist", viewFullDetails:"View Full Details",
     videoNotesHint:"Our team will cover these points in your personalized video",
     // Supplier / Marketplace
@@ -968,6 +972,10 @@ export const LANG_DATA = {
     // UI labels
     photoSoon:"ფოტო მალე", quickView:"სწრაფი ნახვა", oneSize:"ერთი ზომა",
     newTag:"ახალი", withVideo:"ვიდეოთი", standardOption:"სტანდარტული",
+    handPicked:"შერჩეული \u00B7 კამერით დადასტურებული \u00B7 მოულოდნელი",
+    watchSampleVerif:"ნახეთ სამოსტრო ვერიფიკაცია", hideSample:"დამალვა", watchSample:"ნახეთ სამოსტრო \u25B6",
+    passwordHint:"მინ. 8 სიმბოლო: დიდი, პატარა, ციფრი, სპეც. სიმბოლო",
+    videoVerifLabel:"ვიდეო ვერიფიკაცია", designersLabel:"დიზაინერები",
     inWishlist:"სურვილების სიაში", addToWishlist:"სურვილებში დამატება", viewFullDetails:"სრულად ნახვა",
     videoNotesHint:"ჩვენი გუნდი თქვენს პერსონალიზებულ ვიდეოში ამ პუნქტებს გაშუქებს",
     // Supplier / Marketplace
@@ -1457,6 +1465,10 @@ export const LANG_DATA = {
     // UI labels
     photoSoon:"Фото скоро", quickView:"Быстрый просмотр", oneSize:"ОДИН РАЗМЕР",
     newTag:"НОВОЕ", withVideo:"С видео", standardOption:"Стандарт",
+    handPicked:"ОТОБРАНО ВРУЧНУЮ \u00B7 ПРОВЕРЕНО КАМЕРОЙ \u00B7 БЕЗ СЮРПРИЗОВ",
+    watchSampleVerif:"СМОТРЕТЬ ОБРАЗЕЦ ВЕРИФИКАЦИИ", hideSample:"Скрыть", watchSample:"Смотреть образец \u25B6",
+    passwordHint:"Мин. 8 символов: заглавная, строчная, цифра, спец. символ",
+    videoVerifLabel:"ВИДЕО ВЕРИФИКАЦИЯ", designersLabel:"ДИЗАЙНЕРЫ",
     inWishlist:"В избранном", addToWishlist:"В избранное", viewFullDetails:"Подробнее",
     videoNotesHint:"Наша команда учтёт эти пожелания в вашем персональном видео",
     // Supplier / Marketplace

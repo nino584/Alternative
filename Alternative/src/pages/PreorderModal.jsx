@@ -225,19 +225,19 @@ export default function PreorderModal({product:p,selectedSize,onClose,onComplete
               )}
 
               {/* Video verification — shared */}
-              <p style={{...T.labelSm,color:C.tan,fontSize:8,marginBottom:8,marginTop:8}}>VIDEO VERIFICATION</p>
+              <p style={{...T.labelSm,color:C.tan,fontSize:8,marginBottom:8,marginTop:8}}>{L?.videoVerifLabel||"VIDEO VERIFICATION"}</p>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                 <button type="button" onClick={()=>setWantVideo(false)}
                   style={{padding:"14px 10px",background:!wantVideo?C.black:"transparent",border:`1.5px solid ${!wantVideo?C.black:C.lgray}`,cursor:"pointer",textAlign:"center",transition:"all 0.2s"}}>
-                  <p style={{...T.label,fontSize:10,color:!wantVideo?C.white:C.black,marginBottom:2}}>Standard</p>
+                  <p style={{...T.label,fontSize:10,color:!wantVideo?C.white:C.black,marginBottom:2}}>{L?.standardOption||"Standard"}</p>
                   <p style={{fontFamily:"'Alido',serif",fontSize:16,color:!wantVideo?C.white:C.black}}>GEL {totalPrice}</p>
                 </button>
                 <button type="button" onClick={()=>setWantVideo(true)}
                   style={{padding:"14px 10px",background:wantVideo?C.black:"transparent",border:`1.5px solid ${wantVideo?C.tan:C.lgray}`,cursor:"pointer",textAlign:"center",position:"relative",transition:"all 0.2s"}}>
-                  <div style={{position:"absolute",top:-1,right:-1,background:C.tan,padding:"2px 8px"}}><span style={{...T.labelSm,color:C.white,fontSize:6}}>RECOMMENDED</span></div>
+                  <div style={{position:"absolute",top:-1,right:-1,background:C.tan,padding:"2px 8px"}}><span style={{...T.labelSm,color:C.white,fontSize:6}}>{L?.recommended||"RECOMMENDED"}</span></div>
                   <p style={{...T.label,fontSize:10,color:wantVideo?C.white:C.black,marginBottom:2,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
                     <IconVideo size={12} color={wantVideo?C.white:C.black} stroke={1.6}/>
-                    With Video
+                    {L?.withVideo||"With Video"}
                   </p>
                   <p style={{fontFamily:"'Alido',serif",fontSize:16,color:wantVideo?C.white:C.black}}>GEL {totalPrice+VIDEO_VERIFICATION_GEL}</p>
                 </button>

@@ -162,7 +162,7 @@ export default function AuthPage({mobile,setPage,setUser,toast,L}) {
           <input type="password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} placeholder="••••••••"
             onKeyDown={e=>e.key==="Enter"&&handleSubmit()}
             style={{width:"100%",padding:"12px 14px",border:`1px solid ${C.lgray}`,fontSize:14,color:C.black,outline:"none"}}/>
-          {mode==="register"&&<p style={{...T.bodySm,color:C.gray,fontSize:9,marginTop:6}}>Min 8 chars: uppercase, lowercase, number, special character</p>}
+          {mode==="register"&&<p style={{...T.bodySm,color:C.gray,fontSize:9,marginTop:6}}>{L?.passwordHint||"Min 8 chars: uppercase, lowercase, number, special character"}</p>}
         </div>
         {mode==="forgot"?(
           <>

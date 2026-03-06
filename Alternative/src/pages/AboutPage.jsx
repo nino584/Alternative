@@ -32,13 +32,13 @@ export default function AboutPage({setPage,L,mobile}) {
             <h2 style={{...T.displayMd,color:C.black,marginBottom:20,lineHeight:1.15}}>{L&&L.yourEyes||'You see the actual item before it arrives.'}</h2>
             <p style={{...T.body,color:C.gray,lineHeight:1.9,marginBottom:16}}>{L&&L.qaDesc1||'Most stores show you a stock photo and hope for the best. We show you YOUR specific piece — on camera, in natural light, every stitch and detail visible.'}</p>
             <p style={{...T.body,color:C.gray,lineHeight:1.9,marginBottom:20}}>{L&&L.qaDesc2||'Want proof? Add video verification to your order.'}</p>
-            <p style={{...T.labelSm,color:C.tan,marginBottom:28,letterSpacing:"0.18em",fontSize:9}}>HAND-PICKED · CAMERA-VERIFIED · ZERO SURPRISES</p>
+            <p style={{...T.labelSm,color:C.tan,marginBottom:28,letterSpacing:"0.18em",fontSize:9}}>{L&&L.handPicked||'HAND-PICKED · CAMERA-VERIFIED · ZERO SURPRISES'}</p>
             <HoverBtn onClick={()=>setPage("video-verification")} variant="primary">{L&&L.learnMore2||'Learn More →'}</HoverBtn>
           </div>
         </div>
       </div>
       <div style={{padding:"64px 0"}}>
-        <div style={{maxWidth:900,margin:"0 auto",padding:"0 40px"}}>
+        <div style={{maxWidth:900,margin:"0 auto",padding:mobile?"0 16px":"0 40px"}}>
           <div style={{display:"grid",gridTemplateColumns:mobile?"1fr":"repeat(3,1fr)",gap:mobile?28:48}}>
             {[{t:L&&L.honestPricing||"Honest pricing",b:L&&L.honestBody||"Our price reflects actual quality and cost — not a brand tax or a landlord's rent."},{t:L&&L.noSurprises||"No surprises",b:L&&L.noSurprisesBody||"The biggest failure of online fashion is the gap between photo and reality. We close it."},{t:L&&L.serviceProduct||"Service is product",b:L&&L.serviceBody||"From first message to delivery, every touchpoint is designed to exceed your expectations."}].map((v,i)=>(
               <div key={i}><div style={{width:36,height:1,background:C.tan,marginBottom:20}}/><h3 style={{...T.label,color:C.black,fontSize:12,marginBottom:10}}>{v.t}</h3><p style={{...T.bodySm,color:C.gray,lineHeight:1.8}}>{v.b}</p></div>
