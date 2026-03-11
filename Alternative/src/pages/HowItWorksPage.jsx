@@ -76,8 +76,8 @@ export default function HowItWorksPage({setPage,L,mobile}) {
               return(
               <div key={i} style={{background:C.cream,padding:"20px 16px",textAlign:"center"}}>
                 <div style={{height:3,background:s.color,marginBottom:16}}/>
-                <p style={{...T.label,color:C.black,marginBottom:7,fontSize:10}}>{L[labelMap[s.key]]||s.label}</p>
-                <p style={{...T.bodySm,color:C.gray,fontSize:11,lineHeight:1.6}}>{L[descMap[s.key]]||s.desc}</p>
+                <p style={{...T.label,color:C.black,marginBottom:7,fontSize:10,textAlign:"center"}}>{L[labelMap[s.key]]||s.label}</p>
+                <p style={{...T.bodySm,color:C.gray,fontSize:11,lineHeight:1.6,textAlign:"center"}}>{L[descMap[s.key]]||s.desc}</p>
               </div>
             );})}
           </div>
