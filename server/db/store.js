@@ -11,6 +11,9 @@ const MAX_BACKUPS = 10;
 // Ensure backup directory exists
 if (!existsSync(BACKUP_DIR)) mkdirSync(BACKUP_DIR, { recursive: true });
 
+// ── Promise-based mutex for serializing file writes ──────────────────────────
+let writeLock = Promise.resolve();
+
 function readDB() {
   try {
     if (!existsSync(DB_PATH)) return { users: [], products: [], orders: [] };
@@ -22,6 +25,27 @@ function readDB() {
 }
 
 function writeDB(data) {
+  // Chain onto the lock so concurrent calls execute one at a time.
+  // The lock ensures only one performWrite runs at a time, preventing
+  // race conditions when multiple async handlers write simultaneously.
+  writeLock = writeLock.then(() => performWrite(data)).catch((err) => {
+    console.error('[DB] writeDB failed:', err.message);
+  });
+}
+
+// Atomic read-modify-write: ensures no TOCTOU race between read and write.
+// The callback receives the current DB, mutates it, and the result is written atomically.
+function atomicUpdate(callback) {
+  writeLock = writeLock.then(() => {
+    const db = readDB();
+    const result = callback(db);
+    performWrite(db);
+    return result;
+  }).catch((err) => { console.error('[DB] Atomic update failed:', err.message); });
+  return writeLock;
+}
+
+function performWrite(data) {
   try {
     const tmp = DB_PATH + '.tmp';
     writeFileSync(tmp, JSON.stringify(data, null, 2), 'utf-8');
@@ -70,25 +94,26 @@ export function findUserById(id) {
 }
 
 export function createUser({ id, name, email, phone, password, role, provider }) {
-  const db = readDB();
-  const user = { id, name, email: email.toLowerCase(), phone: phone || "", password, role: role || "user", createdAt: new Date().toISOString() };
-  if (provider) user.provider = provider;
-  db.users.push(user);
-  writeDB(db);
-  return user;
+  return atomicUpdate(db => {
+    // Check for duplicate email atomically
+    if (db.users.find(u => u.email === email.toLowerCase())) return null;
+    const user = { id, name, email: email.toLowerCase(), phone: phone || "", password, role: role || "user", createdAt: new Date().toISOString() };
+    if (provider) user.provider = provider;
+    db.users.push(user);
+    return user;
+  });
 }
 
 export function deleteUser(id) {
-  const db = readDB();
-  const idx = db.users.findIndex(u => u.id === id);
-  if (idx === -1) return false;
-  db.users.splice(idx, 1);
-  if (db.wishlists) db.wishlists = db.wishlists.filter(w => w.userId !== id);
-  if (db.returnRequests) db.returnRequests = db.returnRequests.filter(r => r.userId !== id);
-  // Clean up refresh tokens for deleted user
-  if (db.refreshTokens) db.refreshTokens = db.refreshTokens.filter(t => t.userId !== id);
-  writeDB(db);
-  return true;
+  return atomicUpdate(db => {
+    const idx = db.users.findIndex(u => u.id === id);
+    if (idx === -1) return false;
+    db.users.splice(idx, 1);
+    if (db.wishlists) db.wishlists = db.wishlists.filter(w => w.userId !== id);
+    if (db.returnRequests) db.returnRequests = db.returnRequests.filter(r => r.userId !== id);
+    if (db.refreshTokens) db.refreshTokens = db.refreshTokens.filter(t => t.userId !== id);
+    return true;
+  });
 }
 
 // ── Products ──────────────────────────────────────────────────────────────────
@@ -101,28 +126,36 @@ export function getProductById(id) {
 }
 
 export function createProduct(product) {
-  const db = readDB();
-  db.products.push(product);
-  writeDB(db);
-  return product;
+  return atomicUpdate(db => {
+    // Generate ID atomically to prevent duplicate IDs
+    if (!product.id) {
+      const maxId = db.products.reduce((m, p) => Math.max(m, p.id || 0), 0);
+      product.id = maxId + 1;
+    }
+    db.products.push(product);
+    return product;
+  });
 }
 
 export function updateProduct(id, updates) {
-  const db = readDB();
-  const idx = db.products.findIndex(p => p.id === id);
-  if (idx === -1) return null;
-  db.products[idx] = { ...db.products[idx], ...updates, id };
-  writeDB(db);
-  return db.products[idx];
+  return atomicUpdate(db => {
+    const idx = db.products.findIndex(p => p.id === id);
+    if (idx === -1) return null;
+    const allowed = ['name', 'brand', 'price', 'sale', 'cat', 'section', 'color', 'desc', 'lead', 'sizes', 'img', 'images', 'inStock', 'featured', 'productStatus', 'vendorId', 'vendorName'];
+    const safe = {};
+    for (const key of allowed) { if (updates[key] !== undefined) safe[key] = updates[key]; }
+    db.products[idx] = { ...db.products[idx], ...safe, id };
+    return db.products[idx];
+  });
 }
 
 export function deleteProduct(id) {
-  const db = readDB();
-  const idx = db.products.findIndex(p => p.id === id);
-  if (idx === -1) return false;
-  db.products.splice(idx, 1);
-  writeDB(db);
-  return true;
+  return atomicUpdate(db => {
+    const idx = db.products.findIndex(p => p.id === id);
+    if (idx === -1) return false;
+    db.products.splice(idx, 1);
+    return true;
+  });
 }
 
 // ── Orders ────────────────────────────────────────────────────────────────────
@@ -139,31 +172,33 @@ export function getOrderById(orderId) {
 }
 
 export function createOrder(order) {
-  const db = readDB();
-  const full = { ...order, createdAt: new Date().toISOString(), statusHistory: [{ status: order.status || 'reserved', at: new Date().toISOString(), by: 'system' }] };
-  db.orders.push(full);
-  writeDB(db);
-  return full;
+  return atomicUpdate(db => {
+    const full = { ...order, createdAt: new Date().toISOString(), statusHistory: [{ status: order.status || 'reserved', at: new Date().toISOString(), by: 'system' }] };
+    db.orders.push(full);
+    return full;
+  });
 }
 
 export function updateOrderStatus(orderId, status, updatedBy) {
-  const db = readDB();
-  const idx = db.orders.findIndex(o => o.orderId === orderId);
-  if (idx === -1) return null;
-  db.orders[idx].status = status;
-  db.orders[idx].updatedAt = new Date().toISOString();
-  db.orders[idx].updatedBy = updatedBy;
-  writeDB(db);
-  return db.orders[idx];
+  return atomicUpdate(db => {
+    const idx = db.orders.findIndex(o => o.orderId === orderId);
+    if (idx === -1) return null;
+    db.orders[idx].status = status;
+    db.orders[idx].updatedAt = new Date().toISOString();
+    db.orders[idx].updatedBy = updatedBy;
+    if (!db.orders[idx].statusHistory) db.orders[idx].statusHistory = [];
+    db.orders[idx].statusHistory.push({ status, at: new Date().toISOString(), by: updatedBy || 'system' });
+    return db.orders[idx];
+  });
 }
 
 export function addStatusHistory(orderId, status, by) {
-  const db = readDB();
-  const idx = db.orders.findIndex(o => o.orderId === orderId);
-  if (idx === -1) return;
-  if (!db.orders[idx].statusHistory) db.orders[idx].statusHistory = [];
-  db.orders[idx].statusHistory.push({ status, at: new Date().toISOString(), by: by || 'system' });
-  writeDB(db);
+  return atomicUpdate(db => {
+    const idx = db.orders.findIndex(o => o.orderId === orderId);
+    if (idx === -1) return;
+    if (!db.orders[idx].statusHistory) db.orders[idx].statusHistory = [];
+    db.orders[idx].statusHistory.push({ status, at: new Date().toISOString(), by: by || 'system' });
+  });
 }
 
 // ── Subscribers ──────────────────────────────────────────────────────────────
@@ -212,7 +247,7 @@ export function updateUser(id, updates) {
   const db = readDB();
   const idx = db.users.findIndex(u => u.id === id);
   if (idx === -1) return null;
-  const allowed = ['name', 'email', 'phone', 'password', 'emailVerified', 'twoFactorSecret', 'twoFactorEnabled'];
+  const allowed = ['name', 'email', 'phone', 'password', 'provider', 'emailVerified', 'twoFactorSecret', 'twoFactorEnabled'];
   for (const key of allowed) {
     if (updates[key] !== undefined) db.users[idx][key] = updates[key];
   }
@@ -331,9 +366,37 @@ export function updatePromoCode(code, updates) {
   if (!db.promoCodes) return null;
   const idx = db.promoCodes.findIndex(p => p.code === code);
   if (idx === -1) return null;
-  Object.assign(db.promoCodes[idx], updates);
+  const allowed = ['active', 'value', 'minOrder', 'maxUses', 'expiresAt'];
+  for (const key of allowed) {
+    if (updates[key] !== undefined) db.promoCodes[idx][key] = updates[key];
+  }
   writeDB(db);
   return db.promoCodes[idx];
+}
+
+// Atomic promo code consumption: validates and increments usedCount in one read-write cycle.
+// Returns { valid, promo, promoDiscount } or { valid: false, reason }.
+// Atomic promo code consumption: read-modify-write all synchronous to prevent TOCTOU.
+// Uses performWrite directly (blocking) instead of queued writeDB to ensure no gap
+// between reading usedCount and incrementing it.
+export function consumePromoCode(code, serverPrice) {
+  const db = readDB();
+  if (!db.promoCodes) return { valid: false, reason: 'no_promos' };
+  const idx = db.promoCodes.findIndex(p => p.code.toLowerCase() === code.trim().toLowerCase() && p.active);
+  if (idx === -1) return { valid: false, reason: 'not_found' };
+  const promo = db.promoCodes[idx];
+  const isValid = (!promo.minOrder || serverPrice >= promo.minOrder)
+    && (!promo.maxUses || (promo.usedCount || 0) < promo.maxUses)
+    && (!promo.expiresAt || new Date(promo.expiresAt) >= new Date());
+  if (!isValid) return { valid: false, reason: 'expired_or_exhausted' };
+  let discount = promo.type === 'percent'
+    ? Math.round((serverPrice * promo.value) / 100)
+    : promo.value;
+  discount = Math.min(discount, serverPrice);
+  db.promoCodes[idx].usedCount = (promo.usedCount || 0) + 1;
+  // Synchronous write — no async gap between read and write
+  performWrite(db);
+  return { valid: true, promo: { ...promo }, promoDiscount: discount };
 }
 
 export function deletePromoCode(code) {
@@ -436,9 +499,16 @@ export function markAllMessagesRead(userId) {
 // ── Refresh Tokens (persistent in data.json) ─────────────────────────────────
 const MAX_TOKENS_PER_USER = 5;
 
+/** Hash a refresh token with SHA-256 before storing / comparing */
+function hashToken(token) {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+
 export function storeRefreshToken(token, userId, userAgent) {
   const db = readDB();
   if (!db.refreshTokens) db.refreshTokens = [];
+
+  const tokenHash = hashToken(token);
 
   // Limit tokens per user — revoke oldest if exceeded
   if (userId) {
@@ -446,7 +516,7 @@ export function storeRefreshToken(token, userId, userAgent) {
     if (userTokens.length >= MAX_TOKENS_PER_USER) {
       userTokens.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
       const toRemove = userTokens.slice(0, userTokens.length - MAX_TOKENS_PER_USER + 1);
-      db.refreshTokens = db.refreshTokens.filter(t => !toRemove.some(r => r.token === t.token));
+      db.refreshTokens = db.refreshTokens.filter(t => !toRemove.some(r => r.tokenHash === t.tokenHash));
     }
   }
 
@@ -454,7 +524,7 @@ export function storeRefreshToken(token, userId, userAgent) {
   const uaHash = userAgent ? crypto.createHash('sha256').update(userAgent).digest('hex').slice(0, 16) : null;
 
   db.refreshTokens.push({
-    token,
+    tokenHash,
     userId: userId || null,
     uaHash,
     createdAt: new Date().toISOString(),
@@ -466,7 +536,8 @@ export function storeRefreshToken(token, userId, userAgent) {
 export function hasRefreshToken(token, userAgent) {
   const db = readDB();
   if (!db.refreshTokens) return false;
-  const entry = db.refreshTokens.find(t => t.token === token);
+  const tokenHash = hashToken(token);
+  const entry = db.refreshTokens.find(t => t.tokenHash === tokenHash);
   if (!entry) return false;
   if (new Date(entry.expiresAt) < new Date()) {
     removeRefreshToken(token);
@@ -483,8 +554,34 @@ export function hasRefreshToken(token, userAgent) {
 export function removeRefreshToken(token) {
   const db = readDB();
   if (!db.refreshTokens) return;
-  db.refreshTokens = db.refreshTokens.filter(t => t.token !== token);
+  const tokenHash = hashToken(token);
+  db.refreshTokens = db.refreshTokens.filter(t => t.tokenHash !== tokenHash);
   writeDB(db);
+}
+
+/** Atomically remove old refresh token and store new one in a single write */
+export function rotateRefreshToken(oldToken, newToken, userId, userAgent) {
+  return atomicUpdate(db => {
+    if (!db.refreshTokens) db.refreshTokens = [];
+    const oldHash = hashToken(oldToken);
+    db.refreshTokens = db.refreshTokens.filter(t => t.tokenHash !== oldHash);
+    const tokenHash = hashToken(newToken);
+    const uaHash = userAgent ? crypto.createHash('sha256').update(userAgent).digest('hex').slice(0, 16) : null;
+    // Limit tokens per user
+    if (userId) {
+      const userTokens = db.refreshTokens.filter(t => t.userId === userId);
+      if (userTokens.length >= MAX_TOKENS_PER_USER) {
+        userTokens.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        const toRemove = userTokens.slice(0, userTokens.length - MAX_TOKENS_PER_USER + 1);
+        db.refreshTokens = db.refreshTokens.filter(t => !toRemove.some(r => r.tokenHash === t.tokenHash));
+      }
+    }
+    db.refreshTokens.push({
+      tokenHash, userId: userId || null, uaHash,
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    });
+  });
 }
 
 export function removeAllRefreshTokensForUser(userId) {

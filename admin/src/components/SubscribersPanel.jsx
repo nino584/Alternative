@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { C, T } from '../constants/theme.js';
 import HoverBtn from './HoverBtn.jsx';
 import { api } from '../api.js';
+import { csvSafe } from '../utils/csv.js';
 
 export default function SubscribersPanel({ mobile, toast, L }) {
   const [subs, setSubs] = useState([]);
@@ -13,7 +14,7 @@ export default function SubscribersPanel({ mobile, toast, L }) {
     setLoading(true);
     setError(false);
     api.getSubscribers()
-      .then(data => setSubs(Array.isArray(data) ? data : (data?.subscribers || [])))
+      .then(data => setSubs(Array.isArray(data) ? data : (data?.data || data?.subscribers || [])))
       .catch(() => { setError(true); toast("Failed to load subscribers", "error"); })
       .finally(() => setLoading(false));
   };
@@ -24,10 +25,12 @@ export default function SubscribersPanel({ mobile, toast, L }) {
 
   const exportCSV = () => {
     const headers = ["Email","Subscribed At"];
-    const rows = filtered.map(s => [s.email, s.subscribedAt || ""]);
+    const rows = filtered.map(s => [csvSafe(s.email), csvSafe(s.subscribedAt || "")]);
     const csv = [headers, ...rows].map(r => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "subscribers.csv"; a.click();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = "subscribers.csv"; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
     toast("Subscribers exported", "success");
   };
 

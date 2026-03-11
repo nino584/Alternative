@@ -36,13 +36,15 @@ export default function AdminDashboard({ mobile, user, onLogout, L, lang, setLan
     setLoading(true);
     Promise.all([
       api.getProducts().catch(err => { toast("Failed to load products", "error"); return { products: [] }; }),
-      api.getOrders().catch(err => { toast("Failed to load orders", "error"); return { orders: [] }; }),
+      user?.role === 'admin'
+        ? api.getOrders().catch(err => { toast("Failed to load orders", "error"); return { orders: [] }; })
+        : Promise.resolve({ orders: [] }),
     ]).then(([pData, oData]) => {
       setProducts(pData.products || []);
       setOrders(oData.orders || []);
       setLoading(false);
     });
-  }, [toast]);
+  }, [toast, user]);
 
   useEffect(() => { refreshData(); }, [refreshData]);
 

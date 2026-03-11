@@ -43,8 +43,8 @@ export default function CheckoutPage({cart,user,L,setPage,onComplete,toast,mobil
   };
   const removePromo=()=>{setPromoApplied(null);setPromoCode("");setPromoError("");};
 
-  const promoDiscount=promoApplied?promoApplied.discount:0;
-  const subtotal=(cart||[]).reduce((s,o)=>s+((Number(o.sale)||Number(o.price)||0)*(o.qty||1)),0);
+  const subtotal=(cart||[]).reduce((s,o)=>s+((Number(o.sale??o.price)||0)*(o.qty||1)),0);
+  const promoDiscount=promoApplied?Math.min(promoApplied.discount,subtotal):0;
   const videoFee=wantVideo?VIDEO_VERIFICATION_GEL:0;
   const grandTotal=Math.max(0,subtotal+videoFee-promoDiscount);
   const [gf,setGf]=useState({firstName:"",lastName:"",email:"",phone:"",address:"",city:"",country:"Georgia",postal:"",notes:""});
@@ -80,25 +80,40 @@ export default function CheckoutPage({cart,user,L,setPage,onComplete,toast,mobil
         :{address:selectedAddr?.line1||"",city:selectedAddr?.city||"",country:selectedAddr?.country||"Georgia",postal:selectedAddr?.postal||""};
       try {
         const orderIds=[];
+        const succeededItems=[];
+        const affiliateCode=localStorage.getItem('affiliate_ref')||'';
         for (const item of cart) {
-          const affiliateCode=localStorage.getItem('affiliate_ref')||'';
-          const res = await api.createOrder({
-            productId:item.id, productName:item.name, selectedSize:item.selectedSize||"One Size",
-            img:(item.img && !item.img.startsWith('data:')) ? item.img : "", brand:item.brand||"", color:item.color||"",
-            wantVideo, customerName, phone, email, notes:wantVideo?notes:"", shippingAddress,
-            price:Number(item.sale)||Number(item.price), depositPaid:Number(item.sale)||Number(item.price),
-            payMethod, affiliateCode, promoCode:promoApplied?.code||"",
-          });
-          if(res.order?.orderId) orderIds.push(res.order.orderId);
+          const qty=item.qty||1;
+          const unitPrice=Number(item.sale??item.price);
+          try {
+            const res = await api.createOrder({
+              productId:item.id, productName:item.name, selectedSize:item.selectedSize||"One Size", quantity:qty,
+              img:(item.img && !item.img.startsWith('data:')) ? item.img : "", brand:item.brand||"", color:item.color||"",
+              wantVideo, customerName, phone, email, notes:item.notes||(wantVideo?notes:""), shippingAddress,
+              price:unitPrice*qty, depositPaid:unitPrice*qty,
+              payMethod, affiliateCode, promoCode:promoApplied?.code||"",
+            });
+            if(res.order?.orderId) orderIds.push(res.order.orderId);
+            succeededItems.push(item);
+          } catch {
+            // Continue with remaining items; partial failure handled below
+          }
         }
-        localStorage.removeItem('affiliate_ref');
-        if(promoApplied) setPromoApplied(null);
-        setConfirmedOrderId(orderIds.join(", "));
-        setConfirmedItems([...cart]);
-        setConfirmedTotal(grandTotal);
-        setStep(3);
-        onComplete({items:cart,total:grandTotal});
-        window.scrollTo({top:0,behavior:"smooth"});
+        if(succeededItems.length===0){
+          toast(L?.orderFailed||"Failed to place order. Please try again.","error");
+        } else {
+          localStorage.removeItem('affiliate_ref');
+          if(promoApplied) setPromoApplied(null);
+          setConfirmedOrderId(orderIds.join(", "));
+          setConfirmedItems([...succeededItems]);
+          setConfirmedTotal(grandTotal);
+          setStep(3);
+          onComplete({items:succeededItems,total:grandTotal});
+          if(succeededItems.length<cart.length){
+            toast(L?.partialOrderFailed||"Some items could not be ordered. Please retry the remaining items.","error");
+          }
+          window.scrollTo({top:0,behavior:"smooth"});
+        }
       } catch {
         toast(L?.orderFailed||"Failed to place order. Please try again.","error");
       } finally {
@@ -150,7 +165,7 @@ export default function CheckoutPage({cart,user,L,setPage,onComplete,toast,mobil
                   <p style={{...T.heading,color:C.black,fontSize:13,marginBottom:2}}>{L?.localNames?.[o.name]||o.name}</p>
                   <p style={{...T.bodySm,color:C.gray,fontSize:11}}>{o.color}{o.selectedSize&&o.selectedSize!=="One Size"?" · "+o.selectedSize:""}</p>
                 </div>
-                <span style={{fontFamily:"'Alido',serif",fontSize:15,color:o.sale?C.red:C.black,flexShrink:0}}>GEL {o.sale||o.price}</span>
+                <span style={{fontFamily:"'Alido',serif",fontSize:15,color:o.sale?C.red:C.black,flexShrink:0}}>GEL {o.sale??o.price}</span>
               </div>
             ))}
             <div style={{borderTop:`1px solid ${C.lgray}`,marginTop:14,paddingTop:14}}>
@@ -247,7 +262,7 @@ export default function CheckoutPage({cart,user,L,setPage,onComplete,toast,mobil
                 <>
                   <div style={{padding:"14px 18px",background:"rgba(177,154,122,0.05)",border:`1px solid rgba(177,154,122,0.12)`,marginBottom:24,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                     <p style={{...T.bodySm,color:C.brown,fontSize:12}}>{L?.haveAccount||"Already have an account?"}</p>
-                    <button onClick={()=>{window.__returnAfterAuth="checkout";setPage("auth");}} style={{background:"none",border:"none",...T.label,color:C.tan,fontSize:11,cursor:"pointer",textDecoration:"underline"}}>{L?.signInBtn||"Sign In"}</button>
+                    <button onClick={()=>{setPage("auth",null,{returnAfterAuth:"checkout"});}} style={{background:"none",border:"none",...T.label,color:C.tan,fontSize:11,cursor:"pointer",textDecoration:"underline"}}>{L?.signInBtn||"Sign In"}</button>
                   </div>
 
                   <p style={{...T.labelSm,color:C.black,fontSize:10,letterSpacing:"0.12em",marginBottom:16}}>{L?.contactDetails||"CONTACT DETAILS"}</p>
@@ -445,7 +460,7 @@ export default function CheckoutPage({cart,user,L,setPage,onComplete,toast,mobil
                     <p style={{...T.heading,color:C.black,fontSize:12,marginBottom:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{L?.localNames?.[o.name]||o.name}</p>
                     <p style={{...T.bodySm,color:C.gray,fontSize:10}}>{o.color}{o.selectedSize&&o.selectedSize!=="One Size"?" · "+o.selectedSize:""}</p>
                   </div>
-                  <span style={{fontFamily:"'Alido',serif",fontSize:14,color:o.sale?C.red:C.black,flexShrink:0}}>GEL {o.sale||o.price}</span>
+                  <span style={{fontFamily:"'Alido',serif",fontSize:14,color:o.sale?C.red:C.black,flexShrink:0}}>GEL {o.sale??o.price}</span>
                 </div>
               ))}
 

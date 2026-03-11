@@ -21,7 +21,7 @@ export default function CheckoutModal({cart,user,L,onClose,setPage,onComplete,to
 
   useEffect(()=>{const fn=e=>{if(e.key==="Escape"&&step<3)onClose();};window.addEventListener("keydown",fn);return()=>window.removeEventListener("keydown",fn);},[onClose,step]);
 
-  const subtotal=(cart||[]).reduce((s,o)=>s+((Number(o.sale)||Number(o.price)||0)*(o.qty||1)),0);
+  const subtotal=(cart||[]).reduce((s,o)=>s+((Number(o.sale??o.price)||0)*(o.qty||1)),0);
   const grandTotal=subtotal+(wantVideo?VIDEO_VERIFICATION_GEL:0);
 
   // Guest form
@@ -61,25 +61,41 @@ export default function CheckoutModal({cart,user,L,onClose,setPage,onComplete,to
 
       try {
         const orderIds=[];
+        const succeededItems=[];
         for (const item of cart) {
-          const res = await api.createOrder({
-            productId: item.id,
-            productName: item.name,
-            selectedSize: item.selectedSize||"One Size",
-            wantVideo,
-            customerName,
-            phone,
-            email,
-            notes: wantVideo?notes:"",
-            shippingAddress,
-            price: Number(item.sale)||Number(item.price),
-            depositPaid: Number(item.sale)||Number(item.price),
-          });
-          if(res.order?.orderId) orderIds.push(res.order.orderId);
+          const qty = item.qty || 1;
+          const unitPrice = Number(item.sale??item.price);
+          try {
+            const res = await api.createOrder({
+              productId: item.id,
+              productName: item.name,
+              selectedSize: item.selectedSize||"One Size",
+              quantity: qty,
+              wantVideo,
+              customerName,
+              phone,
+              email,
+              notes: item.notes||(wantVideo?notes:""),
+              shippingAddress,
+              price: unitPrice * qty,
+              depositPaid: unitPrice * qty,
+            });
+            if(res.order?.orderId) orderIds.push(res.order.orderId);
+            succeededItems.push(item);
+          } catch {
+            // Continue with remaining items
+          }
         }
-        setConfirmedOrderId(orderIds.join(", "));
-        onComplete({ items: cart, total: grandTotal });
-        setStep(3);
+        if (succeededItems.length === 0) {
+          toast(L?.orderFailed||"Failed to place order. Please try again.","error");
+        } else {
+          setConfirmedOrderId(orderIds.join(", "));
+          onComplete({ items: succeededItems, total: grandTotal });
+          setStep(3);
+          if (succeededItems.length < cart.length) {
+            toast(L?.partialOrderFailed||"Some items could not be ordered.","error");
+          }
+        }
       } catch (err) {
         toast(L?.orderFailed||"Failed to place order. Please try again.","error");
       } finally {
@@ -121,7 +137,7 @@ export default function CheckoutModal({cart,user,L,onClose,setPage,onComplete,to
                   <p style={{...T.labelSm,color:C.gray,fontSize:9}}>{o.color}{o.selectedSize&&o.selectedSize!=="One Size"?" · "+o.selectedSize:""}</p>
                   {o.notes&&<p style={{...T.bodySm,color:C.brown,fontSize:9,fontStyle:"italic",marginTop:3}}>"{o.notes}"</p>}
                 </div>
-                <span style={{fontFamily:"'Alido',serif",fontSize:14,color:o.sale?C.red:C.black,flexShrink:0}}>GEL {o.sale||o.price}</span>
+                <span style={{fontFamily:"'Alido',serif",fontSize:14,color:o.sale?C.red:C.black,flexShrink:0}}>GEL {o.sale??o.price}</span>
               </div>
             ))}
             <div style={{display:"flex",justifyContent:"space-between",padding:"12px 0",borderTop:`1px solid ${C.lgray}`,marginTop:4}}>
@@ -276,7 +292,7 @@ export default function CheckoutModal({cart,user,L,onClose,setPage,onComplete,to
               {cart.map((o,i)=>(
                 <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid ${C.lgray}`}}>
                   <span style={{...T.bodySm,color:C.gray,fontSize:12}}>{L?.localNames?.[o.name]||o.name} {o.selectedSize&&o.selectedSize!=="One Size"?`(${o.selectedSize})`:""}</span>
-                  <span style={{...T.bodySm,color:C.black}}>GEL {o.sale||o.price}</span>
+                  <span style={{...T.bodySm,color:C.black}}>GEL {o.sale??o.price}</span>
                 </div>
               ))}
               {wantVideo&&(

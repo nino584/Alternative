@@ -9,13 +9,13 @@
     <title>Alternative — Curated Designer Fashion | Tbilisi Concept Store</title>
     <meta name="description" content="Curated designer fashion sourced from verified European suppliers. Pre-order luxury bags, shoes, clothing and watches — shipped to your doorstep." />
     <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="https://alternative.ge/" />
+    <link rel="canonical" href="https://alternative.store/" />
 
     <!-- Open Graph -->
     <meta property="og:title" content="Alternative — Curated Designer Fashion | Tbilisi Concept Store" />
     <meta property="og:description" content="Curated designer fashion sourced from verified European suppliers. Pre-order luxury bags, shoes, clothing and watches — shipped to your doorstep." />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://alternative.ge/" />
+    <meta property="og:url" content="https://alternative.store/" />
     <meta property="og:site_name" content="Alternative" />
     <meta property="og:locale" content="en_US" />
     <meta property="og:locale:alternate" content="ka_GE" />
@@ -27,12 +27,10 @@
     <meta name="twitter:description" content="Curated designer fashion sourced from verified European suppliers. Shipped to your doorstep." />
 
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="/images/logo.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/images/logo.png" />
 
-    <!-- Preload critical fonts -->
-    <link rel="preload" href="/fonts/Alido.otf" as="font" type="font/otf" crossorigin />
-    <link rel="preload" href="/fonts/TT-Interphases-Pro-Regular.ttf" as="font" type="font/ttf" crossorigin />
+    <!-- Fonts loaded via CSS @font-face -->
 
     <!-- DNS prefetch for API -->
     <link rel="dns-prefetch" href="//localhost:3001" />
@@ -47,6 +45,23 @@
       </div>
     </noscript>
     <div id="root"></div>
+    <script>
+      // Debug: catch module loading errors (using textContent to prevent XSS)
+      window.addEventListener('error', function(e) {
+        var r = document.getElementById('root');
+        if (!r.hasChildNodes() || !r.innerHTML.trim()) {
+          r.textContent = '';
+          var d = document.createElement('div');
+          d.style.cssText = 'padding:40px;text-align:center;font-family:sans-serif';
+          var h = document.createElement('h2');
+          h.textContent = 'Loading error';
+          var p = document.createElement('pre');
+          p.style.cssText = 'text-align:left;max-width:600px;margin:20px auto;overflow:auto';
+          p.textContent = (e.message || 'Unknown error') + '\n' + (e.filename || '') + ':' + (e.lineno || '');
+          d.appendChild(h); d.appendChild(p); r.appendChild(d);
+        }
+      });
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

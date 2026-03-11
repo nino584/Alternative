@@ -2,7 +2,7 @@ import { C, T } from '../constants/theme.js';
 import HoverBtn from './HoverBtn.jsx';
 
 const STATUS_COLOR = {
-  reserved: C.brown, confirmed: "#1a5c8b", shipped: C.green, delivered: C.gray,
+  reserved: C.brown, sourcing: "#8b6914", confirmed: "#1a5c8b", shipped: C.green, delivered: C.gray, cancelled: "#c62828",
 };
 
 export default function DashboardOverview({ orders, products, mobile, setTab, L, lang }) {
@@ -139,7 +139,7 @@ export default function DashboardOverview({ orders, products, mobile, setTab, L,
               </thead>
               <tbody>
                 {recent.map((o, i) => (
-                  <tr key={i} style={{ borderBottom: `1px solid ${C.lgray}`, transition: "background 0.15s" }}
+                  <tr key={o.orderId || o.id || i} style={{ borderBottom: `1px solid ${C.lgray}`, transition: "background 0.15s" }}
                     onMouseEnter={e => e.currentTarget.style.background = C.offwhite}
                     onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                     <td style={{ ...T.labelSm, color: C.tan, padding: "12px 16px", fontSize: 11 }}>{o.orderId || "—"}</td>

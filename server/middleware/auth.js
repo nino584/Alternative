@@ -11,7 +11,7 @@ export function authenticate(req, res, next) {
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
     const user = findUserById(decoded.sub);
     if (!user) {
       return res.status(401).json({ error: 'User not found' });
@@ -33,7 +33,7 @@ export function optionalAuth(req, res, next) {
   if (!token) return next();
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
     const user = findUserById(decoded.sub);
     if (user) {
       req.user = { id: user.id, name: user.name, email: user.email, role: user.role };

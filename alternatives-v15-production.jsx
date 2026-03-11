@@ -2278,15 +2278,19 @@ function HowItWorksPage({setPage,L,mobile}) {
             <p style={{...T.labelSm,color:C.tan,marginBottom:10}}>{L&&L.trackOrder||'Track your order'}</p>
             <h2 style={{...T.displayMd,color:C.black}}>{L&&L.orderStatusVisible||'Order status — always visible'}</h2>
           </div>
-          <div style={{display:"grid",gridTemplateColumns:mobile?"1fr 1fr":"repeat(5,1fr)",gap:3}}>
-            {ORDER_STATUSES.map((s,i)=>(
-              <div key={i} style={{background:C.cream,padding:"20px 16px"}}>
-                <div style={{height:3,background:s.color,marginBottom:16}}/>
-                <p style={{...T.label,color:C.black,marginBottom:7,fontSize:10}}>{s.label}</p>
-                <p style={{...T.bodySm,color:C.gray,fontSize:11,lineHeight:1.6}}>{s.desc}</p>
-              </div>
-            ))}
-          </div>
+          {(()=>{
+            const display=ORDER_STATUSES.filter(s=>s.key!=="sourcing").map(s=>s.key==="reserved"?{...s,label:"Ordered",desc:"Order confirmed. We are processing your order now."}:s);
+            return(
+            <div style={{display:"grid",gridTemplateColumns:mobile?"1fr 1fr":`repeat(${display.length},1fr)`,gap:3}}>
+              {display.map((s,i)=>(
+                <div key={i} style={{background:C.cream,padding:"20px 16px",textAlign:"center"}}>
+                  <div style={{height:3,background:s.color,marginBottom:16}}/>
+                  <p style={{...T.label,color:C.black,marginBottom:7,fontSize:10}}>{s.label}</p>
+                  <p style={{...T.bodySm,color:C.gray,fontSize:11,lineHeight:1.6}}>{s.desc}</p>
+                </div>
+              ))}
+            </div>);
+          })()}
         </div>
       </div>
 

@@ -44,31 +44,31 @@ router.get('/', (req, res) => {
 
 // ── GET /api/products/:id — public ────────────────────────────────────────
 router.get('/:id', (req, res) => {
-  const product = getProductById(parseInt(req.params.id, 10));
-  if (!product) return res.status(404).json({ error: 'Product not found' });
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) return res.status(400).json({ error: 'Invalid product ID' });
+  const product = getProductById(id);
+  if (!product || (product.productStatus && product.productStatus !== 'approved')) return res.status(404).json({ error: 'Product not found' });
   res.json({ product });
 });
 
 // ── POST /api/products — admin only ───────────────────────────────────────
-router.post('/', authenticate, requireRole('admin'), validate(productSchema), (req, res) => {
-  const products = getAllProducts();
-  const maxId = products.reduce((m, p) => Math.max(m, p.id), 0);
-  const product = createProduct({ ...req.validated, id: maxId + 1 });
+router.post('/', authenticate, requireRole('admin'), validate(productSchema), async (req, res) => {
+  const product = await createProduct({ ...req.validated });
   res.status(201).json({ product });
 });
 
 // ── PUT /api/products/:id — admin only ────────────────────────────────────
-router.put('/:id', authenticate, requireRole('admin'), validate(productSchema), (req, res) => {
+router.put('/:id', authenticate, requireRole('admin'), validate(productSchema), async (req, res) => {
   const id = parseInt(req.params.id, 10);
-  const product = updateProduct(id, req.validated);
+  const product = await updateProduct(id, req.validated);
   if (!product) return res.status(404).json({ error: 'Product not found' });
   res.json({ product });
 });
 
 // ── DELETE /api/products/:id — admin only ─────────────────────────────────
-router.delete('/:id', authenticate, requireRole('admin'), (req, res) => {
+router.delete('/:id', authenticate, requireRole('admin'), async (req, res) => {
   const id = parseInt(req.params.id, 10);
-  const ok = deleteProduct(id);
+  const ok = await deleteProduct(id);
   if (!ok) return res.status(404).json({ error: 'Product not found' });
   res.json({ ok: true });
 });

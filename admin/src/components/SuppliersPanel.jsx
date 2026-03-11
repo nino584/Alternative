@@ -81,6 +81,7 @@ export default function SuppliersPanel({ toast, L, mobile }) {
 
   const handlePayout = (id) => {
     const sup = suppliers.find(s => s.id === id);
+    if (!window.confirm(`Are you sure you want to process payout of GEL ${sup?.pendingEarnings || 0} to ${sup?.companyName || 'this supplier'}?`)) return;
     api.payoutSupplier(id)
       .then(data => {
         setSuppliers(prev => prev.map(s => s.id === id ? { ...s, ...data.supplier } : s));
@@ -159,7 +160,7 @@ export default function SuppliersPanel({ toast, L, mobile }) {
               <code style={{ fontSize: 12, color: C.black }}>{inviteLink}</code>
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => { navigator.clipboard.writeText(inviteLink); toast?.('Link copied!', 'success'); }}
+              <button onClick={() => { navigator.clipboard.writeText(inviteLink).then(() => toast?.('Link copied!', 'success')).catch(() => toast?.('Failed to copy', 'error')); }}
                 style={{ ...T.labelSm, fontSize: 10, padding: '10px 20px', cursor: 'pointer', border: 'none', background: C.black, color: C.white, letterSpacing: '0.06em' }}>
                 COPY LINK
               </button>
@@ -217,7 +218,7 @@ export default function SuppliersPanel({ toast, L, mobile }) {
                     </td>
                     <td style={{ padding: '12px', color: C.gray, fontSize: 12 }}>{p._supplierName}</td>
                     <td style={{ padding: '12px', color: C.gray, fontSize: 12 }}>{p.section} / {p.cat}</td>
-                    <td style={{ padding: '12px', color: C.black, fontWeight: 500 }}>GEL {p.sale || p.price}</td>
+                    <td style={{ padding: '12px', color: C.black, fontWeight: 500 }}>GEL {p.sale ?? p.price ?? 0}</td>
                     <td style={{ padding: '12px', textAlign: 'right' }}>
                       <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                         <button onClick={() => handleProductApproval(p.id, 'approved')}

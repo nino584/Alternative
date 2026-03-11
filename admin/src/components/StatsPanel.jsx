@@ -3,9 +3,11 @@ import { VIDEO_VERIFICATION_GEL } from '../constants/config.js';
 
 const ORDER_STATUSES_BASE = [
   { key: "reserved", label: "Reserved", color: C.brown },
+  { key: "sourcing", label: "Sourcing", color: "#8b6914" },
   { key: "confirmed", label: "Confirmed", color: "#1a5c8b" },
   { key: "shipped", label: "Shipped", color: C.green },
   { key: "delivered", label: "Delivered", color: C.gray },
+  { key: "cancelled", label: "Cancelled", color: "#c62828" },
 ];
 const STATUS_COLOR = Object.fromEntries(ORDER_STATUSES_BASE.map(s => [s.key, s.color]));
 
@@ -19,6 +21,7 @@ export default function StatsPanel({ orders, mobile, L }) {
     status: o.status || "reserved",
     amount: o.depositPaid ?? o.price ?? 0,
     wantVideo: !!o.wantVideo,
+    cat: o.cat || o.category || "Other",
   }));
 
   const totalRevenue = orderList.reduce((s, o) => s + o.amount, 0);
@@ -33,13 +36,7 @@ export default function StatsPanel({ orders, mobile, L }) {
 
   const categoryCount = {};
   orderList.forEach(o => {
-    const item = o.item.toLowerCase();
-    let cat = "Other";
-    if (item.includes("bag") || item.includes("tote") || item.includes("duffle") || item.includes("puzzle")) cat = "Bags";
-    else if (item.includes("watch")) cat = "Watches";
-    else if (item.includes("coat") || item.includes("blazer") || item.includes("jacket") || item.includes("puffer")) cat = "Clothing";
-    else if (item.includes("shoe") || item.includes("loafer") || item.includes("mule") || item.includes("sneaker")) cat = "Shoes";
-    else if (item.includes("scarf") || item.includes("belt") || item.includes("cashmere")) cat = "Accessories";
+    const cat = o.cat || o.category || "Other";
     categoryCount[cat] = (categoryCount[cat] || 0) + 1;
   });
   const bestCategories = Object.entries(categoryCount).sort((a, b) => b[1] - a[1]);

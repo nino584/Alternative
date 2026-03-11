@@ -17,7 +17,7 @@ export default function AffiliateDashboard({ setPage, L, mobile }) {
 
   useEffect(() => {
     if (session) loadDashboard(session.code, session.email);
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- only restore session on mount
 
   const loadDashboard = (code, email) => {
     setLoading(true);

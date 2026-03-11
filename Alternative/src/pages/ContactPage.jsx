@@ -20,6 +20,8 @@ export default function ContactPage({setPage,L,mobile}) {
     if(!form.name.trim()||form.name.trim().length<2){setFormError(L?.contactNameRequired||"Please enter your name.");return;}
     if(!form.email.includes("@")){setFormError(L?.validEmail||"Please enter a valid email.");return;}
     if(!form.message.trim()||form.message.trim().length<5){setFormError(L?.contactMessageRequired||"Please enter a message (at least 5 characters).");return;}
+    // Honeypot: silently "succeed" if bot fills hidden field
+    if(form.website){setSent(true);setTimeout(()=>setSent(false),5000);setForm({name:"",email:"",message:"",website:""});return;}
     setSending(true);
     try {
       const res=await fetch("/api/contact",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:form.name.trim(),email:form.email.trim(),message:form.message.trim(),website:form.website})});

@@ -253,7 +253,7 @@ export default function StylistChat({ mobile, lang, setPage, L }) {
       const occ = action.replace("occ_", "");
       addUser(OCCASIONS[occ]?.[lang] || occ);
       const recs = getRecommendations(occ, styleSection);
-      const total = recs.reduce((s, p) => s + (p.sale || p.price), 0);
+      const total = recs.reduce((s, p) => s + (p.sale ?? p.price), 0);
       addBot(t.hereIsLook, [
         { label: t.tryAnother, action: "occ_" + occ },
         { label: t.styleSomethingElse, action: "style" },
@@ -262,7 +262,8 @@ export default function StylistChat({ mobile, lang, setPage, L }) {
     } else if (action === "track") {
       addUser(t.trackOrder);
       setFlow("track");
-      const stored = JSON.parse(localStorage.getItem("alternative_orders") || "[]");
+      let stored = [];
+      try { stored = JSON.parse(localStorage.getItem("alternative_orders") || "[]"); } catch {}
       if (stored.length === 0) {
         addBot(t.noOrders, [
           { label: t.browseCollection, action: "browse" },
@@ -472,7 +473,7 @@ export default function StylistChat({ mobile, lang, setPage, L }) {
                             {L?.localNames?.[p.name] || p.name}
                           </p>
                           <p style={{ fontFamily: "'Alido',serif", fontSize: 10, color: p.sale ? C.red : C.black }}>
-                            GEL {p.sale || p.price}
+                            GEL {p.sale ?? p.price}
                           </p>
                         </div>
                       </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { C, T } from '../constants/theme.js';
 import { PRODUCTS as IMPORTED_PRODUCTS } from '../constants/data.js';
 import HoverBtn from '../components/ui/HoverBtn.jsx';
@@ -163,7 +164,8 @@ function EmptyState({ icon, title, subtitle, action, actionLabel }) {
 
 // ── ACCOUNT PAGE ─────────────────────────────────────────────────────────────
 export default function AccountPage({ mobile, user, setUser, setPage, orders, wishlist, onWishlist, onQuickView, toast, L, products: productsProp, onLogout }) {
-  const [tab, setTab] = useState("overview");
+  const location = useLocation();
+  const [tab, setTab] = useState(location.state?.initAccountTab||"overview");
   const getImg=(o)=>{
     if(o.img) return o.img;
     const p=(productsProp||[]).find(pr=>String(pr.id)===String(o.productId));
@@ -172,11 +174,10 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
 
   // Support external tab navigation (e.g. Nav wishlist button)
   useEffect(() => {
-    if (window.__initAccountTab) {
-      setTab(window.__initAccountTab);
-      delete window.__initAccountTab;
+    if (location.state?.initAccountTab) {
+      setTab(location.state.initAccountTab);
     }
-  }, []);
+  }, [location.state]);
   const [addresses, setAddresses] = useState(() => load(STORAGE.addr, []));
   const [payments, setPayments] = useState(() => load(STORAGE.pay, []));
   const [addrModal, setAddrModal] = useState(null); // null | "new" | index
@@ -236,7 +237,7 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
   const [localOrders, setLocalOrders] = useState(orders);
   useEffect(() => { setLocalOrders(orders); }, [orders]);
 
-  // Note: __initAccountTab is handled by the useEffect above (no deps) which runs on every render
+  // Tab navigation handled by location.state from Nav wishlist button
   useEffect(() => { if (!user) setPage("auth"); }, [user]);
   useEffect(() => { save(STORAGE.addr, addresses); }, [addresses]);
   useEffect(() => { save(STORAGE.pay, payments); }, [payments]);
@@ -287,7 +288,7 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
   const deleteAddress = (idx) => {
     setAddresses(prev => {
       const next = prev.filter((_, i) => i !== idx);
-      if (next.length > 0 && !next.some(a => a.isDefault)) next[0].isDefault = true;
+      if (next.length > 0 && !next.some(a => a.isDefault)) next[0] = { ...next[0], isDefault: true };
       return next;
     });
     toast(L.addressRemoved || "Address removed.", "");
@@ -316,7 +317,7 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
   const deletePayment = (idx) => {
     setPayments(prev => {
       const next = prev.filter((_, i) => i !== idx);
-      if (next.length > 0 && !next.some(c => c.isDefault)) next[0].isDefault = true;
+      if (next.length > 0 && !next.some(c => c.isDefault)) next[0] = { ...next[0], isDefault: true };
       return next;
     });
     toast(L.cardRemoved || "Card removed.", "");
@@ -401,6 +402,8 @@ export default function AccountPage({ mobile, user, setUser, setPage, orders, wi
       { id: "returns", icon: icons.returns, label: L.returnsRefunds || "Returns & Refunds" },
     ]},
   ];
+
+  if (!user) return null;
 
   // ── RENDER ──
   return (

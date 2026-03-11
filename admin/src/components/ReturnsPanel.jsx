@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { C, T } from '../constants/theme.js';
 import HoverBtn from './HoverBtn.jsx';
 import { api } from '../api.js';
+import { csvSafe } from '../utils/csv.js';
 
 const STATUS_COLORS = { pending: C.tan, approved: "#1a6b3a", rejected: C.red, completed: C.black };
 const STATUSES = ["pending", "approved", "rejected", "completed"];
@@ -11,10 +12,11 @@ export default function ReturnsPanel({ mobile, toast, L }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.getReturns().then(data => setReturns(Array.isArray(data) ? data : [])).catch(() => toast("Failed to load returns", "error")).finally(() => setLoading(false));
+    api.getReturns().then(data => setReturns(Array.isArray(data) ? data : (data?.data || []))).catch(() => toast("Failed to load returns", "error")).finally(() => setLoading(false));
   }, []);
 
   const updateStatus = (id, status) => {
+    if (['rejected','completed'].includes(status) && !window.confirm('Mark this return as "' + status + '"?')) return;
     api.updateReturn(id, { status }).then(updated => {
       setReturns(prev => prev.map(r => r.id === id ? { ...r, status } : r));
       toast(`Return ${status}`, "success");
@@ -23,10 +25,12 @@ export default function ReturnsPanel({ mobile, toast, L }) {
 
   const exportCSV = () => {
     const headers = ["ID", "Order ID", "User", "Reason", "Status", "Created"];
-    const rows = returns.map(r => [r.id, r.orderId, r.userId, `"${(r.reason || "").replace(/"/g, '""')}"`, r.status, r.createdAt?.split("T")[0] || ""]);
+    const rows = returns.map(r => [csvSafe(r.id), csvSafe(r.orderId), csvSafe(r.userId), csvSafe(r.reason), csvSafe(r.status), csvSafe(r.createdAt?.split("T")[0] || "")]);
     const csv = [headers, ...rows].map(r => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "returns.csv"; a.click();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = "returns.csv"; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   if (loading) return <div style={{ padding: 40, textAlign: "center" }}><p style={{ ...T.bodySm, color: C.gray }}>Loading...</p></div>;

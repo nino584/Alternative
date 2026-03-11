@@ -59,7 +59,7 @@ const COLOR_LIST = [
 ];
 
 const EMPTY_PRODUCT = {
-  name: "", brand: "", section: "Womenswear", cat: "Clothing",
+  name: "", brand: "", section: "Womenswear", cat: "Clothing", sub: "",
   color: "", price: "", sale: "", discountPercent: "", sizes: [], lead: "",
   tag: "", images: [], mainImgIndex: 0, fit: "True to Size", oneSize: false,
   inStock: true,
@@ -109,6 +109,7 @@ export default function ProductsPanel({ products, setProducts, mobile, toast, L 
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({ ...EMPTY_PRODUCT });
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [saving, setSaving] = useState(false);
   const [brandSearch, setBrandSearch] = useState("");
   const [brandOpen, setBrandOpen] = useState(false);
   const [colorSearch, setColorSearch] = useState("");
@@ -133,7 +134,7 @@ export default function ProductsPanel({ products, setProducts, mobile, toast, L 
       dp = String(Math.round((1 - p.sale / p.price) * 100));
     }
     setForm({
-      name: p.name || "", brand: p.brand || "", section: p.section || "Womenswear", cat: p.cat || "Clothing",
+      name: p.name || "", brand: p.brand || "", section: p.section || "Womenswear", cat: p.cat || "Clothing", sub: p.sub || "",
       color: p.color || "", price: p.price ? String(p.price) : "", sale: p.sale ? String(p.sale) : "", discountPercent: dp,
       sizes: isOneSize ? [] : (p.sizes || []), lead: p.lead || "", tag: p.tag || "",
       images: imgs, mainImgIndex: mainIdx, fit: p.fit?.fit || "True to Size", oneSize: isOneSize,
@@ -187,7 +188,16 @@ export default function ProductsPanel({ products, setProducts, mobile, toast, L 
 
   // ── Save ────────────────────────────────────────────────────────────────────
   const save = () => {
+    if (saving) return;
     if (!form.name.trim() || !String(form.price).trim()) { toast("Name and price are required", "error"); return; }
+    const priceNum = Number(form.price);
+    if (!priceNum || priceNum <= 0) { toast("Price must be a positive number", "error"); return; }
+    if (form.sale) {
+      const saleNum = Number(form.sale);
+      if (saleNum <= 0) { toast("Sale price must be a positive number", "error"); return; }
+      if (saleNum >= priceNum) { toast("Sale price must be less than original price", "error"); return; }
+    }
+    setSaving(true);
     const finalSizes = form.oneSize ? ["One Size"] : (form.sizes.length > 0 ? form.sizes : ["One Size"]);
     const mainImg = form.images.length > 0 ? form.images[form.mainImgIndex] || form.images[0] : "";
 
@@ -200,7 +210,7 @@ export default function ProductsPanel({ products, setProducts, mobile, toast, L 
 
     const productData = {
       name: form.name.trim(), brand: form.brand.trim(), section: form.section,
-      cat: form.cat, sub: form.cat, color: form.color.trim(),
+      cat: form.cat, sub: form.sub || form.cat, color: form.color.trim(),
       price: Number(form.price) || 0,
       sale: form.sale ? Number(form.sale) : null,
       sizes: finalSizes, lead: form.lead.trim(), tag: form.tag,
@@ -220,11 +230,13 @@ export default function ProductsPanel({ products, setProducts, mobile, toast, L 
     if (editingId !== null) {
       api.updateProduct(editingId, productData)
         .then(res => { setProducts(prev => prev.map(p => p.id === editingId ? res.product : p)); toast("Product updated", "success"); cancel(); })
-        .catch(err => toast(err?.details?.map(d => d.message).join(", ") || err?.message || "Failed to update", "error"));
+        .catch(err => toast(err?.details?.map(d => d.message).join(", ") || err?.message || "Failed to update", "error"))
+        .finally(() => setSaving(false));
     } else {
       api.createProduct(productData)
         .then(res => { setProducts(prev => [...prev, res.product]); toast("Product added", "success"); cancel(); })
-        .catch(err => toast(err?.details?.map(d => d.message).join(", ") || err?.message || "Failed to add", "error"));
+        .catch(err => toast(err?.details?.map(d => d.message).join(", ") || err?.message || "Failed to add", "error"))
+        .finally(() => setSaving(false));
     }
   };
 
@@ -252,7 +264,21 @@ export default function ProductsPanel({ products, setProducts, mobile, toast, L 
     });
     e.target.value = "";
   };
-  const addImageUrl = (url) => { if (url.trim()) setForm(f => ({ ...f, images: [...f.images, url.trim()] })); };
+  const addImageUrl = (url) => {
+    const trimmed = url.trim();
+    if (!trimmed) return;
+    try {
+      const parsed = new URL(trimmed);
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        toast("Invalid URL: must start with http:// or https://", "error");
+        return;
+      }
+    } catch {
+      toast("Invalid URL format", "error");
+      return;
+    }
+    setForm(f => ({ ...f, images: [...f.images, trimmed] }));
+  };
   const removeImage = (idx) => {
     setForm(f => {
       const newImgs = f.images.filter((_, i) => i !== idx);
@@ -272,9 +298,8 @@ export default function ProductsPanel({ products, setProducts, mobile, toast, L 
 
   const deleteProduct = (id) => {
     api.deleteProduct(id)
-      .then(() => { setProducts(prev => prev.filter(p => p.id !== id)); toast("Product deleted", "success"); })
-      .catch(() => toast("Failed to delete product", "error"));
-    setDeleteConfirmId(null);
+      .then(() => { setProducts(prev => prev.filter(p => p.id !== id)); toast("Product deleted", "success"); setDeleteConfirmId(null); })
+      .catch(() => { toast("Failed to delete product", "error"); setDeleteConfirmId(null); });
   };
 
   return (
@@ -568,8 +593,8 @@ export default function ProductsPanel({ products, setProducts, mobile, toast, L 
 
           {/* Save / Cancel */}
           <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-            <HoverBtn onClick={save} variant="tan" style={{ padding: "10px 28px", fontSize: 9 }}>
-              <IconCheck size={12} color={C.white} /> {L?.adminSaveProduct||"Save Product"}
+            <HoverBtn onClick={save} variant="tan" disabled={saving} style={{ padding: "10px 28px", fontSize: 9, opacity: saving ? 0.6 : 1 }}>
+              <IconCheck size={12} color={C.white} /> {saving ? (L?.adminSaving||"Saving...") : (L?.adminSaveProduct||"Save Product")}
             </HoverBtn>
             <HoverBtn onClick={cancel} variant="ghost" style={{ padding: "10px 20px", fontSize: 9 }}>{L?.adminCancel||"Cancel"}</HoverBtn>
           </div>

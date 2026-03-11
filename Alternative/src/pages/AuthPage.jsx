@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { C, T } from '../constants/theme.js';
 import { Logo } from '../components/layout/Logo.jsx';
 import HoverBtn from '../components/ui/HoverBtn.jsx';
@@ -10,11 +11,12 @@ const FACEBOOK_APP_ID = import.meta.env.VITE_FACEBOOK_APP_ID || "";
 
 // ── AUTH PAGE ─────────────────────────────────────────────────────────────────
 export default function AuthPage({mobile,setPage,setUser,toast,L}) {
-  const goAfterAuth=()=>{
-    const ret=window.__returnAfterAuth;
-    if(ret){delete window.__returnAfterAuth;setPage(ret);}
+  const location = useLocation();
+  const goAfterAuth=useCallback(()=>{
+    const ret=location.state?.returnAfterAuth;
+    if(ret){setPage(ret);}
     else{setPage("account");}
-  };
+  },[location.state,setPage]);
   const [mode,setMode]=useState("login"); // login | register | forgot
   const [form,setForm]=useState({name:"",email:"",phone:"",password:""});
   const [error,setError]=useState("");
@@ -60,7 +62,7 @@ export default function AuthPage({mobile,setPage,setUser,toast,L}) {
     } finally {
       setSocialLoading(null);
     }
-  },[setUser,toast,setPage,L]);
+  },[setUser,toast,L,goAfterAuth]);
 
   const handleGoogle=useCallback(()=>{
     if (!GOOGLE_CLIENT_ID) { toast(L?.comingSoon||"Google login — coming soon!","info"); return; }
@@ -144,26 +146,30 @@ export default function AuthPage({mobile,setPage,setUser,toast,L}) {
               style={{width:"100%",padding:"12px 14px",border:`1px solid ${C.lgray}`,fontSize:14,color:C.black,outline:"none"}}/>
           </div>
         )}
-        <div style={{marginBottom:14}}>
-          <label style={{...T.labelSm,color:C.gray,fontSize:9,display:"block",marginBottom:6}}>{L?.emailLabel||"Email *"}</label>
-          <input type="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} placeholder="your@email.com"
-            onKeyDown={e=>e.key==="Enter"&&handleSubmit()}
-            style={{width:"100%",padding:"12px 14px",border:`1px solid ${C.lgray}`,fontSize:14,color:C.black,outline:"none"}}/>
-        </div>
-        {mode==="register"&&(
-          <div style={{marginBottom:14}}>
-            <label style={{...T.labelSm,color:C.gray,fontSize:9,display:"block",marginBottom:6}}>{L?.phoneLabel||"Phone Number *"}</label>
-            <input type="tel" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} placeholder="+995 5XX XXX XXX"
-              style={{width:"100%",padding:"12px 14px",border:`1px solid ${C.lgray}`,fontSize:14,color:C.black,outline:"none"}}/>
-          </div>
+        {mode!=="forgot"&&(
+          <>
+            <div style={{marginBottom:14}}>
+              <label style={{...T.labelSm,color:C.gray,fontSize:9,display:"block",marginBottom:6}}>{L?.emailLabel||"Email *"}</label>
+              <input type="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} placeholder="your@email.com"
+                onKeyDown={e=>e.key==="Enter"&&handleSubmit()}
+                style={{width:"100%",padding:"12px 14px",border:`1px solid ${C.lgray}`,fontSize:14,color:C.black,outline:"none"}}/>
+            </div>
+            {mode==="register"&&(
+              <div style={{marginBottom:14}}>
+                <label style={{...T.labelSm,color:C.gray,fontSize:9,display:"block",marginBottom:6}}>{L?.phoneLabel||"Phone Number"}</label>
+                <input type="tel" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} placeholder="+995 5XX XXX XXX"
+                  style={{width:"100%",padding:"12px 14px",border:`1px solid ${C.lgray}`,fontSize:14,color:C.black,outline:"none"}}/>
+              </div>
+            )}
+            <div style={{marginBottom:22}}>
+              <label style={{...T.labelSm,color:C.gray,fontSize:9,display:"block",marginBottom:6}}>{L?.passwordLabel||"Password *"}</label>
+              <input type="password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} placeholder="••••••••"
+                onKeyDown={e=>e.key==="Enter"&&handleSubmit()}
+                style={{width:"100%",padding:"12px 14px",border:`1px solid ${C.lgray}`,fontSize:14,color:C.black,outline:"none"}}/>
+              {mode==="register"&&<p style={{...T.bodySm,color:C.gray,fontSize:9,marginTop:6}}>{L?.passwordHint||"Min 8 chars: uppercase, lowercase, number, special character"}</p>}
+            </div>
+          </>
         )}
-        <div style={{marginBottom:22}}>
-          <label style={{...T.labelSm,color:C.gray,fontSize:9,display:"block",marginBottom:6}}>{L?.passwordLabel||"Password *"}</label>
-          <input type="password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} placeholder="••••••••"
-            onKeyDown={e=>e.key==="Enter"&&handleSubmit()}
-            style={{width:"100%",padding:"12px 14px",border:`1px solid ${C.lgray}`,fontSize:14,color:C.black,outline:"none"}}/>
-          {mode==="register"&&<p style={{...T.bodySm,color:C.gray,fontSize:9,marginTop:6}}>{L?.passwordHint||"Min 8 chars: uppercase, lowercase, number, special character"}</p>}
-        </div>
         {mode==="forgot"?(
           <>
             {forgotSent?(

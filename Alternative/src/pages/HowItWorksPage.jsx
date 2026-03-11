@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { C, T } from '../constants/theme.js';
 import { ORDER_STATUSES } from '../constants/data.js';
 import Footer from '../components/layout/Footer.jsx';
@@ -7,14 +8,14 @@ import { pageMeta, faqSchema, breadcrumbSchema } from '../utils/seo.js';
 
 // ── HOW IT WORKS ──────────────────────────────────────────────────────────────
 export default function HowItWorksPage({setPage,L,mobile}) {
+  const location = useLocation();
   const [openFaq,setOpenFaq]=useState(null);
   useEffect(()=>{
-    if(window.__initHowScroll){
-      const id=window.__initHowScroll;
-      delete window.__initHowScroll;
+    const id=location.state?.initHowScroll;
+    if(id){
       setTimeout(()=>{const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:"smooth",block:"start"});},100);
     }
-  },[]);
+  },[location.state]);
   const faqs=[
     [L.faqQ1,L.faqA1],
     [L.faqQ2,L.faqA2],
@@ -68,12 +69,12 @@ export default function HowItWorksPage({setPage,L,mobile}) {
             <p style={{...T.labelSm,color:C.tan,marginBottom:10}}>{L.trackOrder}</p>
             <h2 style={{...T.displayMd,color:C.black}}>{L.orderStatusVisible}</h2>
           </div>
-          <div style={{display:"grid",gridTemplateColumns:mobile?"1fr 1fr":"repeat(5,1fr)",gap:3}}>
+          <div style={{display:"grid",gridTemplateColumns:mobile?"1fr 1fr":`repeat(${ORDER_STATUSES.length},1fr)`,gap:3}}>
             {ORDER_STATUSES.map((s,i)=>{
               const labelMap={reserved:"statusReservedLabel",sourcing:"statusSourcingLabel",confirmed:"statusConfirmedLabel",shipped:"statusShippedLabel",delivered:"statusDeliveredLabel"};
               const descMap={reserved:"statusReservedDesc",sourcing:"statusSourcingDesc",confirmed:"statusConfirmedDesc",shipped:"statusShippedDesc",delivered:"statusDeliveredDesc"};
               return(
-              <div key={i} style={{background:C.cream,padding:"20px 16px"}}>
+              <div key={i} style={{background:C.cream,padding:"20px 16px",textAlign:"center"}}>
                 <div style={{height:3,background:s.color,marginBottom:16}}/>
                 <p style={{...T.label,color:C.black,marginBottom:7,fontSize:10}}>{L[labelMap[s.key]]||s.label}</p>
                 <p style={{...T.bodySm,color:C.gray,fontSize:11,lineHeight:1.6}}>{L[descMap[s.key]]||s.desc}</p>

@@ -14,6 +14,9 @@ import {
 import { authenticate } from '../middleware/auth.js';
 import { requireRole } from '../middleware/rbac.js';
 import { validate } from '../middleware/validate.js';
+import { adminIpCheck } from '../middleware/adminIp.js';
+import { auditLog } from '../middleware/audit.js';
+import { csrfProtection } from '../middleware/csrf.js';
 import crypto from 'crypto';
 
 const router = Router();
@@ -129,7 +132,7 @@ router.post('/apply', applyLimiter, validate(applySchema), async (req, res) => {
 // ══════════════════════════════════════════════════════════════════════════════
 
 // ── GET /api/suppliers/admin/list — all suppliers ────────────────────────────
-router.get('/admin/list', authenticate, requireRole('admin'), (req, res) => {
+router.get('/admin/list', authenticate, requireRole('admin'), adminIpCheck, (req, res) => {
   const suppliers = getSuppliers();
   const allProducts = getAllProducts();
   const allOrders = getAllOrders();
@@ -152,7 +155,7 @@ router.get('/admin/list', authenticate, requireRole('admin'), (req, res) => {
 });
 
 // ── PATCH /api/suppliers/admin/:id/status — approve/reject/suspend ───────────
-router.patch('/admin/:id/status', authenticate, requireRole('admin'), validate(statusSchema), async (req, res) => {
+router.patch('/admin/:id/status', csrfProtection, authenticate, requireRole('admin'), adminIpCheck, auditLog, validate(statusSchema), async (req, res) => {
   const supplier = getSupplierById(req.params.id);
   if (!supplier) return res.status(404).json({ error: 'Supplier not found' });
 
@@ -164,7 +167,7 @@ router.patch('/admin/:id/status', authenticate, requireRole('admin'), validate(s
     const tempPass = crypto.randomUUID().slice(0, 16);
     const hashedPass = await bcryptjs.hash(tempPass, 12);
     const userId = 'usr_' + crypto.randomUUID().replace(/-/g, '').slice(0, 12);
-    const user = createUser({
+    const user = await createUser({
       id: userId,
       name: supplier.contactName,
       email: supplier.email,
@@ -172,12 +175,15 @@ router.patch('/admin/:id/status', authenticate, requireRole('admin'), validate(s
       password: hashedPass,
       role: 'supplier',
     });
+    if (!user) return res.status(409).json({ error: 'Email already registered as a user' });
     updateSupplier(supplier.id, { userId: user.id });
 
     // Generate invite token (reuses password reset mechanism)
     const inviteToken = crypto.randomUUID().replace(/-/g, '');
     storeResetToken(inviteToken, user.id);
-    console.log(`[SUPPLIER INVITE] Token for ${supplier.email}: ${inviteToken}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[SUPPLIER INVITE] Token for ${supplier.email}: ${inviteToken}`);
+    }
 
     return res.json({ ok: true, supplier: { ...updated, passwordHash: undefined }, inviteToken });
   }
@@ -186,7 +192,7 @@ router.patch('/admin/:id/status', authenticate, requireRole('admin'), validate(s
   if (status === 'suspended' || status === 'rejected') {
     const products = getProductsByVendor(supplier.id);
     for (const p of products) {
-      updateProduct(p.id, { productStatus: 'rejected' });
+      await updateProduct(p.id, { productStatus: 'rejected' });
     }
   }
 
@@ -194,7 +200,7 @@ router.patch('/admin/:id/status', authenticate, requireRole('admin'), validate(s
 });
 
 // ── PATCH /api/suppliers/admin/:id/commission — update commission ─────────────
-router.patch('/admin/:id/commission', authenticate, requireRole('admin'), validate(commissionSchema), (req, res) => {
+router.patch('/admin/:id/commission', csrfProtection, authenticate, requireRole('admin'), adminIpCheck, auditLog, validate(commissionSchema), (req, res) => {
   const supplier = getSupplierById(req.params.id);
   if (!supplier) return res.status(404).json({ error: 'Supplier not found' });
 
@@ -203,7 +209,7 @@ router.patch('/admin/:id/commission', authenticate, requireRole('admin'), valida
 });
 
 // ── POST /api/suppliers/admin/:id/payout — mark as paid ──────────────────────
-router.post('/admin/:id/payout', authenticate, requireRole('admin'), (req, res) => {
+router.post('/admin/:id/payout', csrfProtection, authenticate, requireRole('admin'), adminIpCheck, auditLog, (req, res) => {
   const supplier = getSupplierById(req.params.id);
   if (!supplier) return res.status(404).json({ error: 'Supplier not found' });
   if ((supplier.pendingEarnings || 0) <= 0) return res.status(400).json({ error: 'No pending earnings to pay out' });
@@ -213,18 +219,18 @@ router.post('/admin/:id/payout', authenticate, requireRole('admin'), (req, res) 
 });
 
 // ── PATCH /api/suppliers/admin/products/:id/approval — approve/reject product ─
-router.patch('/admin/products/:id/approval', authenticate, requireRole('admin'), validate(productApprovalSchema), (req, res) => {
+router.patch('/admin/products/:id/approval', csrfProtection, authenticate, requireRole('admin'), adminIpCheck, auditLog, validate(productApprovalSchema), async (req, res) => {
   const id = parseInt(req.params.id, 10);
   const product = getProductById(id);
   if (!product) return res.status(404).json({ error: 'Product not found' });
   if (!product.vendorId) return res.status(400).json({ error: 'This is not a supplier product' });
 
-  const updated = updateProduct(id, { productStatus: req.validated.productStatus });
+  const updated = await updateProduct(id, { productStatus: req.validated.productStatus });
   res.json({ ok: true, product: updated });
 });
 
 // ── GET /api/suppliers/admin/:id/products — supplier's products ──────────────
-router.get('/admin/:id/products', authenticate, requireRole('admin'), (req, res) => {
+router.get('/admin/:id/products', authenticate, requireRole('admin'), adminIpCheck, (req, res) => {
   const supplier = getSupplierById(req.params.id);
   if (!supplier) return res.status(404).json({ error: 'Supplier not found' });
 
@@ -262,18 +268,14 @@ router.get('/me/products', authenticate, requireRole('supplier'), (req, res) => 
 });
 
 // ── POST /api/suppliers/me/products — create product ─────────────────────────
-router.post('/me/products', authenticate, requireRole('supplier'), validate(supplierProductSchema), (req, res) => {
+router.post('/me/products', authenticate, requireRole('supplier'), validate(supplierProductSchema), async (req, res) => {
   const supplier = getSupplierByUserId(req.user.id);
   if (!supplier) return res.status(404).json({ error: 'Supplier profile not found' });
   if (supplier.status !== 'approved') return res.status(403).json({ error: 'Your supplier account is not active' });
   if (!supplier.agreementAccepted) return res.status(403).json({ error: 'You must accept the Seller Agreement before creating products', code: 'AGREEMENT_REQUIRED' });
 
-  const allProducts = getAllProducts();
-  const maxId = allProducts.reduce((m, p) => Math.max(m, p.id), 0);
-
-  const product = createProduct({
+  const product = await createProduct({
     ...req.validated,
-    id: maxId + 1,
     vendorId: supplier.id,
     vendorName: supplier.companyName,
     productStatus: 'pending',
@@ -283,7 +285,7 @@ router.post('/me/products', authenticate, requireRole('supplier'), validate(supp
 });
 
 // ── PUT /api/suppliers/me/products/:id — update own product ──────────────────
-router.put('/me/products/:id', authenticate, requireRole('supplier'), validate(supplierProductSchema), (req, res) => {
+router.put('/me/products/:id', authenticate, requireRole('supplier'), validate(supplierProductSchema), async (req, res) => {
   const supplier = getSupplierByUserId(req.user.id);
   if (!supplier) return res.status(404).json({ error: 'Supplier profile not found' });
   if (!supplier.agreementAccepted) return res.status(403).json({ error: 'You must accept the Seller Agreement before updating products', code: 'AGREEMENT_REQUIRED' });
@@ -294,7 +296,7 @@ router.put('/me/products/:id', authenticate, requireRole('supplier'), validate(s
   if (existing.vendorId !== supplier.id) return res.status(403).json({ error: 'Not your product' });
 
   // Reset to pending on edit so admin re-approves
-  const product = updateProduct(id, {
+  const product = await updateProduct(id, {
     ...req.validated,
     vendorId: supplier.id,
     vendorName: supplier.companyName,
@@ -305,7 +307,7 @@ router.put('/me/products/:id', authenticate, requireRole('supplier'), validate(s
 });
 
 // ── DELETE /api/suppliers/me/products/:id — delete own product ───────────────
-router.delete('/me/products/:id', authenticate, requireRole('supplier'), (req, res) => {
+router.delete('/me/products/:id', authenticate, requireRole('supplier'), async (req, res) => {
   const supplier = getSupplierByUserId(req.user.id);
   if (!supplier) return res.status(404).json({ error: 'Supplier profile not found' });
 
@@ -314,7 +316,7 @@ router.delete('/me/products/:id', authenticate, requireRole('supplier'), (req, r
   if (!existing) return res.status(404).json({ error: 'Product not found' });
   if (existing.vendorId !== supplier.id) return res.status(403).json({ error: 'Not your product' });
 
-  deleteProduct(id);
+  await deleteProduct(id);
   res.json({ ok: true });
 });
 
@@ -379,13 +381,13 @@ router.post('/me/agreement', authenticate, requireRole('supplier'), validate(agr
 // ══════════════════════════════════════════════════════════════════════════════
 
 // ── POST /api/suppliers/admin/takedown — initiate IP takedown ────────────────
-router.post('/admin/takedown', authenticate, requireRole('admin'), validate(takedownSchema), (req, res) => {
+router.post('/admin/takedown', csrfProtection, authenticate, requireRole('admin'), adminIpCheck, auditLog, validate(takedownSchema), async (req, res) => {
   const { productId, reason, noticeDetails } = req.validated;
   const product = getProductById(productId);
   if (!product) return res.status(404).json({ error: 'Product not found' });
   if (!product.vendorId) return res.status(400).json({ error: 'Not a supplier product' });
 
-  updateProduct(productId, { productStatus: 'under_review' });
+  await updateProduct(productId, { productStatus: 'under_review' });
 
   const log = createTakedownLog({
     productId,
@@ -399,23 +401,23 @@ router.post('/admin/takedown', authenticate, requireRole('admin'), validate(take
 });
 
 // ── PATCH /api/suppliers/admin/takedown/:id — update takedown step ───────────
-router.patch('/admin/takedown/:id', authenticate, requireRole('admin'), validate(takedownUpdateSchema), (req, res) => {
+router.patch('/admin/takedown/:id', csrfProtection, authenticate, requireRole('admin'), adminIpCheck, auditLog, validate(takedownUpdateSchema), async (req, res) => {
   const { step, note } = req.validated;
   const updated = updateTakedownLog(req.params.id, step, req.user.id, note);
   if (!updated) return res.status(404).json({ error: 'Takedown log not found' });
 
   if (step === 'resolved_removed') {
-    updateProduct(updated.productId, { productStatus: 'rejected' });
+    await updateProduct(updated.productId, { productStatus: 'rejected' });
   }
   if (step === 'resolved_kept') {
-    updateProduct(updated.productId, { productStatus: 'approved' });
+    await updateProduct(updated.productId, { productStatus: 'approved' });
   }
 
   res.json({ ok: true, takedown: updated });
 });
 
 // ── GET /api/suppliers/admin/takedowns — list all takedown logs ──────────────
-router.get('/admin/takedowns', authenticate, requireRole('admin'), (req, res) => {
+router.get('/admin/takedowns', authenticate, requireRole('admin'), adminIpCheck, (req, res) => {
   const logs = getTakedownLogs();
   res.json({ takedowns: logs });
 });

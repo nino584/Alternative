@@ -18,10 +18,27 @@ function reportError(msg, stack) {
 window.addEventListener('error', (e) => { reportError(e.message, e.error?.stack); });
 window.addEventListener('unhandledrejection', (e) => { reportError(String(e.reason), e.reason?.stack); });
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <HelmetProvider>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
-  </HelmetProvider>
-);
+try {
+  const root = ReactDOM.createRoot(document.getElementById('root'));
+  root.render(
+    <HelmetProvider>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </HelmetProvider>
+  );
+} catch (err) {
+  console.error('React render error:', err);
+  const root = document.getElementById('root');
+  root.textContent = '';
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'padding:40px;text-align:center;font-family:sans-serif';
+  const h = document.createElement('h2');
+  h.textContent = 'Render Error';
+  const pre = document.createElement('pre');
+  pre.style.cssText = 'text-align:left;max-width:600px;margin:20px auto;overflow:auto;font-size:13px';
+  pre.textContent = (err.message || '') + '\n\n' + (err.stack || '');
+  wrap.appendChild(h);
+  wrap.appendChild(pre);
+  root.appendChild(wrap);
+}

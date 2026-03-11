@@ -1,6 +1,6 @@
 // ── SEO UTILITIES ────────────────────────────────────────────────────────────
 const SITE_NAME = "Alternative";
-const SITE_URL = "https://alternative.ge";
+const SITE_URL = "https://alternative.store";
 const SITE_DESC = "Curated designer fashion sourced from verified European suppliers. Pre-order luxury bags, shoes, clothing and watches — shipped to Tbilisi, Georgia.";
 const OG_IMAGE = SITE_URL + "/images/store-interior.jpg";
 
@@ -57,7 +57,7 @@ export function pageMeta(page, data = {}) {
     case "product": {
       const p = data.product;
       if (!p) return { title: `Product | ${SITE_NAME}`, description: SITE_DESC, canonical: SITE_URL, og: {} };
-      const price = p.sale || p.price;
+      const price = p.sale ?? p.price;
       return {
         title: `${p.name} by ${p.brand} — ${p.color} | ${SITE_NAME}`,
         description: `${p.brand} ${p.name} in ${p.color}. ${p.desc} Pre-order for GEL ${price} with free cancellation. Delivery ${p.lead}.`,
@@ -140,6 +140,27 @@ export function pageMeta(page, data = {}) {
         canonical: SITE_URL + "/shipping",
         og: { type: "website" },
       };
+    case "accessibility":
+      return {
+        title: `Accessibility Statement | ${SITE_NAME}`,
+        description: `${SITE_NAME} accessibility statement. Our commitment to making our website accessible to all users.`,
+        canonical: SITE_URL + "/accessibility",
+        og: { type: "website" },
+      };
+    case "seller-agreement":
+      return {
+        title: `Seller Agreement | ${SITE_NAME}`,
+        description: `${SITE_NAME} seller agreement. Terms and conditions for suppliers and sellers on our platform.`,
+        canonical: SITE_URL + "/seller-agreement",
+        og: { type: "website" },
+      };
+    case "ip-policy":
+      return {
+        title: `Intellectual Property Policy | ${SITE_NAME}`,
+        description: `${SITE_NAME} intellectual property policy. How we handle IP rights, counterfeits, and trademark complaints.`,
+        canonical: SITE_URL + "/ip-policy",
+        og: { type: "website" },
+      };
     default:
       return {
         title: `${SITE_NAME} — Curated Designer Fashion`,
@@ -195,7 +216,7 @@ export function websiteSchema() {
 }
 
 export function productSchema(product) {
-  const price = product.sale || product.price;
+  const price = product.sale ?? product.price;
   return {
     "@context": "https://schema.org",
     "@type": "Product",

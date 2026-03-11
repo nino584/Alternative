@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { C, T } from '../constants/theme.js';
 import HoverBtn from './HoverBtn.jsx';
 import { api } from '../api.js';
+import { csvSafe } from '../utils/csv.js';
 
 export default function PromosPanel({ mobile, toast, L }) {
   const [promos, setPromos] = useState([]);
@@ -18,6 +19,12 @@ export default function PromosPanel({ mobile, toast, L }) {
 
   const save = () => {
     if (!form.code.trim() || !form.value) { toast("Code and value are required", "error"); return; }
+    const numValue = Number(form.value);
+    if (form.type === "percent") {
+      if (numValue < 1 || numValue > 100) { toast("Percent discount must be between 1 and 100", "error"); return; }
+    } else {
+      if (numValue <= 0) { toast("Fixed discount must be a positive number", "error"); return; }
+    }
     api.createPromo({
       code: form.code.trim().toUpperCase(),
       type: form.type,
@@ -44,16 +51,18 @@ export default function PromosPanel({ mobile, toast, L }) {
     api.deletePromo(code).then(() => {
       setPromos(prev => prev.filter(p => p.code !== code));
       toast("Promo deleted", "success");
-    }).catch(() => toast("Failed to delete", "error"));
-    setDeleteConfirm(null);
+      setDeleteConfirm(null);
+    }).catch(() => { toast("Failed to delete", "error"); setDeleteConfirm(null); });
   };
 
   const exportCSV = () => {
     const headers = ["Code", "Type", "Value", "Min Order", "Max Uses", "Used", "Active", "Expires", "Created"];
-    const rows = promos.map(p => [p.code, p.type, p.value, p.minOrder || 0, p.maxUses || "∞", p.usedCount || 0, p.active ? "Yes" : "No", p.expiresAt || "Never", p.createdAt?.split("T")[0] || ""]);
+    const rows = promos.map(p => [csvSafe(p.code), csvSafe(p.type), csvSafe(p.value), csvSafe(p.minOrder || 0), csvSafe(p.maxUses || "∞"), csvSafe(p.usedCount || 0), csvSafe(p.active ? "Yes" : "No"), csvSafe(p.expiresAt || "Never"), csvSafe(p.createdAt?.split("T")[0] || "")]);
     const csv = [headers, ...rows].map(r => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "promos.csv"; a.click();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = "promos.csv"; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   if (loading) return <div style={{ padding: 40, textAlign: "center" }}><p style={{ ...T.bodySm, color: C.gray }}>Loading...</p></div>;

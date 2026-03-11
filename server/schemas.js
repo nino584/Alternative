@@ -50,10 +50,17 @@ export const wishlistSchema = z.object({
 });
 
 // ── Returns ───────────────────────────────────────────────────────────────────
+const returnItemSchema = z.object({
+  productId: z.union([z.string(), z.number()]).optional(),
+  productName: z.string().max(200).optional(),
+  quantity: z.number().int().min(1).max(100).optional(),
+  reason: z.string().max(500).optional(),
+}).strict();
+
 export const createReturnSchema = z.object({
   orderId: z.string().min(1, 'Order ID is required'),
   reason: z.string().min(1, 'Reason is required').max(1000),
-  items: z.array(z.any()).optional().default([]),
+  items: z.array(returnItemSchema).max(50).optional().default([]),
 });
 
 export const updateReturnStatusSchema = z.object({
@@ -82,7 +89,7 @@ const mediaItemSchema = z.object({
 export const createMessageSchema = z.object({
   orderId: z.string().min(1, 'Order ID is required'),
   content: z.string().max(2000).optional().default(''),
-  media: z.array(mediaItemSchema).min(1, 'At least one media item is required'),
+  media: z.array(mediaItemSchema).min(1, 'At least one media item is required').max(20, 'Maximum 20 media items'),
 });
 
 // ── Auth: Reset/Change Password ───────────────────────────────────────────────
@@ -104,6 +111,20 @@ export const updateProfileSchema = z.object({
 
 // ── Unsubscribe ───────────────────────────────────────────────────────────────
 export const unsubscribeSchema = z.object({
+  email: z.string().email('Valid email is required').max(254),
+});
+
+// ── Auth: 2FA & Account Deletion ──────────────────────────────────────────────
+export const twoFaDisableSchema = z.object({
+  password: z.string().min(1, 'Password is required'),
+  code: z.string().length(6).regex(/^\d{6}$/, 'Code must be 6 digits'),
+});
+
+export const deleteAccountSchema = z.object({
+  password: z.string().min(1, 'Password is required'),
+});
+
+export const forgotPasswordSchema = z.object({
   email: z.string().email('Valid email is required').max(254),
 });
 

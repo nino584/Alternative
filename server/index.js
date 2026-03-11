@@ -106,15 +106,17 @@ app.use(compression({
 
 // ── HTTPS redirect (production behind reverse proxy) ─────────────────────
 if (isProd) {
+  const SITE_HOST = process.env.SITE_HOST || 'alternative.ge';
   app.use((req, res, next) => {
     if (req.header('x-forwarded-proto') !== 'https') {
-      return res.redirect(301, `https://${req.header('host')}${req.url}`);
+      return res.redirect(301, `https://${SITE_HOST}${req.url}`);
     }
     next();
   });
 }
 
 // ── Security headers ──────────────────────────────────────────────────────
+app.disable('x-powered-by');
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -153,8 +155,8 @@ const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
   .split(',').map(s => s.trim());
 app.use(cors({
   origin: (origin, cb) => {
-    if (!origin && isProd) return cb(new Error('Not allowed by CORS'));
-    if (!origin || allowedOrigins.includes(origin)) cb(null, true);
+    if (!origin) return cb(null, true); // same-origin requests have no Origin header
+    if (allowedOrigins.includes(origin)) cb(null, true);
     else cb(new Error('Not allowed by CORS'));
   },
   credentials: true,
@@ -163,7 +165,7 @@ app.use(cors({
 }));
 
 // ── Body parsing ──────────────────────────────────────────────────────────
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '2mb' }));
 app.use(cookieParser());
 
 // ── CSRF token initialization (set cookie on first request) ──────────────
@@ -237,7 +239,7 @@ app.get('/api/admin/customers', authenticate, requireRole('admin', 'support'), a
 
 // ── Admin: Orders (all orders for admin) ─────────────────────────────────
 app.get('/api/admin/orders', authenticate, requireRole('admin', 'support'), adminIpCheck, (req, res) => {
-  res.json({ orders: getAllOrders() });
+  res.json(paginate(getAllOrders(), req.query));
 });
 
 // ── Admin: Subscribers (paginated, support can read) ────────────────────
@@ -260,21 +262,31 @@ app.post('/api/admin/promos', csrfProtection, authenticate, requireRole('admin')
 const subscribeLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 10, message: { error: 'Too many subscribe attempts.' } });
 const pendingSubscribers = new Map();
 
+// Cleanup expired pending subscribers every 15 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of pendingSubscribers) {
+    if (now > entry.expiresAt) pendingSubscribers.delete(key);
+  }
+}, 15 * 60 * 1000).unref();
+
 app.post('/api/subscribe', subscribeLimiter, csrfProtection, validate(subscribeSchema), (req, res) => {
   const { email } = req.validated;
 
   const existing = getAllSubscribers().find(s => s.email === email.toLowerCase());
   if (existing) return res.status(409).json({ error: 'Already subscribed' });
 
+  // Enforce max pending entries to prevent memory exhaustion
+  if (pendingSubscribers.size >= 10000) return res.status(503).json({ error: 'Too many pending subscriptions. Try later.' });
+
   // Secure random confirmation token
   const token = crypto.randomUUID();
   pendingSubscribers.set(token, { email: email.toLowerCase(), expiresAt: Date.now() + 24 * 60 * 60 * 1000 });
 
-  console.log(`[NEWSLETTER] Confirmation token for ${email}: ${token}`);
-  console.log(`[NEWSLETTER] Confirm link: /api/subscribe/confirm?token=${token}`);
-
-  // Auto-confirm for now (remove when email sending is implemented)
-  addSubscriber(email);
+  // Token logged only in development (never in production)
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`[NEWSLETTER] Confirm link: /api/subscribe/confirm?token=${token}`);
+  }
 
   res.status(201).json({ ok: true });
 });
@@ -348,6 +360,29 @@ app.post('/api/returns', csrfProtection, authenticate, validate(createReturnSche
   if (!order || order.userId !== req.user.id) {
     return res.status(404).json({ error: 'Order not found' });
   }
+
+  // Validate that return items actually belong to the referenced order.
+  // Each order is a single-product order with productId, productName, selectedSize.
+  if (items && items.length > 0) {
+    if (order.productId == null) return res.status(400).json({ error: 'Order has no product ID for validation' });
+    const orderProductId = String(order.productId);
+    const orderProductName = (order.productName || '').toLowerCase();
+    for (const item of items) {
+      // If the item specifies a productId, it must match the order's product
+      if (item.productId !== undefined && String(item.productId) !== orderProductId) {
+        return res.status(400).json({ error: 'Return item does not match the referenced order' });
+      }
+      // If the item specifies a productName, it must match the order's product
+      if (item.productName && item.productName.toLowerCase() !== orderProductName) {
+        return res.status(400).json({ error: 'Return item does not match the referenced order' });
+      }
+      // If the item specifies a quantity, it must not exceed the order quantity
+      if (item.quantity !== undefined && item.quantity > (order.quantity || 1)) {
+        return res.status(400).json({ error: 'Return quantity exceeds order quantity' });
+      }
+    }
+  }
+
   const id = 'ret_' + crypto.randomUUID().replace(/-/g, '').slice(0, 12);
   const entry = createReturnRequest({ id, userId: req.user.id, orderId, reason, items });
   res.status(201).json(entry);
@@ -532,7 +567,7 @@ app.post('/api/contact', contactLimiter, csrfProtection, validate(contactSchema)
   };
   appendLog('contacts.log', entry);
 
-  console.log(`[CONTACT] From: ${entry.name} <${entry.email}> (${entry.messageLength} chars)`);
+  console.log(`[CONTACT] Received (${entry.messageLength} chars)`);
   res.json({ ok: true });
 });
 
@@ -636,6 +671,15 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({
     error: isProd ? 'Internal server error' : err.message,
   });
+});
+
+// ── Process-level error handlers ─────────────────────────────────────────
+process.on('unhandledRejection', (reason) => {
+  console.error('[FATAL] Unhandled rejection:', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[FATAL] Uncaught exception:', err.message);
+  process.exit(1);
 });
 
 app.listen(PORT, () => {

@@ -5,7 +5,7 @@ import HoverBtn from '../ui/HoverBtn.jsx';
 // ── LUXURY SHOPPING BAG DRAWER ──────────────────────────────────────────────
 export default function CartDrawer({cart,onClose,setPage,removeFromCart,updateCartQty,onCheckout,L,mobile}) {
   useEffect(()=>{const fn=e=>{if(e.key==="Escape")onClose();};window.addEventListener("keydown",fn);return()=>window.removeEventListener("keydown",fn);},[onClose]);
-  const total=(cart||[]).reduce((s,o)=>s+((Number(o.sale)||Number(o.price)||0)*(o.qty||1)),0);
+  const total=(cart||[]).reduce((s,o)=>s+((Number(o.sale??o.price)||0)*(o.qty||1)),0);
   return (
     <div role="dialog" aria-label={L&&L.shoppingBag||"Shopping Bag"} aria-modal="true" style={{position:"fixed",inset:0,zIndex:350,display:"flex"}}>
       <div onClick={onClose} style={{position:"absolute",inset:0,background:"rgba(25,25,25,0.55)",backdropFilter:"blur(4px)",WebkitBackdropFilter:"blur(4px)",animation:"fadeIn 0.2s ease"}}/>
@@ -48,7 +48,7 @@ export default function CartDrawer({cart,onClose,setPage,removeFromCart,updateCa
                 {o.notes&&<p style={{fontFamily:"'TT Interphases Pro',sans-serif",fontSize:11,fontWeight:300,color:C.brown,fontStyle:"italic",marginBottom:8,lineHeight:1.4}}>"{o.notes}"</p>}
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                   <span style={{fontFamily:"'Alido',serif",fontSize:17,color:C.black}}>
-                    GEL {(o.sale||o.price)*(o.qty||1)}
+                    GEL {(o.sale??o.price)*(o.qty||1)}
                     {o.sale&&<span style={{fontFamily:"'TT Interphases Pro',sans-serif",fontSize:11,color:C.gray,textDecoration:"line-through",marginLeft:8,fontWeight:300}}>GEL {o.price*(o.qty||1)}</span>}
                   </span>
                   <button onClick={()=>removeFromCart(i)}

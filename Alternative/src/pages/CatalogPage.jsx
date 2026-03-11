@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import { C, T } from '../constants/theme.js';
 import { PRODUCTS } from '../constants/data.js';
 import HoverBtn from '../components/ui/HoverBtn.jsx';
@@ -10,19 +11,21 @@ import { SkeletonProductGrid } from '../components/ui/SkeletonLoader.jsx';
 import { pageMeta, collectionSchema } from '../utils/seo.js';
 
 // ── CATALOG PAGE ── LuisaViaRoma-style sidebar layout ──────────────────────────
-export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,onQuickView,initSection,initSub,L,toast,user,setUser,mobile,products:productsProp,topOffset=0}) {
-  const [section,setSection]=useState(initSection||"Womenswear");
-  const [subCat,setSubCat]=useState("All");
+export default function CatalogPage({setPage,wishlist,onWishlist,onQuickView,L,toast,user,setUser,mobile,products:productsProp,topOffset=0}) {
+  const location = useLocation();
+  const navState = location.state;
+  const [section,setSection]=useState(navState?.initSection||"Womenswear");
+  const [subCat,setSubCat]=useState(navState?.initSub||"All");
   const [price,setPrice]=useState("all");
   const [sortBy,setSortBy]=useState("picks");
   const [refineOpen,setRefineOpen]=useState(false);
   const [typeFilter,setTypeFilter]=useState("All");
   const [colorFilter,setColorFilter]=useState("All");
   const [sizeFilter,setSizeFilter]=useState([]);
-  const [brandFilter,setBrandFilter]=useState("All");
+  const [brandFilter,setBrandFilter]=useState(navState?.initBrand||"All");
   const [brandSearch,setBrandSearch]=useState("");
   const [kidsGender,setKidsGender]=useState("All");
-  const [expanded,setExpanded]=useState({});
+  const [expanded,setExpanded]=useState(navState?.initBrand?{brand:true}:{});
 
   useEffect(()=>{setTypeFilter("All");setColorFilter("All");setSizeFilter([]);setBrandFilter("All");setBrandSearch("");},[subCat]);
   useEffect(()=>{if(section!=="Kidswear")setKidsGender("All");},[section]);
@@ -30,20 +33,16 @@ export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,onQ
   useEffect(()=>{window.scrollTo({top:0,behavior:"instant"});},[section]);
   useEffect(()=>{window.scrollTo({top:0,behavior:"instant"});},[subCat]);
 
+  // Handle navigate state changes (e.g. Nav menu clicks while already on /catalog)
   useEffect(()=>{
-    if (typeof window==="undefined") return;
-    const s=window.__initSection;
-    const sub=window.__initSub;
-    const brand=window.__initBrand;
-    if (s) setSection(s);
-    if (sub) setSubCat(sub);
-    if (brand) { setBrandFilter(brand); setExpanded(prev=>({...prev,brand:true})); }
-    delete window.__initSection;
-    delete window.__initSub;
-    delete window.__initBrand;
-    // Double rAF ensures DOM is fully painted before scrolling
-    requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,0)));
-  },[]);
+    if (!navState) return;
+    if (navState.initSection) setSection(navState.initSection);
+    if (navState.initSub) setSubCat(navState.initSub);
+    if (navState.initBrand) { setBrandFilter(navState.initBrand); setExpanded(prev=>({...prev,brand:true})); }
+    let raf2;
+    const raf1=requestAnimationFrame(()=>{raf2=requestAnimationFrame(()=>window.scrollTo(0,0));});
+    return ()=>{cancelAnimationFrame(raf1);if(raf2)cancelAnimationFrame(raf2);};
+  },[navState]);
 
   const subCats={
     All:[[L.newIn,"New In"],[L.clothing,"Clothing"],[L.shoes,"Shoes"],[L.bags,"Bags"],[L.accessories,"Accessories"],[L.watches,"Watches"],[L.jewellery,"Jewellery"],[L.sale,"Sale"],[L.brands,"Brands"]],
@@ -99,13 +98,13 @@ export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,onQ
     if (colorFilter!=="All") result=result.filter(p=>p.color===colorFilter);
     if (sizeFilter.length>0) result=result.filter(p=>p.sizes&&sizeFilter.some(s=>p.sizes.includes(s)));
     if (brandFilter!=="All") result=result.filter(p=>p.brand===brandFilter);
-    if (price==="under200") result=result.filter(p=>(p.sale||p.price)<200);
-    else if (price==="200-400") result=result.filter(p=>{const ep=p.sale||p.price;return ep>=200&&ep<=400;});
-    else if (price==="over400") result=result.filter(p=>(p.sale||p.price)>400);
+    if (price==="under200") result=result.filter(p=>(p.sale??p.price)<200);
+    else if (price==="200-400") result=result.filter(p=>{const ep=p.sale??p.price;return ep>=200&&ep<=400;});
+    else if (price==="over400") result=result.filter(p=>(p.sale??p.price)>400);
     if (subCat==="New In") result.sort((a,b)=>b.id-a.id);
     else if (sortBy==="new") result.sort((a,b)=>b.id-a.id);
-    else if (sortBy==="low") result.sort((a,b)=>(a.sale||a.price)-(b.sale||b.price));
-    else if (sortBy==="high") result.sort((a,b)=>(b.sale||b.price)-(a.sale||a.price));
+    else if (sortBy==="low") result.sort((a,b)=>(a.sale??a.price)-(b.sale??b.price));
+    else if (sortBy==="high") result.sort((a,b)=>(b.sale??b.price)-(a.sale??a.price));
     return result;
   }, [ALL_PRODUCTS, section, subCat, kidsGender, typeFilter, colorFilter, sizeFilter, brandFilter, price, sortBy]);
 
@@ -413,7 +412,7 @@ export default function CatalogPage({setPage,setSelected,wishlist,onWishlist,onQ
 
         {/* ── PRODUCT GRID ── */}
         <div style={{flex:1,padding:mobile?"20px 16px 60px":"24px 0 80px 32px",minWidth:0}}>
-          {filtered.length===0 && activeFilters===0 ? (
+          {filtered.length===0 && activeFilters===0 && ALL_PRODUCTS.length===0 ? (
             <SkeletonProductGrid count={8} mobile={mobile} />
           ) : filtered.length===0 ? (
             <div style={{padding:"80px 0",textAlign:"center"}}>

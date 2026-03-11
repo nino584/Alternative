@@ -6,7 +6,7 @@ import HoverBtn from '../components/ui/HoverBtn.jsx';
 import Footer from '../components/layout/Footer.jsx';
 
 // ── ORDERS PAGE ───────────────────────────────────────────────────────────────
-export default function OrdersPage({mobile,orders,setPage,toast,L,products}) {
+export default function OrdersPage({mobile,orders,setOrders,setPage,toast,L,products}) {
   const allOrders = orders || [];
   const getImg=(o)=>{
     if(o.img) return o.img;
@@ -14,6 +14,7 @@ export default function OrdersPage({mobile,orders,setPage,toast,L,products}) {
     return p?.img||"";
   };
   const [activeIdx,setActiveIdx]=useState(0);
+  const [cancelling,setCancelling]=useState(false);
 
   useEffect(()=>{if(allOrders.length>0)setActiveIdx(0);},[allOrders.length]);
 
@@ -31,11 +32,19 @@ export default function OrdersPage({mobile,orders,setPage,toast,L,products}) {
   const sDesc=(s)=>s.desc;
 
   const handleCancel=()=>{
+    if(cancelling) return;
     if(window.confirm&&window.confirm(L&&L.cancelConfirm||"Cancel this order? Your payment will be fully refunded.")){
+      setCancelling(true);
       api.cancelOrder(current.orderId||current.id).then(()=>{
         toast(L&&L.cancelSuccess||"Cancellation request sent.","success");
+        // Update order status immutably
+        if(setOrders){
+          setOrders(prev=>prev.map(o=>(o.orderId||o.id)===(current.orderId||current.id)?{...o,status:"cancelled"}:o));
+        }
       }).catch(()=>{
         toast(L&&L.cancelError||"Could not cancel order. Please try again.","error");
+      }).finally(()=>{
+        setCancelling(false);
       });
     }
   };
@@ -81,7 +90,7 @@ export default function OrdersPage({mobile,orders,setPage,toast,L,products}) {
             const itemCount=o.items?o.items.length:1;
             const firstItem=(o.items&&o.items.length>0)?o.items[0]:o;
             return (
-              <div key={o.orderId} onClick={()=>setActiveIdx(idx)} style={{padding:16,marginBottom:2,cursor:"pointer",background:isA?C.offwhite:C.cream,border:isA?`1px solid ${C.tan}`:"1px solid transparent",transition:"all 0.2s"}}>
+              <div key={o.orderId||o.id||idx} onClick={()=>setActiveIdx(idx)} style={{padding:16,marginBottom:2,cursor:"pointer",background:isA?C.offwhite:C.cream,border:isA?`1px solid ${C.tan}`:"1px solid transparent",transition:"all 0.2s"}}>
                 <div style={{display:"flex",gap:12,alignItems:"flex-start"}}>
                   {getImg(firstItem)?<img src={getImg(firstItem)} alt={firstItem.name||"Order item"} loading="lazy" width="48" height="48" style={{width:48,height:48,objectFit:"cover",flexShrink:0}}/>:<div style={{width:48,height:48,background:C.lgray,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:18,color:C.gray}}>&#9744;</span></div>}
                   <div style={{flex:1,minWidth:0}}>
@@ -109,9 +118,9 @@ export default function OrdersPage({mobile,orders,setPage,toast,L,products}) {
               <div style={{display:"flex",marginBottom:8,gap:2}}>
                 {CUSTOMER_STATUSES.map((s,i)=><div key={i} style={{flex:1,height:3,background:i<=si?s.color:C.lgray,transition:"background 0.3s"}}/>)}
               </div>
-              <div style={{display:"flex",justifyContent:"space-between"}}>
+              <div style={{display:"flex"}}>
                 {CUSTOMER_STATUSES.map((s,i)=>(
-                  <span key={i} style={{...T.labelSm,fontSize:8,color:i===si?s.color:C.gray,fontWeight:i===si?500:300}}>{sLabel(s)}</span>
+                  <span key={i} style={{...T.labelSm,fontSize:8,color:i===si?s.color:C.gray,fontWeight:i===si?500:300,flex:1,textAlign:"center"}}>{sLabel(s)}</span>
                 ))}
               </div>
             </div>
@@ -126,7 +135,7 @@ export default function OrdersPage({mobile,orders,setPage,toast,L,products}) {
                     {item.brand&&<p style={{...T.labelSm,color:C.tan,fontSize:8,letterSpacing:"0.12em",marginBottom:2}}>{item.brand}</p>}
                     <p style={{fontFamily:"'Alido',serif",fontSize:mobile?16:20,fontWeight:300,color:C.black,lineHeight:1.2,marginBottom:4}}>{item.name||item.productName}</p>
                     <p style={{...T.bodySm,color:C.gray,fontSize:12}}>{item.color}{item.selectedSize&&item.selectedSize!=="One Size"?" · "+item.selectedSize:""}</p>
-                    <p style={{fontFamily:"'Alido',serif",fontSize:16,color:item.sale?C.red:C.black,marginTop:6}}>GEL {item.sale||item.price}</p>
+                    <p style={{fontFamily:"'Alido',serif",fontSize:16,color:item.sale?C.red:C.black,marginTop:6}}>GEL {item.sale??item.price}</p>
                   </div>
                 </div>
               ))}
@@ -134,7 +143,7 @@ export default function OrdersPage({mobile,orders,setPage,toast,L,products}) {
 
             {/* Status info */}
             <div style={{padding:16,background:C.offwhite,borderLeft:`3px solid ${CUSTOMER_STATUSES[si]?.color||C.tan}`,marginBottom:20}}>
-              <p style={{...T.labelSm,color:CUSTOMER_STATUSES[si]?.color||C.tan,marginBottom:5,fontSize:9}}>{L.currentStatus||"Current status"}</p>
+              <p style={{...T.labelSm,color:CUSTOMER_STATUSES[si]?.color||C.tan,marginBottom:5,fontSize:9}}>{L?.currentStatus||"Current status"}</p>
               <p style={{...T.label,color:C.black,fontSize:11,marginBottom:4}}>{CUSTOMER_STATUSES[si]?sLabel(CUSTOMER_STATUSES[si]):""}</p>
               <p style={{...T.bodySm,color:C.gray,lineHeight:1.7,fontSize:12}}>{CUSTOMER_STATUSES[si]?sDesc(CUSTOMER_STATUSES[si]):""}</p>
             </div>

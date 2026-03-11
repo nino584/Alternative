@@ -23,7 +23,13 @@ export function csrfProtection(req, res, next) {
   const cookieToken = req.cookies?.csrf_token;
   const headerToken = req.headers['x-csrf-token'];
 
-  if (!cookieToken || !headerToken || cookieToken !== headerToken) {
+  if (!cookieToken || !headerToken) {
+    return res.status(403).json({ error: 'CSRF token mismatch' });
+  }
+  // Hash both tokens to ensure constant-length comparison (avoids timing leak from length check)
+  const cookieHash = crypto.createHash('sha256').update(cookieToken).digest();
+  const headerHash = crypto.createHash('sha256').update(headerToken).digest();
+  if (!crypto.timingSafeEqual(cookieHash, headerHash)) {
     return res.status(403).json({ error: 'CSRF token mismatch' });
   }
 

@@ -274,6 +274,7 @@ function MyProducts({ mobile, toast, L }) {
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files || []);
     files.forEach(file => {
+      if (!file.type.startsWith('image/')) { toast?.('Only image files allowed', 'error'); return; }
       if (file.size > 500000) { toast?.('Image too large (max 500KB)', 'error'); return; }
       const reader = new FileReader();
       reader.onload = () => setForm(prev => ({ ...prev, images: [...prev.images, reader.result] }));
@@ -297,8 +298,10 @@ function MyProducts({ mobile, toast, L }) {
 
   const handleSubmit = async () => {
     if (!form.name || !form.price) { toast?.('Name and price are required', 'error'); return; }
-    if (Number(form.price) < 100) { toast?.(L?.minPriceError || 'Minimum price is 100 GEL', 'error'); return; }
+    const priceNum = Number(form.price);
+    if (!priceNum || isNaN(priceNum) || priceNum < 100) { toast?.(L?.minPriceError || 'Minimum price is 100 GEL', 'error'); return; }
     if (form.sale && Number(form.sale) < 100) { toast?.(L?.minSalePriceError || 'Minimum sale price is 100 GEL', 'error'); return; }
+    if (form.sale && Number(form.sale) >= Number(form.price)) { toast?.('Sale price must be less than original price', 'error'); return; }
 
     const sizes = form.oneSize ? ['One Size'] : form.sizes;
     if (sizes.length === 0) { toast?.('Select at least one size', 'error'); return; }
@@ -335,7 +338,7 @@ function MyProducts({ mobile, toast, L }) {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Delete this product?')) return;
+    if (!window.confirm('Delete this product?')) return;
     try {
       await api.deleteMyProduct(id);
       setProducts(prev => prev.filter(p => p.id !== id));

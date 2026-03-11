@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { randomBytes } from 'crypto';
 import nodemailer from 'nodemailer';
-import { getAllOrders, getOrdersByUser, createOrder, updateOrderStatus, getOrderById, getProductById, addStatusHistory, getAffiliateByCode, createAffiliateClick, addAffiliatePendingEarnings, getPromoCodes, updatePromoCode, getSupplierById, addSupplierEarnings } from '../db/store.js';
+import { getAllOrders, getOrdersByUser, createOrder, updateOrderStatus, getOrderById, getProductById, addStatusHistory, getAffiliateByCode, createAffiliateClick, addAffiliatePendingEarnings, consumePromoCode, getSupplierById, addSupplierEarnings } from '../db/store.js';
 import { authenticate, optionalAuth } from '../middleware/auth.js';
 import { requireRole } from '../middleware/rbac.js';
 import { validate } from '../middleware/validate.js';
@@ -281,6 +281,7 @@ const orderSchema = z.object({
   brand: z.string().max(100).optional().default(''),
   color: z.string().max(100).optional().default(''),
   selectedSize: z.string().min(1).max(50).default('One Size'),
+  quantity: z.number().int().min(1).max(100).optional().default(1),
   wantVideo: z.boolean().default(false),
   customerName: z.string().min(1).max(200),
   phone: z.string().min(5).max(30),
@@ -322,7 +323,7 @@ router.get('/:orderId', authenticate, (req, res) => {
 });
 
 // ── POST /api/orders — create order (authenticated or guest) ─────────────
-router.post('/', optionalAuth, validate(orderSchema), (req, res) => {
+router.post('/', optionalAuth, validate(orderSchema), async (req, res) => {
   // Server-side validation: look up actual product price & image
   const product = getProductById(Number(req.validated.productId)) || getProductById(String(req.validated.productId));
   if (!product) {
@@ -330,34 +331,23 @@ router.post('/', optionalAuth, validate(orderSchema), (req, res) => {
   }
   let serverPrice = product.sale ?? product.price;
 
-  // Apply promo code discount server-side
+  // Apply promo code discount server-side (atomic to prevent race conditions)
   let promoDiscount = 0;
   if (req.validated.promoCode) {
-    const promos = getPromoCodes();
-    const promo = promos.find(p => p.code.toLowerCase() === req.validated.promoCode.trim().toLowerCase() && p.active);
-    if (promo) {
-      const valid = (!promo.minOrder || serverPrice >= promo.minOrder)
-        && (!promo.maxUses || promo.usedCount < promo.maxUses)
-        && (!promo.expiresAt || new Date(promo.expiresAt) >= new Date());
-      if (valid) {
-        promoDiscount = promo.type === 'percent'
-          ? Math.round((serverPrice * promo.value) / 100)
-          : promo.value;
-        promoDiscount = Math.min(promoDiscount, serverPrice);
-        serverPrice = serverPrice - promoDiscount;
-        updatePromoCode(promo.code, { usedCount: (promo.usedCount || 0) + 1 });
-        req.validated.promoCode = promo.code; // normalize case
-        req.validated.promoDiscount = promoDiscount;
-      } else {
-        req.validated.promoCode = '';
-      }
+    const result = consumePromoCode(req.validated.promoCode, serverPrice);
+    if (result.valid) {
+      promoDiscount = result.promoDiscount;
+      serverPrice = serverPrice - promoDiscount;
+      req.validated.promoCode = result.promo.code; // normalize case
+      req.validated.promoDiscount = promoDiscount;
     } else {
       req.validated.promoCode = '';
     }
   }
 
-  req.validated.price = serverPrice;
-  req.validated.depositPaid = serverPrice;
+  const qty = req.validated.quantity || 1;
+  req.validated.price = serverPrice * qty;
+  req.validated.depositPaid = serverPrice * qty;
   // Use product image if client didn't send one or sent base64 (avoid storing large blobs in orders)
   if (!req.validated.img || req.validated.img.startsWith('data:')) {
     req.validated.img = product.img?.startsWith('data:') ? '' : (product.img || '');
@@ -370,11 +360,14 @@ router.post('/', optionalAuth, validate(orderSchema), (req, res) => {
   }
 
   const orderId = 'ALT-' + randomBytes(6).toString('hex').toUpperCase();
-  const order = createOrder({
+  // Destructure out any userId/status that might have leaked into validated data
+  // to prevent privilege escalation (userId must come from auth, not request body)
+  const { userId: _ignoredUserId, status: _ignoredStatus, orderId: _ignoredOrderId, ...sanitizedData } = req.validated;
+  const order = await createOrder({
+    ...sanitizedData,
     orderId,
     userId: req.user?.id || null,
     status: 'reserved',
-    ...req.validated,
   });
 
   // Supplier earnings tracking
@@ -386,20 +379,23 @@ router.post('/', optionalAuth, validate(orderSchema), (req, res) => {
     }
   }
 
-  // Affiliate commission tracking
+  // Affiliate commission tracking (rate clamped to 0-50% for safety)
   if (req.validated.affiliateCode) {
     const affiliate = getAffiliateByCode(req.validated.affiliateCode);
     if (affiliate && affiliate.status === 'approved') {
-      const commission = Math.round(order.price * affiliate.commission_rate / 100);
-      createAffiliateClick({
-        affiliate_code: affiliate.code,
-        type: 'conversion',
-        order_id: orderId,
-        order_amount: order.price,
-        commission,
-        status: 'pending',
-      });
-      addAffiliatePendingEarnings(affiliate.code, commission);
+      const rate = Math.max(0, Math.min(50, Number(affiliate.commission_rate) || 0));
+      const commission = Math.round(order.price * rate / 100);
+      if (commission > 0) {
+        createAffiliateClick({
+          affiliate_code: affiliate.code,
+          type: 'conversion',
+          order_id: orderId,
+          order_amount: order.price,
+          commission,
+          status: 'pending',
+        });
+        addAffiliatePendingEarnings(affiliate.code, commission);
+      }
     }
   }
 
@@ -408,10 +404,24 @@ router.post('/', optionalAuth, validate(orderSchema), (req, res) => {
 });
 
 // ── PATCH /api/orders/:orderId/status — admin only ────────────────────────
-router.patch('/:orderId/status', authenticate, requireRole('admin'), validate(statusUpdateSchema), (req, res) => {
-  const order = updateOrderStatus(req.params.orderId, req.validated.status, req.user.id);
+const VALID_STATUS_TRANSITIONS = {
+  reserved: ['sourcing', 'confirmed', 'cancelled'],
+  sourcing: ['confirmed', 'cancelled'],
+  confirmed: ['shipped', 'cancelled'],
+  shipped: ['delivered'],
+  delivered: [],
+  cancelled: [],
+};
+
+router.patch('/:orderId/status', authenticate, requireRole('admin'), validate(statusUpdateSchema), async (req, res) => {
+  const existing = getOrderById(req.params.orderId);
+  if (!existing) return res.status(404).json({ error: 'Order not found' });
+  const allowed = VALID_STATUS_TRANSITIONS[existing.status] || [];
+  if (!allowed.includes(req.validated.status)) {
+    return res.status(400).json({ error: `Cannot transition from "${existing.status}" to "${req.validated.status}"` });
+  }
+  const order = await updateOrderStatus(req.params.orderId, req.validated.status, req.user.id);
   if (!order) return res.status(404).json({ error: 'Order not found' });
-  addStatusHistory(req.params.orderId, req.validated.status, req.user.id);
   res.json({ order });
 });
 
