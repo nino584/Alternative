@@ -11,7 +11,7 @@ export default function AboutPage({setPage,L,mobile}) {
     <div style={{paddingTop:mobile?78:104,background:C.cream}}>
       <SEO {...pageMeta("about")} schema={breadcrumbSchema([{name:"Home",url:"/"},{name:"About"}])} />
       <div style={{position:"relative",height:mobile?280:460,overflow:"hidden"}}>
-        <img src={BI.store_interior} alt="Alternative concept store interior in Tbilisi" loading="lazy" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+        <img src="/images/about-hero.jpg" alt="Alternative concept store interior in Tbilisi" loading="lazy" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
         <div style={{position:"absolute",inset:0,background:"rgba(25,25,25,0.5)"}}/>
         <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",justifyContent:"flex-end",padding:mobile?"0 20px 28px":"0 80px 60px"}}>
           <p style={{...T.labelSm,color:C.tan,marginBottom:12}}>{L&&L.ourStory||'Our story'}</p>

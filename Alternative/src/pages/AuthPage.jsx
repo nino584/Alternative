@@ -23,6 +23,9 @@ export default function AuthPage({mobile,setPage,setUser,toast,L}) {
   const [loading,setLoading]=useState(false);
   const [socialLoading,setSocialLoading]=useState(null);
   const [forgotSent,setForgotSent]=useState(false);
+  const [phoneStep,setPhoneStep]=useState(null); // {user} — awaiting phone after social login
+  const [phoneInput,setPhoneInput]=useState("");
+  const [phoneSaving,setPhoneSaving]=useState(false);
 
   // ── Google Sign-In SDK ──
   useEffect(()=>{
@@ -54,6 +57,12 @@ export default function AuthPage({mobile,setPage,setUser,toast,L}) {
     setError("");
     try {
       const data = await api.socialLogin(provider, token);
+      if (!data.user.phone) {
+        // New social user — ask for phone before continuing
+        setPhoneStep(data.user);
+        setSocialLoading(null);
+        return;
+      }
       setUser(data.user);
       toast(L?.welcomeBack||"Welcome!","success");
       goAfterAuth();
@@ -63,6 +72,23 @@ export default function AuthPage({mobile,setPage,setUser,toast,L}) {
       setSocialLoading(null);
     }
   },[setUser,toast,L,goAfterAuth]);
+
+  const handlePhoneSave = useCallback(async () => {
+    if (!phoneInput.trim()) { setError(L?.phoneRequired||"Please enter your phone number."); return; }
+    setPhoneSaving(true);
+    setError("");
+    try {
+      const data = await api.updateProfile({ phone: phoneInput.trim() });
+      setUser(data.user);
+      toast(L?.accountCreated||"Account created! Welcome to Alternative.","success");
+      setPhoneStep(null);
+      goAfterAuth();
+    } catch (err) {
+      setError(err.message||"Failed to save phone number.");
+    } finally {
+      setPhoneSaving(false);
+    }
+  },[phoneInput,setUser,toast,L,goAfterAuth]);
 
   const handleGoogle=useCallback(()=>{
     if (!GOOGLE_CLIENT_ID) { toast(L?.comingSoon||"Google login — coming soon!","info"); return; }
@@ -120,6 +146,33 @@ export default function AuthPage({mobile,setPage,setUser,toast,L}) {
   };
 
   const socialBtnBase={width:"100%",padding:"13px 16px",border:`1px solid ${C.lgray}`,background:C.white,display:"flex",alignItems:"center",justifyContent:"center",gap:10,cursor:"pointer",transition:"all 0.2s",fontSize:13,fontWeight:500,fontFamily:"'TT Interphases Pro',sans-serif",letterSpacing:"0.01em"};
+
+  // ── Phone step after social login ──
+  if (phoneStep) {
+    return (
+      <div style={{minHeight:"100vh",background:C.cream,display:"flex",alignItems:"center",justifyContent:"center",padding:mobile?"78px 16px 40px":"104px 20px 40px"}}>
+        <style>{`@keyframes spinAnim{to{transform:rotate(360deg)}}`}</style>
+        <div style={{width:"100%",maxWidth:420,padding:mobile?"36px 28px":"48px 44px",background:C.white}}>
+          <div style={{textAlign:"center",marginBottom:28}}>
+            <Logo size={0.8}/>
+            <h2 style={{...T.displaySm,color:C.black,marginTop:20,marginBottom:8}}>{L?.almostDone||"Almost done!"}</h2>
+            <p style={{...T.bodySm,color:C.gray,fontSize:13}}>{L?.enterPhoneToComplete||"Enter your phone number to complete registration."}</p>
+          </div>
+          {error&&<div style={{padding:"11px 14px",background:"rgba(88,70,56,0.06)",border:`1px solid ${C.red}`,marginBottom:18}}><p style={{...T.bodySm,color:C.red,fontSize:12}}>{error}</p></div>}
+          <div style={{marginBottom:22}}>
+            <label style={{...T.labelSm,color:C.gray,fontSize:9,display:"block",marginBottom:6}}>{L?.phoneLabel||"Phone Number *"}</label>
+            <input type="tel" value={phoneInput} onChange={e=>setPhoneInput(e.target.value)} placeholder="+995 5XX XXX XXX"
+              onKeyDown={e=>e.key==="Enter"&&handlePhoneSave()}
+              autoFocus
+              style={{width:"100%",padding:"12px 14px",border:`1px solid ${C.lgray}`,fontSize:14,color:C.black,outline:"none"}}/>
+          </div>
+          <HoverBtn onClick={handlePhoneSave} variant="primary" style={{width:"100%",padding:"15px"}} disabled={phoneSaving}>
+            {phoneSaving?<span style={{display:"inline-block",width:16,height:16,border:`2px solid rgba(255,255,255,0.3)`,borderTop:`2px solid ${C.white}`,borderRadius:"50%",animation:"spinAnim 0.7s linear infinite"}}/>:(L?.continueBtn||"Continue")}
+          </HoverBtn>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{minHeight:"100vh",background:C.cream,display:"flex",alignItems:"center",justifyContent:"center",padding:mobile?"78px 16px 40px":"104px 20px 40px"}}>

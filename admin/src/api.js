@@ -18,36 +18,50 @@ function buildHeaders(options) {
 let onSessionExpired = null;
 export function setSessionExpiredHandler(fn) { onSessionExpired = fn; }
 
+// Mutex to prevent concurrent token refresh calls
+let refreshPromise = null;
+async function refreshToken() {
+  if (refreshPromise) return refreshPromise;
+  refreshPromise = fetch(API + '/auth/refresh', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'X-CSRF-Token': getCsrfToken() },
+  })
+    .then(r => { if (!r.ok) throw new Error(); return r; })
+    .finally(() => { refreshPromise = null; });
+  return refreshPromise;
+}
+
 async function request(path, options = {}) {
+  const { headers: optHeaders, credentials: optCredentials, ...restOptions } = options;
   const headers = buildHeaders(options);
   const res = await fetch(`${API}${path}`, {
+    ...restOptions,
     credentials: 'include',
     headers,
-    ...options,
   });
 
   // Auto-refresh on 401 with TOKEN_EXPIRED
   if (res.status === 401) {
     const body = await res.json().catch(() => ({}));
     if (body.code === 'TOKEN_EXPIRED') {
-      const refreshRes = await fetch(`${API}/auth/refresh`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'X-CSRF-Token': getCsrfToken() },
-      });
-      if (refreshRes.ok) {
-        const retryHeaders = buildHeaders(options);
-        const retryRes = await fetch(`${API}${path}`, {
-          credentials: 'include',
-          headers: retryHeaders,
-          ...options,
-        });
-        if (!retryRes.ok) {
-          const retryBody = await retryRes.json().catch(() => ({ error: 'Request failed' }));
-          throw { status: retryRes.status, message: retryBody.error, details: retryBody.details };
-        }
-        return retryRes.json();
+      try {
+        await refreshToken();
+      } catch {
+        if (onSessionExpired && !path.includes('/auth/login')) onSessionExpired();
+        throw { status: 401, message: body.error || 'Unauthorized' };
       }
+      const retryHeaders = buildHeaders(options);
+      const retryRes = await fetch(`${API}${path}`, {
+        ...restOptions,
+        credentials: 'include',
+        headers: retryHeaders,
+      });
+      if (!retryRes.ok) {
+        const retryBody = await retryRes.json().catch(() => ({ error: 'Request failed' }));
+        throw { status: retryRes.status, message: retryBody.error, details: retryBody.details };
+      }
+      return retryRes.json();
     }
     // Session is truly dead — force re-login
     if (onSessionExpired && !path.includes('/auth/login')) onSessionExpired();
@@ -82,13 +96,13 @@ export const api = {
     request('/products'),
 
   createProduct: (data) =>
-    request('/admin/products', { method: 'POST', body: JSON.stringify(data) }),
+    request('/products', { method: 'POST', body: JSON.stringify(data) }),
 
   updateProduct: (id, data) =>
-    request(`/admin/products/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    request(`/products/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
 
   deleteProduct: (id) =>
-    request(`/admin/products/${id}`, { method: 'DELETE' }),
+    request(`/products/${id}`, { method: 'DELETE' }),
 
   // Admin: Orders
   getOrders: () =>

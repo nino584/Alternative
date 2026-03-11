@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { C, T, S } from '../constants/theme.js';
+import { C, T } from '../constants/theme.js';
 import { BI, HERO_IMAGE } from '../constants/images.js';
 import { PRODUCTS } from '../constants/data.js';
 import { IconShield, IconPackage, IconVideo, IconDiamond } from '../components/icons/Icons.jsx';
@@ -8,6 +8,7 @@ import ProductCard from '../components/ui/ProductCard.jsx';
 import Footer from '../components/layout/Footer.jsx';
 import SEO from '../components/SEO.jsx';
 import { pageMeta } from '../utils/seo.js';
+import { DEMO_VIDEO_URL } from '../constants/config.js';
 import useInView from '../hooks/useInView.js';
 
 // ── SEASON HELPER ─────────────────────────────────────────────────────────────
@@ -24,9 +25,7 @@ function getSeasonLabel(lang) {
 }
 
 // ── HOMEPAGE ──────────────────────────────────────────────────────────────────
-const DEMO_VIDEO_URL = "https://cdn.shopify.com/videos/c/o/v/87c0928e89c34bdfb4e4fefc45f14cb2.mp4";
-
-export default function HomePage({setPage,setSelected,L,lang,mobile,products:productsProp,wishlist,onWishlist,onQuickView}) {
+export default function HomePage({setPage,L,lang,mobile,products:productsProp,wishlist,onWishlist,onQuickView}) {
   const [vis,setVis]=useState(false);
   const [heroSrc,setHeroSrc]=useState(HERO_IMAGE);
   const [vidPlaying,setVidPlaying]=useState(false);
@@ -121,7 +120,7 @@ export default function HomePage({setPage,setSelected,L,lang,mobile,products:pro
           <h2 style={{...T.displayMd,color:C.black,marginBottom:mobile?28:48,fontSize:mobile?"clamp(22px,6vw,32px)":undefined}}>{L.collections}</h2>
           <div style={{display:"grid",gridTemplateColumns:mobile?"1fr":"1fr 1fr 1fr",gap:mobile?10:3}}>
             {[{name:L.womenswear,section:"Womenswear",src:BI.cover,sub:L.womensSub},{name:L.menswear,section:"Menswear",src:BI.man_editorial,sub:L.mensSub},{name:L.kidswear,section:"Kidswear",src:BI.packaging,sub:L.kidsSub}].map((cat,i)=>(
-              <div key={i} onClick={()=>{window.__initSection=cat.section;setPage("catalog");}}
+              <div key={i} onClick={()=>{setPage("catalog",null,{initSection:cat.section});}}
                 style={{position:"relative",height:mobile?260:420,cursor:"pointer",overflow:"hidden"}}
                 onMouseEnter={e=>{const img=e.currentTarget.querySelector('img');if(img)img.style.transform="scale(1.05)";}}
                 onMouseLeave={e=>{const img=e.currentTarget.querySelector('img');if(img)img.style.transform="scale(1)";}}>
@@ -167,7 +166,7 @@ export default function HomePage({setPage,setSelected,L,lang,mobile,products:pro
           <div style={{position:"relative",height:mobile?220:400,overflow:"hidden",order:mobile?1:0,background:C.black}}>
             {!vidPlaying?(
               <>
-                <img src={BI.store_interior} alt="Video verification service at Alternative" loading="lazy" style={{width:"100%",height:"100%",objectFit:"cover",opacity:0.55}}/>
+                <img src="/images/about-hero.jpg" alt="Video verification service at Alternative" loading="lazy" style={{width:"100%",height:"100%",objectFit:"cover",opacity:0.55}}/>
                 <button onClick={()=>setVidPlaying(true)} aria-label="Play demo video"
                   style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:64,height:64,borderRadius:"50%",border:"1px solid rgba(255,255,255,0.7)",background:"rgba(0,0,0,0.2)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",transition:"all 0.4s cubic-bezier(0.25,0.46,0.45,0.94)",backdropFilter:"blur(8px)"}}
                   onMouseEnter={e=>{e.currentTarget.style.transform="translate(-50%,-50%) scale(1.08)";e.currentTarget.style.borderColor="rgba(177,154,122,0.8)";}}

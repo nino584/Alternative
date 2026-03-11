@@ -1,10 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { C, T } from '../../constants/theme.js';
 import { PRODUCTS } from '../../constants/data.js';
-import { productUrl } from '../../utils/seo.js';
 
 // ── LUXURY SEARCH OVERLAY (Farfetch / Luisaviaroma style) ────────────────────
-export default function SearchOverlay({onClose,setPage,setSelected,L,mobile,products:productsProp}) {
+export default function SearchOverlay({onClose,setPage,L,mobile,products:productsProp}) {
   const [q,setQ]=useState("");
   const [focused,setFocused]=useState(false);
   const [section,setSection]=useState("All");
@@ -32,11 +31,7 @@ export default function SearchOverlay({onClose,setPage,setSelected,L,mobile,prod
   }).slice(0,12):[];
 
   const navigate = (p) => {
-    if (p.brand && p.name) {
-      window.location.href = productUrl(p);
-    } else {
-      setPage("product", p);
-    }
+    setPage("product", p);
     onClose();
   };
 

@@ -3,12 +3,15 @@ import { C, T } from '../constants/theme.js';
 import { VIDEO_VERIFICATION_GEL } from '../constants/config.js';
 import HoverBtn from './HoverBtn.jsx';
 import { api } from '../api.js';
+import { csvSafe } from '../utils/csv.js';
 
 const ORDER_STATUSES_BASE = [
   { key: "reserved", label: "Reserved", color: C.brown },
+  { key: "sourcing", label: "Sourcing", color: "#8b6914" },
   { key: "confirmed", label: "Confirmed", color: "#1a5c8b" },
   { key: "shipped", label: "Shipped", color: C.green },
   { key: "delivered", label: "Delivered", color: C.gray },
+  { key: "cancelled", label: "Cancelled", color: "#c62828" },
 ];
 
 const STATUS_COLOR = Object.fromEntries(ORDER_STATUSES_BASE.map(s => [s.key, s.color]));
@@ -40,7 +43,7 @@ function SendMediaModal({ orderId, orderItem, onClose, toast, L }) {
   const fileRef = useRef(null);
 
   useEffect(() => {
-    api.getOrderMessages(orderId)
+    api.getMessages(orderId)
       .then(data => setSentMessages(data.messages || []))
       .catch(() => {})
       .finally(() => setLoadingHistory(false));
@@ -237,6 +240,9 @@ export default function OrdersPanel({ orders, setOrders, products, mobile, toast
   });
 
   const updateStatus = (orderId, newStatus) => {
+    if (newStatus === "cancelled") {
+      if (!window.confirm(`Are you sure you want to cancel order ${orderId}? This action cannot be undone.`)) return;
+    }
     api.updateOrderStatus(orderId, newStatus)
       .then(() => {
         setOrders(prev => prev.map(o => o.orderId === orderId ? { ...o, status: newStatus } : o));
@@ -247,10 +253,12 @@ export default function OrdersPanel({ orders, setOrders, products, mobile, toast
 
   const exportCSV = () => {
     const headers = ["Order ID","Customer","WhatsApp","Item","Size","Status","Amount","Date","Video Verification","Notes"];
-    const rows = filtered.map(o => [`"${(o.orderId||"").replace(/"/g,'""')}"`, `"${(o.customer||"").replace(/"/g,'""')}"`, `"${(o.phone||"").replace(/"/g,'""')}"`, `"${(o.item||"").replace(/"/g,'""')}"`, `"${(o.size||"").replace(/"/g,'""')}"`, o.status, o.amount, o.date, o.wantVideo ? "Yes" : "No", `"${(o.notes||"").replace(/"/g,'""')}"`]);
+    const rows = filtered.map(o => [csvSafe(o.orderId), csvSafe(o.customer), csvSafe(o.phone), csvSafe(o.item), csvSafe(o.size), csvSafe(o.status), csvSafe(o.amount), csvSafe(o.date), csvSafe(o.wantVideo ? "Yes" : "No"), csvSafe(o.notes)]);
     const csv = [headers, ...rows].map(r => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "orders.csv"; a.click();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = "orders.csv"; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
     toast("Orders exported", "success");
   };
 

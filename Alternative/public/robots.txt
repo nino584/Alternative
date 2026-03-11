@@ -5,4 +5,4 @@ Disallow: /account
 Disallow: /orders
 Disallow: /api/
 
-Sitemap: https://alternative.ge/sitemap.xml
+Sitemap: https://alternative.store/sitemap.xml

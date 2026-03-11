@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
-import { useNavigate, useLocation, Routes, Route, Navigate } from 'react-router-dom';
+import { useNavigate, useLocation, Routes, Route } from 'react-router-dom';
 import { STYLES } from './constants/theme.js';
 import { LANG_DATA } from './constants/translations.js';
 import { PRODUCTS as FALLBACK_PRODUCTS } from './constants/data.js';
@@ -60,7 +60,6 @@ export default function App() {
   const pageFromRoute = pathname === "/" ? "home" : pathname.slice(1).split("/")[0];
 
   const [siteLoaded, setSiteLoaded] = useState(false);
-  const [selected,setSelected]=useState(null);
   const [cart,setCart]=useState(()=>readStorage(STORAGE_KEYS.cart,[]));
   const [orders,setOrders]=useState(()=>readStorage(STORAGE_KEYS.orders,[]));
   const [user,setUser]=useState(null);
@@ -74,15 +73,16 @@ export default function App() {
   const [lang,setLang]=useState(()=>readStorage(STORAGE_KEYS.lang,"en"));
   const mobile = useIsMobile();
 
-  const setPage = useCallback((page, payload) => {
+  const setPage = useCallback((page, payload, state) => {
+    const opts = state ? { state } : undefined;
     if (page === "product" && payload) {
       // Support both full product objects and {id} refs
       const prod = payload.id != null ? (products.find(p=>p.id===payload.id) || payload) : payload;
-      if (prod.brand && prod.name) navigate(productUrl(prod));
-      else navigate("/product/" + (prod.id || payload.id));
+      if (prod.brand && prod.name) navigate(productUrl(prod), opts);
+      else navigate("/product/" + (prod.id || payload.id), opts);
     }
-    else if (page === "home") navigate("/");
-    else navigate("/" + page);
+    else if (page === "home") navigate("/", opts);
+    else navigate("/" + page, opts);
   }, [navigate, products]);
 
   const page = pageFromRoute;
@@ -90,10 +90,15 @@ export default function App() {
 
   useEffect(()=>{window.scrollTo({top:0,behavior:"instant"});},[pathname]);
 
+  // Reset banner height when leaving home page
+  useEffect(()=>{if(page!=="home")setBannerH(0);},[page]);
+
   // ── Affiliate ref tracking ───────────────────────────────────────────────
   useEffect(()=>{
     const params=new URLSearchParams(window.location.search);
-    const ref=params.get('ref');
+    const rawRef=params.get('ref');
+    // Sanitize affiliate ref to alphanumeric + hyphens/underscores only
+    const ref=rawRef?rawRef.replace(/[^a-zA-Z0-9_-]/g,'').slice(0,30):'';
     if(ref){
       localStorage.setItem('affiliate_ref',ref);
       api.trackAffiliateClick(ref).catch(()=>{});
@@ -162,7 +167,7 @@ export default function App() {
   },[lang]);
 
   const toast=useCallback((message,type="info")=>{
-    const id=Date.now();
+    const id=Date.now()+Math.random();
     setToasts(p=>[...p,{id,message,type}]);
     setTimeout(()=>setToasts(p=>p.filter(t=>t.id!==id)),3200);
   },[]);
@@ -190,8 +195,14 @@ export default function App() {
     }));
   },[]);
 
-  const placeOrder=useCallback(()=>{
-    setCart([]);
+  const placeOrder=useCallback(({items}={})=>{
+    if(items&&items.length>0){
+      // Remove only successfully ordered items from cart
+      const orderedIds=new Set(items.map(i=>i.id+'_'+(i.selectedSize||'')));
+      setCart(prev=>prev.filter(c=>!orderedIds.has(c.id+'_'+(c.selectedSize||''))));
+    } else {
+      setCart([]);
+    }
     // Refresh orders from server so "My Orders" is up to date
     api.getOrders().then(oData => {
       if (oData?.orders?.length) setOrders(oData.orders);
@@ -209,11 +220,10 @@ export default function App() {
     });
   },[L]);
 
-  // Logout handler that clears server session
+  // Logout handler that clears server session (cart preserved for guests)
   const handleLogout = useCallback(async () => {
     try { await api.logout(); } catch (_) {}
     setUser(null);
-    setCart([]);
     setWishlist([]);
     setPage("home");
   }, [setPage]);
@@ -233,7 +243,7 @@ export default function App() {
         *:focus-visible{outline:2px solid #b19a7a;outline-offset:2px}
       `}</style>
       <a href="#main-content" className="skip-link">Skip to content</a>
-      {siteLoaded&&page!=="checkout"&&page!=="checkout-bags"&&<AppBanner mobile={mobile} onHeightChange={setBannerH} L={L}/>}
+      {siteLoaded&&page==="home"&&<AppBanner mobile={mobile} onHeightChange={setBannerH} L={L}/>}
       {page!=="checkout"&&page!=="checkout-bags"&&<Nav page={page} setPage={setPage} cartCount={cart.length}
         user={user} setUser={setUser} onLogout={handleLogout}
         onSearch={()=>setShowSearch(true)} onCart={()=>setShowCart(true)}
@@ -242,15 +252,15 @@ export default function App() {
       <main id="main-content" role="main">
       <Suspense fallback={<div style={{minHeight:"100vh"}} role="status" aria-label="Loading page"/>}>
         <Routes>
-          <Route path="/" element={<HomePage setPage={setPage} setSelected={setSelected} products={products} wishlist={wishlist} onWishlist={onWishlist} onQuickView={setQuickViewProduct} L={L} lang={lang} mobile={mobile}/>}/>
-          <Route path="/catalog" element={<CatalogPage {...commonProps} setSelected={setSelected} products={products} wishlist={wishlist} onWishlist={onWishlist} onQuickView={setQuickViewProduct} mobile={mobile} topOffset={bannerH}/>}/>
-          <Route path="/product/:slug" element={<ProductPage {...commonProps} setSelected={setSelected} products={products} addToCart={addToCart} wishlist={wishlist} onWishlist={onWishlist} onQuickView={setQuickViewProduct} mobile={mobile}/>}/>
+          <Route path="/" element={<HomePage setPage={setPage} products={products} wishlist={wishlist} onWishlist={onWishlist} onQuickView={setQuickViewProduct} L={L} lang={lang} mobile={mobile}/>}/>
+          <Route path="/catalog" element={<CatalogPage {...commonProps} products={products} wishlist={wishlist} onWishlist={onWishlist} onQuickView={setQuickViewProduct} mobile={mobile} topOffset={bannerH}/>}/>
+          <Route path="/product/:slug" element={<ProductPage {...commonProps} products={products} addToCart={addToCart} wishlist={wishlist} onWishlist={onWishlist} onQuickView={setQuickViewProduct} mobile={mobile}/>}/>
           <Route path="/how" element={<HowItWorksPage setPage={setPage} L={L} mobile={mobile}/>}/>
           <Route path="/about" element={<AboutPage setPage={setPage} L={L} mobile={mobile}/>}/>
-          <Route path="/orders" element={<OrdersPage orders={orders} products={products} setPage={setPage} toast={toast} L={L} mobile={mobile}/>}/>
+          <Route path="/orders" element={<OrdersPage orders={orders} setOrders={setOrders} products={products} setPage={setPage} toast={toast} L={L} mobile={mobile}/>}/>
           <Route path="/auth" element={<AuthPage setPage={setPage} setUser={setUser} toast={toast} L={L} mobile={mobile}/>}/>
           <Route path="/account" element={<AccountPage {...commonProps} orders={orders} products={products} wishlist={wishlist} onWishlist={onWishlist} onQuickView={setQuickViewProduct} mobile={mobile}/>}/>
-          <Route path="/brands" element={<BrandsPage setPage={setPage} setSelected={setSelected} products={products} L={L} mobile={mobile}/>}/>
+          <Route path="/brands" element={<BrandsPage setPage={setPage} products={products} L={L} mobile={mobile}/>}/>
           <Route path="/video-verification" element={<VideoVerificationPage setPage={setPage} L={L} mobile={mobile}/>}/>
           <Route path="/membership" element={<MembershipPage setPage={setPage} L={L} mobile={mobile}/>}/>
           <Route path="/affiliate" element={<AffiliatePage setPage={setPage} L={L} mobile={mobile}/>}/>
@@ -264,14 +274,14 @@ export default function App() {
           <Route path="/seller-agreement" element={<LegalPage type="seller-agreement" setPage={setPage} L={L} lang={lang} mobile={mobile}/>}/>
           <Route path="/ip-policy" element={<LegalPage type="ip-policy" setPage={setPage} L={L} lang={lang} mobile={mobile}/>}/>
           <Route path="/contact" element={<ContactPage setPage={setPage} L={L} mobile={mobile}/>}/>
-          <Route path="/checkout" element={<CheckoutPage cart={cart.filter(i=>i.cat!=="Bags")} user={user} L={L} setPage={setPage} onComplete={placeOrder} toast={toast} mobile={mobile}/>}/>
+          <Route path="/checkout" element={<CheckoutPage cart={cart} user={user} L={L} setPage={setPage} onComplete={placeOrder} toast={toast} mobile={mobile}/>}/>
           <Route path="/checkout-bags" element={<BagsCheckoutPage cart={cart.filter(i=>i.cat==="Bags")} user={user} L={L} setPage={setPage} onComplete={placeOrder} toast={toast} mobile={mobile}/>}/>
           <Route path="*" element={<NotFoundPage setPage={setPage} L={L} mobile={mobile}/>}/>
         </Routes>
       </Suspense>
       </main>
-      {showSearch&&<SearchOverlay onClose={()=>setShowSearch(false)} setPage={setPage} setSelected={setSelected} products={products} L={L} mobile={mobile}/>}
-      {showCart&&<CartDrawer cart={cart} onClose={()=>setShowCart(false)} setPage={setPage} removeFromCart={removeFromCart} updateCartQty={updateCartQty} onCheckout={()=>{setShowCart(false);const hasBags=cart.some(i=>i.cat==="Bags");const hasOther=cart.some(i=>i.cat!=="Bags");if(hasBags&&!hasOther)setPage("checkout-bags");else if(!hasBags&&hasOther)setPage("checkout");else setPage("checkout-bags");}} L={L} mobile={mobile}/>}
+      {showSearch&&<SearchOverlay onClose={()=>setShowSearch(false)} setPage={setPage} products={products} L={L} mobile={mobile}/>}
+      {showCart&&<CartDrawer cart={cart} onClose={()=>setShowCart(false)} setPage={setPage} removeFromCart={removeFromCart} updateCartQty={updateCartQty} onCheckout={()=>{setShowCart(false);const hasBags=cart.some(i=>i.cat==="Bags");const hasOther=cart.some(i=>i.cat!=="Bags");if(hasBags&&!hasOther)setPage("checkout-bags");else setPage("checkout");}} L={L} mobile={mobile}/>}
       {quickViewProduct&&<QuickViewModal product={quickViewProduct} onClose={()=>setQuickViewProduct(null)} addToCart={addToCart} setPage={setPage} onWishlist={onWishlist} wishlist={wishlist} toast={toast} L={L} mobile={mobile}/>}
       <StylistChat mobile={mobile} lang={lang} setPage={setPage} L={L}/>
       <ToastContainer toasts={toasts} mobile={mobile} role="status" aria-live="polite"/>

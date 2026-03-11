@@ -1,36 +1,36 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <!-- Core pages -->
-  <url><loc>https://alternative.ge/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
-  <url><loc>https://alternative.ge/catalog</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
-  <url><loc>https://alternative.ge/brands</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://alternative.ge/how</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://alternative.ge/about</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://alternative.ge/video-verification</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://alternative.ge/membership</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
-  <url><loc>https://alternative.ge/contact</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://alternative.store/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>https://alternative.store/catalog</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://alternative.store/brands</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://alternative.store/how</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://alternative.store/about</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://alternative.store/video-verification</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://alternative.store/membership</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://alternative.store/contact</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
 
   <!-- Legal pages -->
-  <url><loc>https://alternative.ge/privacy</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
-  <url><loc>https://alternative.ge/terms</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
-  <url><loc>https://alternative.ge/returns</loc><changefreq>yearly</changefreq><priority>0.4</priority></url>
-  <url><loc>https://alternative.ge/shipping</loc><changefreq>yearly</changefreq><priority>0.4</priority></url>
+  <url><loc>https://alternative.store/privacy</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://alternative.store/terms</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://alternative.store/returns</loc><changefreq>yearly</changefreq><priority>0.4</priority></url>
+  <url><loc>https://alternative.store/shipping</loc><changefreq>yearly</changefreq><priority>0.4</priority></url>
 
   <!-- Products (generated from seed data) -->
-  <url><loc>https://alternative.ge/product/1-bottega-veneta-arco-tote</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://alternative.ge/product/2-saint-laurent-classic-flap-bag</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://alternative.ge/product/3-loewe-silk-twill-scarf-9090</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://alternative.ge/product/4-chlo-block-heel-mule</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://alternative.ge/product/5-brunello-cucinelli-cashmere-scarf</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://alternative.ge/product/6-loewe-mini-puzzle-bag</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://alternative.ge/product/7-max-mara-tailored-wool-blazer</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://alternative.ge/product/8-valentino-leather-belt-25mm</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://alternative.ge/product/9-tom-ford-automatic-mesh-watch</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://alternative.ge/product/10-cartier-gold-bracelet-watch</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://alternative.ge/product/11-gucci-horsebit-loafer</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://alternative.ge/product/12-loro-piana-weekender-duffle</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://alternative.ge/product/13-the-row-double-breasted-overcoat</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://alternative.ge/product/14-tom-ford-ceramic-dress-watch</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://alternative.ge/product/15-moncler-mini-puffer-jacket</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://alternative.ge/product/16-golden-goose-canvas-sneaker</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://alternative.store/product/1-bottega-veneta-arco-tote</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://alternative.store/product/2-saint-laurent-classic-flap-bag</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://alternative.store/product/3-loewe-silk-twill-scarf-9090</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://alternative.store/product/4-chlo-block-heel-mule</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://alternative.store/product/5-brunello-cucinelli-cashmere-scarf</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://alternative.store/product/6-loewe-mini-puzzle-bag</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://alternative.store/product/7-max-mara-tailored-wool-blazer</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://alternative.store/product/8-valentino-leather-belt-25mm</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://alternative.store/product/9-tom-ford-automatic-mesh-watch</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://alternative.store/product/10-cartier-gold-bracelet-watch</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://alternative.store/product/11-gucci-horsebit-loafer</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://alternative.store/product/12-loro-piana-weekender-duffle</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://alternative.store/product/13-the-row-double-breasted-overcoat</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://alternative.store/product/14-tom-ford-ceramic-dress-watch</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://alternative.store/product/15-moncler-mini-puffer-jacket</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://alternative.store/product/16-golden-goose-canvas-sneaker</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
 </urlset>

@@ -22,7 +22,7 @@ export default function Nav({page,setPage,cartCount,user,setUser,onLogout,onSear
 
   const onMegaLink=(section,engKey)=>{
     if(engKey==="Brands"){setPage("brands");}
-    else{setPage("catalog");window.__initSection=section;window.__initSub=engKey;}
+    else{setPage("catalog",null,{initSection:section,initSub:engKey});}
     setMegaOpen(false);
     setMobileMenuOpen(false);
   };
@@ -55,7 +55,7 @@ export default function Nav({page,setPage,cartCount,user,setUser,onLogout,onSear
               <button onClick={onSearch} aria-label={L.search||"Search"} className="icon-btn" style={{width:44,height:44}}>
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.black} strokeWidth="1.2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
               </button>
-              <button onClick={()=>{window.__initAccountTab="wishlist";setPage("account");setMobileMenuOpen(false);}} aria-label={L.wishlist||"Wishlist"} className="icon-btn" style={{width:44,height:44,position:"relative"}}>
+              <button onClick={()=>{setPage("account",null,{initAccountTab:"wishlist"});setMobileMenuOpen(false);}} aria-label={L.wishlist||"Wishlist"} className="icon-btn" style={{width:44,height:44,position:"relative"}}>
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.black} strokeWidth="1.2" strokeLinecap="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
                 {wishlistCount>0&&<span style={{position:"absolute",top:2,right:2,background:C.tan,color:"#fff",borderRadius:"50%",minWidth:16,height:16,padding:"0 3px",fontSize:9,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center"}}>{wishlistCount}</span>}
               </button>
@@ -91,7 +91,7 @@ export default function Nav({page,setPage,cartCount,user,setUser,onLogout,onSear
               }[mobileTab]||[]).map((item,i)=>(
                 <button key={i} onClick={()=>{
                     if(item.k==="Brands"){setPage("brands");}
-                    else{setPage("catalog");window.__initSection=mobileTab;window.__initSub=item.k;}
+                    else{setPage("catalog",null,{initSection:mobileTab,initSub:item.k});}
                     setMobileMenuOpen(false);
                   }}
                   style={{display:"flex",justifyContent:"space-between",alignItems:"center",width:"100%",padding:"16px 20px",background:"none",border:"none",borderBottom:`1px solid ${C.lgray}`,textAlign:"left",...T.body,color:item.k==="Sale"?C.tan:C.black,fontSize:15,fontWeight:300,transition:"padding-left 0.2s"}}
@@ -208,7 +208,7 @@ export default function Nav({page,setPage,cartCount,user,setUser,onLogout,onSear
           </button>
 
           {/* Wishlist */}
-          <button onClick={()=>{window.__initAccountTab="wishlist";setPage("account");}} title={L.wishlist||"Wishlist"} className="icon-btn" style={{width:42,height:42,position:"relative"}}>
+          <button onClick={()=>{setPage("account",null,{initAccountTab:"wishlist"});}} title={L.wishlist||"Wishlist"} className="icon-btn" style={{width:42,height:42,position:"relative"}}>
             <svg width="19" height="19" viewBox="0 0 24 24" fill={wishlistCount>0?C.tan:"none"} stroke={wishlistCount>0?C.tan:C.black} strokeWidth="1.2" strokeLinecap="round">
               <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
             </svg>

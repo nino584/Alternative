@@ -4,7 +4,7 @@ import SEO from '../components/SEO.jsx';
 import { pageMeta, breadcrumbSchema } from '../utils/seo.js';
 
 // ── BRANDS PAGE ──────────────────────────────────────────────────────────────
-export default function BrandsPage({setPage,setSelected,L,mobile}) {
+export default function BrandsPage({setPage,L,mobile}) {
   const px=mobile?"16px":"40px";
 
   const BRANDS = [
@@ -39,7 +39,7 @@ export default function BrandsPage({setPage,setSelected,L,mobile}) {
           {[col1,col2].map((col,ci)=>(
             <div key={ci}>
               {col.map(brand=>(
-                <button key={brand} onClick={()=>{window.__initBrand=brand;setPage("catalog");}}
+                <button key={brand} onClick={()=>{setPage("catalog",null,{initBrand:brand});}}
                   onMouseEnter={e=>e.currentTarget.querySelector("span").style.color=C.tan}
                   onMouseLeave={e=>e.currentTarget.querySelector("span").style.color=C.black}
                   style={{display:"block",background:"none",border:"none",padding:`${mobile?"10px":"12px"} 0`,textAlign:"left",cursor:"pointer",width:"100%"}}>

@@ -1,15 +1,12 @@
 import { useState } from 'react';
 import { C, T } from '../constants/theme.js';
 import { BI } from '../constants/images.js';
-import { VIDEO_VERIFICATION_GEL } from '../constants/config.js';
+import { VIDEO_VERIFICATION_GEL, DEMO_VIDEO_URL } from '../constants/config.js';
 import { IconVideo, IconCheck } from '../components/icons/Icons.jsx';
 import HoverBtn from '../components/ui/HoverBtn.jsx';
 import Footer from '../components/layout/Footer.jsx';
 import SEO from '../components/SEO.jsx';
 import { pageMeta, breadcrumbSchema } from '../utils/seo.js';
-
-// Demo verification video URL — replace with your own hosted video
-const DEMO_VIDEO_URL = "https://cdn.shopify.com/videos/c/o/v/87c0928e89c34bdfb4e4fefc45f14cb2.mp4";
 
 // ── VIDEO VERIFICATION PAGE ──────────────────────────────────────────────────
 export default function VideoVerificationPage({setPage,L,mobile}) {
@@ -37,7 +34,7 @@ export default function VideoVerificationPage({setPage,L,mobile}) {
           <div style={{position:"relative",overflow:"hidden",background:C.black,aspectRatio:"9/16",maxHeight:mobile?380:520,margin:"0 auto",width:mobile?"100%":"auto",maxWidth:mobile?"280px":"300px",borderRadius:4}}>
             {!playing?(
               <>
-                <img src={BI.store_interior} alt="Video verification demo" loading="lazy" style={{width:"100%",height:"100%",objectFit:"cover",opacity:0.6}}/>
+                <img src="/images/about-hero.jpg" alt="Video verification demo" loading="lazy" style={{width:"100%",height:"100%",objectFit:"cover",opacity:0.6}}/>
                 <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}>
                   <button onClick={()=>setPlaying(true)} aria-label="Play demo video"
                     style={{width:72,height:72,borderRadius:"50%",border:"2px solid rgba(255,255,255,0.85)",background:"rgba(0,0,0,0.3)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",transition:"all 0.3s",backdropFilter:"blur(4px)"}}>

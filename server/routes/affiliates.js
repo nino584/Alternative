@@ -16,6 +16,15 @@ const router = Router();
 
 const dashboardLoginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: { error: 'Too many login attempts. Try again later.' } });
 
+// Rate limit for dashboard data endpoints (30 requests per 15 min per IP)
+const dashboardDataLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: { error: 'Too many requests. Try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // ── Schemas ──────────────────────────────────────────────────────────────────
 const applySchema = z.object({
   name: z.string().min(2).max(100),
@@ -77,7 +86,7 @@ router.post('/track-click', validate(trackClickSchema), (req, res) => {
 });
 
 // ── PUBLIC: Dashboard login ──────────────────────────────────────────────────
-router.post('/dashboard/login', dashboardLoginLimiter, validate(dashboardLoginSchema), (req, res) => {
+router.post('/dashboard/login', dashboardLoginLimiter, dashboardDataLimiter, validate(dashboardLoginSchema), (req, res) => {
   const { code, email } = req.validated;
   const affiliate = getAffiliateByCode(code);
   if (!affiliate || affiliate.email.toLowerCase() !== email.toLowerCase()) {
@@ -118,7 +127,7 @@ router.post('/dashboard/login', dashboardLoginLimiter, validate(dashboardLoginSc
 });
 
 // ── ADMIN: List all affiliates ───────────────────────────────────────────────
-router.get('/admin/list', authenticate, requireRole('admin'), (req, res) => {
+router.get('/admin/list', dashboardDataLimiter, authenticate, requireRole('admin'), (req, res) => {
   const affiliates = getAffiliates();
   // Enrich with click/conversion counts
   const enriched = affiliates.map(a => {

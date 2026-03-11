@@ -18,7 +18,7 @@ export default function PreorderModal({product:p,selectedSize,onClose,onComplete
   const [formError,setFormError]=useState("");
   const [submitting,setSubmitting]=useState(false);
   const [confirmedOrderId,setConfirmedOrderId]=useState("");
-  const effectivePrice=p.sale||p.price;
+  const effectivePrice=p.sale??p.price;
   const totalPrice=effectivePrice;
 
   // ── GUEST form state ──

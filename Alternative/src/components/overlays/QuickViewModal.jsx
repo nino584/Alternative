@@ -27,7 +27,7 @@ export default function QuickViewModal({product:p,onClose,addToCart,setPage,onWi
   };
 
   const imgSrc=p.img||(p.images&&p.images[0])||null;
-  const effectivePrice=p.sale||p.price;
+  const effectivePrice=p.sale??p.price;
 
   return (
     <div style={{position:"fixed",inset:0,zIndex:400,display:"flex",alignItems:"center",justifyContent:"center"}}>

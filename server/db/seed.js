@@ -1,12 +1,32 @@
 import { writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { randomBytes } from 'node:crypto';
 import bcryptjs from 'bcryptjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DB_PATH = join(__dirname, 'data.json');
 
 const SALT = bcryptjs.genSaltSync(12);
+
+// Admin password: read from env or generate a secure random one
+const adminPassword = process.env.ADMIN_PASSWORD || randomBytes(24).toString('base64url');
+if (!process.env.ADMIN_PASSWORD) {
+  console.log('─────────────────────────────────────────────────');
+  console.log('  ADMIN_PASSWORD not set in environment.');
+  console.log('  Generated admin password (save it now):');
+  console.log(`  ${adminPassword}`);
+  console.log('─────────────────────────────────────────────────');
+}
+
+// Demo password: read from env or generate a secure random one
+const demoPassword = process.env.DEMO_PASSWORD || randomBytes(24).toString('base64url');
+if (!process.env.DEMO_PASSWORD) {
+  console.log('  DEMO_PASSWORD not set in environment.');
+  console.log('  Generated demo password (save it now):');
+  console.log(`  ${demoPassword}`);
+  console.log('─────────────────────────────────────────────────');
+}
 
 const BASE = '/images/products/';
 
@@ -17,7 +37,7 @@ const data = {
       name: "Admin",
       email: "admin@alternative.ge",
       phone: "+995 555 999 555",
-      password: bcryptjs.hashSync("Admin@2026!", SALT),
+      password: bcryptjs.hashSync(adminPassword, SALT),
       role: "admin",
       createdAt: new Date().toISOString()
     },
@@ -26,7 +46,7 @@ const data = {
       name: "Demo User",
       email: "demo@alternative.ge",
       phone: "+995 599 123 456",
-      password: bcryptjs.hashSync("Demo@2026!", SALT),
+      password: bcryptjs.hashSync(demoPassword, SALT),
       role: "user",
       createdAt: new Date().toISOString()
     }
@@ -56,5 +76,5 @@ writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf-8');
 console.log('Database seeded successfully.');
 console.log(`  ${data.users.length} users created`);
 console.log(`  ${data.products.length} products created`);
-console.log('  Admin: admin@alternative.ge / Admin@2026!');
-console.log('  Demo:  demo@alternative.ge / Demo@2026!');
+console.log('  Admin: admin@alternative.ge');
+console.log('  Demo:  demo@alternative.ge');

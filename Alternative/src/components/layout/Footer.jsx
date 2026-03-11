@@ -102,7 +102,7 @@ export default function Footer({setPage,L,mobile}) {
           <div>
             <p style={{fontFamily:"'TT Interphases Pro',sans-serif",fontSize:10,fontWeight:500,letterSpacing:"0.14em",textTransform:"uppercase",color:C.onDarkMuted,marginBottom:mobile?S.md:S.lg+4}}>{L.footerAbout}</p>
             {[[L.ourStoryFooter,"about",null],[L.footerHowItWorks,"how",null],[L.contact,"contact",null]].map(([l,pg,scrollTo])=>(
-              <button key={l} onClick={()=>{if(scrollTo)window.__initHowScroll=scrollTo;setPage(pg);}} style={linkStyle}
+              <button key={l} onClick={()=>{setPage(pg,null,scrollTo?{initHowScroll:scrollTo}:undefined);}} style={linkStyle}
                 onMouseEnter={e=>e.currentTarget.style.color=C.tan} onMouseLeave={e=>e.currentTarget.style.color=C.onDark}>{l}</button>
             ))}
           </div>
@@ -111,7 +111,7 @@ export default function Footer({setPage,L,mobile}) {
           <div>
             <p style={{fontFamily:"'TT Interphases Pro',sans-serif",fontSize:10,fontWeight:500,letterSpacing:"0.14em",textTransform:"uppercase",color:C.onDarkMuted,marginBottom:mobile?S.md:S.lg+4}}>{L.footerHelp}</p>
             {[[L.faqFooter,"how","faq"],[L.footerShipping,"shipping",null],[L.footerReturnsLink,"returns",null]].map(([l,pg,scrollTo])=>(
-              <button key={l} onClick={()=>{if(scrollTo)window.__initHowScroll=scrollTo;setPage(pg);}} style={linkStyle}
+              <button key={l} onClick={()=>{setPage(pg,null,scrollTo?{initHowScroll:scrollTo}:undefined);}} style={linkStyle}
                 onMouseEnter={e=>e.currentTarget.style.color=C.tan} onMouseLeave={e=>e.currentTarget.style.color=C.onDark}>{l}</button>
             ))}
           </div>
@@ -120,7 +120,7 @@ export default function Footer({setPage,L,mobile}) {
           <div>
             <p style={{fontFamily:"'TT Interphases Pro',sans-serif",fontSize:10,fontWeight:500,letterSpacing:"0.14em",textTransform:"uppercase",color:C.onDarkMuted,marginBottom:mobile?S.md:S.lg+4}}>{L.footerDiscounts}</p>
             {[[L.footerAffiliate,"affiliate",null],[L.footerRefer,"membership","refer"],[L.footerMembership,"auth",null],[L?.footerBecomeSupplier||"Become a Supplier","become-supplier",null]].map(([l,pg,scrollTo])=>(
-              <button key={l} onClick={()=>{if(scrollTo)window.__initMembershipScroll=scrollTo;setPage(pg);}} style={linkStyle}
+              <button key={l} onClick={()=>{setPage(pg,null,scrollTo?{initMembershipScroll:scrollTo}:undefined);}} style={linkStyle}
                 onMouseEnter={e=>e.currentTarget.style.color=C.tan} onMouseLeave={e=>e.currentTarget.style.color=C.onDark}>{l}</button>
             ))}
           </div>

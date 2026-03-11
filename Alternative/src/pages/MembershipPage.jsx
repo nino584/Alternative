@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { C, T } from '../constants/theme.js';
 import { IconCheck } from '../components/icons/Icons.jsx';
 import HoverBtn from '../components/ui/HoverBtn.jsx';
@@ -8,14 +9,14 @@ import { pageMeta, breadcrumbSchema } from '../utils/seo.js';
 
 // ── MEMBERSHIP PAGE ──────────────────────────────────────────────────────────
 export default function MembershipPage({setPage,L,mobile}) {
+  const location = useLocation();
   const px=mobile?"16px":"40px";
   useEffect(()=>{
-    if(window.__initMembershipScroll){
-      const id=window.__initMembershipScroll;
-      delete window.__initMembershipScroll;
+    const id=location.state?.initMembershipScroll;
+    if(id){
       setTimeout(()=>{const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:"smooth",block:"start"});},100);
     }
-  },[]);
+  },[location.state]);
   return (
     <div style={{paddingTop:mobile?78:104,background:C.cream}}>
       <SEO {...pageMeta("membership")} schema={breadcrumbSchema([{name:"Home",url:"/"},{name:"Membership"}])} />

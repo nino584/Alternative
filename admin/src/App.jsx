@@ -167,6 +167,11 @@ function InviteSetup({ token, L, lang, setLang, mobile }) {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
 
+  // Strip the invite token from the URL/history immediately — token is already captured in `token` prop
+  useEffect(() => {
+    if (token) window.history.replaceState({}, '', window.location.pathname);
+  }, []);
+
   const handleSubmit = async (e) => {
     e?.preventDefault();
     setError('');

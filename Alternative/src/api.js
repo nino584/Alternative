@@ -14,36 +14,55 @@ function buildHeaders(options) {
   return headers;
 }
 
+// Mutex for token refresh — prevents concurrent 401s from triggering multiple refreshes
+let refreshPromise = null;
+
+async function doRefresh() {
+  const res = await fetch(`${API}/auth/refresh`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'X-CSRF-Token': getCsrfToken() },
+  });
+  if (!res.ok) throw new Error('Refresh failed');
+  return res.json();
+}
+
+async function refreshToken() {
+  if (refreshPromise) return refreshPromise;
+  refreshPromise = doRefresh().finally(() => { refreshPromise = null; });
+  return refreshPromise;
+}
+
 async function request(path, options = {}) {
   const headers = buildHeaders(options);
+  // Destructure to prevent ...options from overriding headers/credentials
+  const { headers: _h, credentials: _c, ...restOptions } = options;
   const res = await fetch(`${API}${path}`, {
     credentials: 'include',
+    ...restOptions,
     headers,
-    ...options,
   });
 
   // Auto-refresh on 401 with TOKEN_EXPIRED
   if (res.status === 401) {
     const body = await res.json().catch(() => ({}));
     if (body.code === 'TOKEN_EXPIRED') {
-      const refreshRes = await fetch(`${API}/auth/refresh`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'X-CSRF-Token': getCsrfToken() },
-      });
-      if (refreshRes.ok) {
+      try {
+        await refreshToken();
         // Retry original request with new token (CSRF token may have rotated)
         const retryHeaders = buildHeaders(options);
         const retryRes = await fetch(`${API}${path}`, {
           credentials: 'include',
+          ...restOptions,
           headers: retryHeaders,
-          ...options,
         });
         if (!retryRes.ok) {
           const retryBody = await retryRes.json().catch(() => ({ error: 'Request failed' }));
           throw { status: retryRes.status, message: retryBody.error, details: retryBody.details };
         }
         return retryRes.json();
+      } catch {
+        // Refresh failed — fall through to 401 throw
       }
     }
     throw { status: 401, message: body.error || 'Unauthorized' };

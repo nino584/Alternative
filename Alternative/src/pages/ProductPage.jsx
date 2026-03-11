@@ -15,7 +15,7 @@ import SEO from '../components/SEO.jsx';
 import { pageMeta, productSchema, breadcrumbSchema, productAlt } from '../utils/seo.js';
 
 // ── PRODUCT PAGE ──────────────────────────────────────────────────────────────
-export default function ProductPage({mobile,product:productProp,setPage,setSelected,addToCart,toast,wishlist,onWishlist,onQuickView,L,products:productsProp}) {
+export default function ProductPage({mobile,product:productProp,setPage,addToCart,toast,wishlist,onWishlist,onQuickView,L,products:productsProp}) {
   const { slug } = useParams();
   const ALL_PRODUCTS = productsProp || PRODUCTS;
   // Support both slug format "id-brand-name" and plain id
@@ -393,7 +393,7 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
               Facebook
             </button>
-            <button onClick={() => { navigator.clipboard.writeText(window.location.href).then(() => toast(L.linkCopied||"Link copied!", "success")); }}
+            <button onClick={() => { navigator.clipboard?.writeText(window.location.href).then(() => toast(L.linkCopied||"Link copied!", "success")).catch(()=>{}); }}
               style={{ flex: 1, padding: "10px 0", border: `1px solid ${C.lgray}`, background: "none", ...T.labelSm, fontSize: 9, color: C.gray, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, transition: "all 0.2s" }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = C.tan; e.currentTarget.style.color = C.tan; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = C.lgray; e.currentTarget.style.color = C.gray; }}>
@@ -447,11 +447,11 @@ export default function ProductPage({mobile,product:productProp,setPage,setSelec
                     <p style={{...T.labelSm,color:C.tan,fontSize:8,letterSpacing:"0.15em",marginBottom:3}}>{item.brand}</p>
                     <p style={{...T.bodySm,color:C.black,fontSize:mobile?12:13,marginBottom:4}}>{L&&L.localNames&&L.localNames[item.name]||item.name}</p>
                     <p style={{fontFamily:"'Alido',serif",fontSize:15,color:item.sale?C.red:C.black,marginBottom:10}}>
-                      GEL {item.sale||item.price}
+                      GEL {item.sale??item.price}
                       {item.sale&&<span style={{fontSize:12,color:C.gray,textDecoration:"line-through",marginLeft:6}}>GEL {item.price}</span>}
                     </p>
                   </div>
-                  <button onClick={()=>{const sz=item.sizes?.length?((item.sizes[0]==="One Size"||item.sizes.length===1)?item.sizes[0]:null):null;addToCart(item,sz);toast(L.addedToCart||"Added to bag","success");}}
+                  <button onClick={()=>{const sz=item.sizes?.length?((item.sizes[0]==="One Size"||item.sizes.length===1)?item.sizes[0]:null):null;if(!sz&&item.sizes?.length>1){setPage("product",item);}else{addToCart(item,sz);toast(L.addedToCart||"Added to bag","success");}}}
                     onMouseEnter={e=>{e.currentTarget.style.background=C.black;e.currentTarget.style.color=C.white;}}
                     onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color=C.black;}}
                     style={{width:"100%",padding:"10px",border:`1px solid ${C.black}`,background:"transparent",color:C.black,...T.labelSm,fontSize:9,letterSpacing:"0.1em",cursor:"pointer",transition:"all 0.25s ease"}}>

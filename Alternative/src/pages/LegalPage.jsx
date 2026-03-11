@@ -323,7 +323,7 @@ export default function LegalPage({type, setPage, L, lang, mobile}) {
         <div style={{maxWidth:900,margin:"0 auto",padding:`0 ${px}`}}>
           <p style={{...T.labelSm,color:C.tan,marginBottom:10}}>{content.label}</p>
           <h1 style={{...T.displayMd,color:C.black,marginBottom:8}}>{content.title}</h1>
-          <p style={{...T.labelSm,color:C.gray,fontSize:9}}>Last updated: {content.updated}</p>
+          <p style={{...T.labelSm,color:C.gray,fontSize:9}}>{L?.lastUpdated||"Last updated"}: {content.updated}</p>
         </div>
       </div>
 

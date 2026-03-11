@@ -34,6 +34,8 @@ export default function AffiliatesPanel({ toast, L, mobile }) {
   };
 
   const handlePayout = (id) => {
+    const aff = affiliates.find(a => a.id === id);
+    if (!window.confirm(`Are you sure you want to process payout of GEL ${aff?.pending_earnings || 0} to ${aff?.name || 'this affiliate'}?`)) return;
     api.payoutAffiliate(id)
       .then(data => {
         const updated = data.affiliate || data;

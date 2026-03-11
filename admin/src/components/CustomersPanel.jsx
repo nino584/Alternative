@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { C, T } from '../constants/theme.js';
 import HoverBtn from './HoverBtn.jsx';
 import { api } from '../api.js';
+import { csvSafe } from '../utils/csv.js';
 
 export default function CustomersPanel({ orders, mobile, toast, L }) {
   const [customers, setCustomers] = useState([]);
@@ -10,7 +11,7 @@ export default function CustomersPanel({ orders, mobile, toast, L }) {
 
   useEffect(() => {
     api.getCustomers()
-      .then(data => setCustomers(Array.isArray(data) ? data : (data?.customers || data?.users || [])))
+      .then(data => setCustomers(Array.isArray(data) ? data : (data?.data || data?.customers || data?.users || [])))
       .catch(() => toast("Failed to load customers", "error"))
       .finally(() => setLoading(false));
   }, []);
@@ -30,10 +31,12 @@ export default function CustomersPanel({ orders, mobile, toast, L }) {
 
   const exportCSV = () => {
     const headers = ["Name","Email","Phone","Role","Registered","Orders"];
-    const rows = filtered.map(c => [`"${(c.name||"").replace(/"/g,'""')}"`, `"${(c.email||"").replace(/"/g,'""')}"`, `"${(c.phone||"").replace(/"/g,'""')}"`, c.role || "user", c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "", orderCounts[c.id] || 0]);
+    const rows = filtered.map(c => [csvSafe(c.name), csvSafe(c.email), csvSafe(c.phone), csvSafe(c.role || "user"), csvSafe(c.createdAt ? new Date(c.createdAt).toLocaleDateString() : ""), csvSafe(orderCounts[c.id] || 0)]);
     const csv = [headers, ...rows].map(r => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "customers.csv"; a.click();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = "customers.csv"; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
     toast("Customers exported", "success");
   };
 
